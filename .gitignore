@@ -2,3 +2,4 @@ lib
 dest
 .vscode
 hello.cpp
+data

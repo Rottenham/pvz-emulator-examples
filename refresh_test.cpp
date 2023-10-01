@@ -1,4 +1,6 @@
-/* WINDOWS POWERSHELL
+/* 测试意外刷新概率.
+ *
+ * WINDOWS POWERSHELL
  * g++ -O3 -o dest/bin/refresh refresh_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest; ./bin/refresh > refresh.csv; cd ..
  */
 
@@ -14,12 +16,12 @@ using namespace pvz_emulator;
 using namespace pvz_emulator::object;
 
 const int COB_TIME = 225;
-const int ROUND_NUM = 1000;
-const int WAVE_NUM = 20;
+const int TOTAL_ROUND_NUM = 1000;
+const int WAVE_PER_ROUND = 20;
 const bool ASSUME_ACTIVATE = true;
 
-double hp_ratio[ROUND_NUM + 1][WAVE_NUM + 1];
-double accident_rate[ROUND_NUM + 1][WAVE_NUM + 1];
+double hp_ratio[TOTAL_ROUND_NUM + 1][WAVE_PER_ROUND + 1];
+double accident_rate[TOTAL_ROUND_NUM + 1][WAVE_PER_ROUND + 1];
 
 void test_one_round(int round, world& w)
 {
@@ -27,7 +29,7 @@ void test_one_round(int round, world& w)
     assert(std::find(type_list.begin(), type_list.end(), GARGANTUAR) != type_list.end());
     assert(std::find(type_list.begin(), type_list.end(), GIGA_GARGANTUAR) != type_list.end());
 
-    for (int wave = 1; wave <= WAVE_NUM; wave++) {
+    for (int wave = 1; wave <= WAVE_PER_ROUND; wave++) {
         auto spawn_list = simulate_wave(w.scene, type_list);
 
         w.reset();
@@ -64,7 +66,7 @@ int main(void)
     for (auto j = 0; j < std::thread::hardware_concurrency(); j++) {
         threads.emplace_back([&]() {
             world w(scene_type::fog);
-            for (auto round = i.fetch_add(1); round <= ROUND_NUM; round = i.fetch_add(1)) {
+            for (auto round = i.fetch_add(1); round <= TOTAL_ROUND_NUM; round = i.fetch_add(1)) {
                 test_one_round(round, w);
             }
         });
@@ -78,19 +80,19 @@ int main(void)
 
     std::cout << "index,wave,hp,accident_rate\n";
     double hp_ratio_sum = 0.0, accident_rate_sum = 0.0;
-    for (int round = 1; round <= ROUND_NUM; round++) {
-        for (int wave = 1; wave <= WAVE_NUM; wave++) {
+    for (int round = 1; round <= TOTAL_ROUND_NUM; round++) {
+        for (int wave = 1; wave <= WAVE_PER_ROUND; wave++) {
             hp_ratio_sum += hp_ratio[round][wave];
             accident_rate_sum += accident_rate[round][wave];
         }
     }
     std::cout << ",,"
               << std::fixed << std::setprecision(3)
-              << hp_ratio_sum / (ROUND_NUM * WAVE_NUM) << ","
-              << 100.0 * accident_rate_sum / (ROUND_NUM * WAVE_NUM) << "%,\n";
+              << hp_ratio_sum / (TOTAL_ROUND_NUM * WAVE_PER_ROUND) << ","
+              << 100.0 * accident_rate_sum / (TOTAL_ROUND_NUM * WAVE_PER_ROUND) << "%,\n";
 
-    for (int round = 1; round <= ROUND_NUM; round++) {
-        for (int wave = 1; wave <= WAVE_NUM; wave++) {
+    for (int round = 1; round <= TOTAL_ROUND_NUM; round++) {
+        for (int wave = 1; wave <= WAVE_PER_ROUND; wave++) {
             std::cout << round << "," << wave << ","
                       << hp_ratio[round][wave] << ","
                       << accident_rate[round][wave] << ",\n";
