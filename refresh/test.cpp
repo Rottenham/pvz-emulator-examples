@@ -1,4 +1,8 @@
-// g++ -O3 -o test test.cpp -I.. -I../lib -L../build -lpvzemu -Wfatal-errors; ./test.exe > test_output.txt
+/*
+g++ -O3 -o test test.cpp -I../lib -I../lib/lib -L../lib/build -lpvzemu -Wfatal-errors;
+./test.exe;
+rm ./test.exe
+*/ 
 
 #include "simulate_summon.h"
 #include <iostream>
@@ -10,12 +14,12 @@ int main()
     init_rnd(0);
 
     scene s(scene_type::day);
-    auto type_list = random_type_list(s, {GARGANTUAR}, {GIGA_GARGANTUAR});
-    auto spawn_list = simulate_summon(s, type_list);
+    for (int i = 0; i < 10; i++) {
+        auto type_list = random_type_list(s, {GARGANTUAR}, {GIGA_GARGANTUAR});
 
-    for (int i = 1; i <= 20; i++) {
-        for (int j = 0; j < 50; j++)
-            std::cout << zombie::type_to_string(static_cast<zombie_type>(spawn_list[(i - 1) * 50 + j])) << " ";
-        std::cout << std::endl;
+        assert(std::find(type_list.begin(), type_list.end(), GARGANTUAR) != type_list.end());
+        assert(std::find(type_list.begin(), type_list.end(), GIGA_GARGANTUAR) == type_list.end());
     }
+
+    std::cout << "OK -- All tests passed.\n";
 }

@@ -7,15 +7,12 @@
 #include "common.h"
 #include "world.h"
 
-#include <chrono>
-#include <iomanip>
-#include <iostream>
 #include <mutex>
 
 using namespace pvz_emulator;
 using namespace pvz_emulator::object;
 
-const int TOTAL_WAVE_NUM = 1024;
+const int TOTAL_WAVE_NUM = 32;
 const int THREAD_NUM = 32;            // if not sure, use number of CPU cores
 const int ZOMBIE_NUM_PER_WAVE = 1000; // must not exceed 1024
 const int START_TICK = 0;

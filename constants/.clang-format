@@ -1,0 +1,4 @@
+# BasedOnStyle: LLVM
+# BreakBeforeBraces: Attach
+# BinPackParameters: true
+ColumnLimit: 100
