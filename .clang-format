@@ -1,0 +1,4 @@
+BasedOnStyle: WebKit
+AlignTrailingComments: true
+Cpp11BracedListStyle: true
+SortIncludes: true
