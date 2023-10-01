@@ -1,7 +1,7 @@
 /* 测试意外刷新概率.
  *
  * WINDOWS POWERSHELL
- * g++ -O3 -o dest/bin/refresh refresh_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest; ./bin/refresh > refresh.csv; cd ..
+ * g++ -O3 -o dest/bin/refresh_test refresh_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest; ./bin/refresh_test > refresh_test.csv; cd ..
  */
 
 #include "common.h"
