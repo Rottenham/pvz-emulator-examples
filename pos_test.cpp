@@ -12,19 +12,20 @@
 using namespace pvz_emulator;
 using namespace pvz_emulator::object;
 
-const int TOTAL_WAVE_NUM = 32;
+const int TOTAL_WAVE_NUM = 10240;
 const int THREAD_NUM = 32;            // if not sure, use number of CPU cores
 const int ZOMBIE_NUM_PER_WAVE = 1000; // must not exceed 1024
 const int START_TICK = 0;
 const int END_TICK = 3000;
-const std::vector<zombie_type> ZOMBIE_TYPES = {zombie_type::zomboni, zombie_type::gargantuar};
+const std::vector<zombie_type> ZOMBIE_TYPES = {zombie_type::gargantuar};
+const bool OUTPUT_AS_INT = true; // if true, output float * 32768, which is guaranteed to be an integer when >= 256
 
 std::mutex mtx;
 
 float min_x[33][END_TICK - START_TICK + 1];
 float max_x[33][END_TICK - START_TICK + 1];
 
-void test_one(const zombie_type& type, world& w, int wave_num_per_thread)
+void test_one_type(const zombie_type& type, world& w, int wave_num_per_thread)
 {
     float local_min_x[END_TICK - START_TICK + 1];
     float local_max_x[END_TICK - START_TICK + 1];
@@ -42,7 +43,6 @@ void test_one(const zombie_type& type, world& w, int wave_num_per_thread)
         }
         run(w, START_TICK);
 
-        int idx = static_cast<int>(type);
         for (int tick = START_TICK; tick <= END_TICK; tick++) {
             for (const auto& z : w.scene.zombies) {
                 local_min_x[tick - START_TICK] = std::min(local_min_x[tick - START_TICK], z.x);
@@ -77,7 +77,7 @@ int main()
         threads.emplace_back([&]() {
             world w(scene_type::fog);
             for (const auto& zombie_type : ZOMBIE_TYPES)
-                test_one(zombie_type, w, TOTAL_WAVE_NUM / THREAD_NUM);
+                test_one_type(zombie_type, w, TOTAL_WAVE_NUM / THREAD_NUM);
         });
     }
     for (auto& t : threads) {
@@ -94,12 +94,22 @@ int main()
     }
     std::cout << "\n";
 
+    if (!OUTPUT_AS_INT)
+        std::cout << std::fixed << std::setprecision(3);
+
     for (int tick = START_TICK; tick <= END_TICK; tick++) {
         std::cout << tick << ",";
         for (const auto& zombie_type : ZOMBIE_TYPES) {
             int idx = static_cast<int>(zombie_type);
-            std::cout << min_x[idx][tick - START_TICK] << ","
-                      << max_x[idx][tick - START_TICK] << ",";
+
+            if (OUTPUT_AS_INT) {
+                std::cout << static_cast<int>(32768.0 * min_x[idx][tick - START_TICK]) << ","
+                          << static_cast<int>(32768.0 * max_x[idx][tick - START_TICK]) << ",";
+            } else {
+
+                std::cout << min_x[idx][tick - START_TICK] << ","
+                          << max_x[idx][tick - START_TICK] << ",";
+            }
         }
         std::cout << "\n";
     }
