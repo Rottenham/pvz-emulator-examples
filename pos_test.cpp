@@ -25,7 +25,7 @@ std::mutex mtx;
 float min_x[33][END_TICK - START_TICK + 1];
 float max_x[33][END_TICK - START_TICK + 1];
 
-void test_one_type(const zombie_type& type, world& w, int wave_num_per_thread)
+void test_one(const zombie_type& type, world& w, int wave_num_per_thread)
 {
     float local_min_x[END_TICK - START_TICK + 1];
     float local_max_x[END_TICK - START_TICK + 1];
@@ -77,7 +77,7 @@ int main()
         threads.emplace_back([&]() {
             world w(scene_type::fog);
             for (const auto& zombie_type : ZOMBIE_TYPES)
-                test_one_type(zombie_type, w, TOTAL_WAVE_NUM / THREAD_NUM);
+                test_one(zombie_type, w, TOTAL_WAVE_NUM / THREAD_NUM);
         });
     }
     for (auto& t : threads) {
