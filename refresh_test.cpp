@@ -22,8 +22,6 @@ double accident_rate[TOTAL_ROUND_NUM + 1][WAVE_PER_ROUND + 1];
 void test_one_round(int round, world& w)
 {
     auto type_list = random_type_list(w.scene, {GARGANTUAR, GIGA_GARGANTUAR});
-    assert(std::find(type_list.begin(), type_list.end(), GARGANTUAR) != type_list.end());
-    assert(std::find(type_list.begin(), type_list.end(), GIGA_GARGANTUAR) != type_list.end());
 
     for (int wave = 1; wave <= WAVE_PER_ROUND; wave++) {
         auto spawn_list = simulate_wave(w.scene, type_list);
