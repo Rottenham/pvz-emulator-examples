@@ -20,7 +20,6 @@ const int START_TICK = 1200;
 const int END_TICK = 1800;
 const scene_type SCENE_TYPE = scene_type::fog;
 const int ICE_TIME = 1;               // actual effect time, <= 0 means no ice
-const std::vector<int> COB_COLS = {5, 7}; // cob tail cols, [1, 8]
 
 std::mutex mtx;
 
@@ -46,12 +45,6 @@ void test(int wave_num_per_thread)
         if (ICE_TIME > 0) {
             w.plant_factory.create(plant_type::iceshroom, 0, 0);
             run(w, 100 - ICE_TIME);
-        }
-
-        for (int cob_col : COB_COLS) {
-            for (int r = 1; r < w.scene.get_max_row(); r++) {
-                w.plant_factory.create(plant_type::cob_cannon, r - 1, cob_col - 1);
-            }
         }
 
         for (int i = 0; i < ZOMBIE_NUM_PER_WAVE; i++) {
