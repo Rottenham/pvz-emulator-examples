@@ -6,6 +6,7 @@
             "type": "shell",
             "command": "g++",
             "args": [
+                "-fexec-charset=GBK",
                 "-O3",
                 "-o",
                 "dest/bin/${fileBasenameNoExtension}",

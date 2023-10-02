@@ -1,4 +1,4 @@
-/* 测试收跳跳的最左炮爆炸中心.
+/* 测试收跳跳的最左炮准星.
  *
  * WINDOWS POWERSHELL
  * g++ -O3 -o dest/bin/pogo_test pogo_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest; ./bin/pogo_test > pogo_test.csv; cd ..
@@ -116,7 +116,7 @@ int main()
     std::cout << "Finished in " << elapsed.count() << "s with " << threads.size() << " threads.\n";
 
     std::cout << "tick,upper_hit_pogo,same_hit_pogo,lower_hit_pogo,upper_hit_garg,same_hit_garg,lower_hit_garg,"
-              << "3all,3P2G,2P3G,2all,1P2G,"
+              << "全三,三跳两巨,两跳三巨,全两,下跳两巨,"
               << "\n";
 
     for (int tick = START_TICK; tick <= END_TICK; tick++) {
