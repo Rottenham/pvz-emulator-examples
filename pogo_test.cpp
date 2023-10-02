@@ -1,7 +1,7 @@
 /* 测试收跳跳的最左炮准星.
  *
  * WINDOWS POWERSHELL
- * g++ -O3 -o dest/bin/pogo_test pogo_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest; ./bin/pogo_test > pogo_test.csv; cd ..
+ * g++ -O3 -o dest/bin/pogo_test pogo_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors -fexec-charset=GBK; cd dest; ./bin/pogo_test > pogo_test.csv; cd ..
  */
 
 #include "common.h"
