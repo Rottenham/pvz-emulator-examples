@@ -106,7 +106,6 @@ int main()
                 std::cout << static_cast<int>(32768.0 * min_x[idx][tick - START_TICK]) << ","
                           << static_cast<int>(32768.0 * max_x[idx][tick - START_TICK]) << ",";
             } else {
-
                 std::cout << min_x[idx][tick - START_TICK] << ","
                           << max_x[idx][tick - START_TICK] << ",";
             }
