@@ -86,8 +86,8 @@ pvz_emulator::object::rect get_hit_box(const pvz_emulator::object::zombie& zombi
 }
 
 // returns a range (min_x, max_x)
-// min_x : min cob explode x when cob is to the left of zombie
-// max_x : max cob explode x when cob is to the right of zombie
+// min_x : min cob hit x when cob is to the left of zombie
+// max_x : max cob hit x when cob is to the right of zombie
 std::pair<int, int> get_cob_hit_x_range(const pvz_emulator::object::rect& zombie_hit_box, int cob_y)
 {
     int y_dist = distance_from_point_to_range({zombie_hit_box.y, zombie_hit_box.y + zombie_hit_box.height}, cob_y);
