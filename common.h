@@ -2,8 +2,11 @@
 #include "world.h"
 
 #include <chrono>
+#include <ctime>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 bool is_roof(const pvz_emulator::object::scene_type& scene_type)
 {
@@ -99,4 +102,16 @@ std::pair<int, int> get_cob_hit_x_range(const pvz_emulator::object::rect& zombie
         int cob_dist = static_cast<int>(sqrt(115 * 115 - y_dist * y_dist));
         return {zombie_hit_box.x - cob_dist + 7, zombie_hit_box.x + zombie_hit_box.width + cob_dist + 7};
     }
+}
+
+// format: 2009.12.25_21.41.37
+std::string get_timestamp()
+{
+    std::time_t t = std::time(nullptr);
+    std::tm* tm = std::localtime(&t);
+
+    std::stringstream ss;
+    ss << std::put_time(tm, "%Y.%m.%d_%H.%M.%S");
+
+    return ss.str();
 }

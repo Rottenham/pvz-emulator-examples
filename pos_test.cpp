@@ -1,7 +1,7 @@
 /* 测试各个时刻各类僵尸的最小/最大x坐标.
  *
  * WINDOWS POWERSHELL
- * g++ -O3 -o dest/bin/pos_test pos_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors -fexec-charset=GBK; cd dest; ./bin/pos_test > pos_test.csv; cd ..
+ * g++ -O3 -o dest/bin/pos_test pos_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest; ./bin/pos_test; cd ..
  */
 
 #include "common.h"
@@ -11,6 +11,9 @@
 
 using namespace pvz_emulator;
 using namespace pvz_emulator::object;
+
+const std::string OUTPUT_FILE = "pos_test";
+const std::string OUTPUT_FILE_EXT = ".csv";
 
 const int TOTAL_WAVE_NUM = 10240;
 const int THREAD_NUM = 32;            // if not sure, use number of CPU cores
@@ -64,6 +67,14 @@ int main()
 {
     static_assert(TOTAL_WAVE_NUM % THREAD_NUM == 0);
 
+    const auto filename = OUTPUT_FILE + " (" + get_timestamp() + ") " + OUTPUT_FILE_EXT;
+    std::ofstream file(filename, std::ios::binary);
+    if (!file) {
+        std::cerr << "打开文件失败: " << filename << std::endl;
+        return 1;
+    }
+    file << "\xEF\xBB\xBF"; // UTF-8 BOM
+
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < 33; ++i) {
         for (int j = 0; j < (END_TICK - START_TICK + 1); ++j) {
@@ -87,30 +98,32 @@ int main()
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
     std::cout << "Finished in " << elapsed.count() << "s with " << threads.size() << " threads.\n";
 
-    std::cout << "tick,";
+    file << "tick,";
     for (const auto& zombie_type : ZOMBIE_TYPES) {
-        std::cout << zombie::type_to_string(zombie_type) << "_min,"
+        file << zombie::type_to_string(zombie_type) << "_min,"
                   << zombie::type_to_string(zombie_type) << "_max,";
     }
-    std::cout << "\n";
+    file << "\n";
 
     if (!OUTPUT_AS_INT)
-        std::cout << std::fixed << std::setprecision(3);
+        file << std::fixed << std::setprecision(3);
 
     for (int tick = START_TICK; tick <= END_TICK; tick++) {
-        std::cout << tick << ",";
+        file << tick << ",";
         for (const auto& zombie_type : ZOMBIE_TYPES) {
             int idx = static_cast<int>(zombie_type);
 
             if (OUTPUT_AS_INT) {
-                std::cout << static_cast<int>(32768.0 * min_x[idx][tick - START_TICK]) << ","
+                file << static_cast<int>(32768.0 * min_x[idx][tick - START_TICK]) << ","
                           << static_cast<int>(32768.0 * max_x[idx][tick - START_TICK]) << ",";
             } else {
-                std::cout << min_x[idx][tick - START_TICK] << ","
+                file << min_x[idx][tick - START_TICK] << ","
                           << max_x[idx][tick - START_TICK] << ",";
             }
         }
-        std::cout << "\n";
+        file << "\n";
     }
+
+    file.close();
     return 0;
 }

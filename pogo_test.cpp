@@ -1,7 +1,7 @@
 /* 测试收跳跳的最左炮准星.
  *
  * WINDOWS POWERSHELL
- * g++ -O3 -o dest/bin/pogo_test pogo_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors -fexec-charset=GBK; cd dest; ./bin/pogo_test > pogo_test.csv; cd ..
+ * g++ -O3 -o dest/bin/pogo_test pogo_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest; ./bin/pogo_test; cd ..
  */
 
 #include "common.h"
@@ -13,13 +13,16 @@
 using namespace pvz_emulator;
 using namespace pvz_emulator::object;
 
+const std::string OUTPUT_FILE = "pogo_test";
+const std::string OUTPUT_FILE_EXT = ".csv";
+
 const int TOTAL_WAVE_NUM = 10240;
 const int THREAD_NUM = 32;            // if not sure, use number of CPU cores
 const int ZOMBIE_NUM_PER_WAVE = 1000; // must not exceed 1024
 const int START_TICK = 1200;
 const int END_TICK = 1800;
 const scene_type SCENE_TYPE = scene_type::fog;
-const int ICE_TIME = 1;               // actual effect time, <= 0 means no ice
+const int ICE_TIME = 1; // actual effect time, <= 0 means no ice
 
 std::mutex mtx;
 
@@ -97,6 +100,14 @@ int main()
 {
     static_assert(TOTAL_WAVE_NUM % THREAD_NUM == 0);
 
+    const auto filename = OUTPUT_FILE + " (" + get_timestamp() + ") " + OUTPUT_FILE_EXT;
+    std::ofstream file(filename, std::ios::binary);
+    if (!file) {
+        std::cerr << "打开文件失败: " << filename << std::endl;
+        return 1;
+    }
+    file << "\xEF\xBB\xBF"; // UTF-8 BOM
+
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < (END_TICK - START_TICK + 1); ++i) {
         upper_cob[i] = same_cob[i] = lower_cob[i] = 999.0f;
@@ -115,9 +126,9 @@ int main()
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
     std::cout << "Finished in " << elapsed.count() << "s with " << threads.size() << " threads.\n";
 
-    std::cout << "tick,upper_hit_pogo,same_hit_pogo,lower_hit_pogo,upper_hit_garg,same_hit_garg,lower_hit_garg,"
-              << "全三,三跳两巨,两跳三巨,全两,下跳两巨,"
-              << "\n";
+    file << "tick,upper_hit_pogo,same_hit_pogo,lower_hit_pogo,upper_hit_garg,same_hit_garg,lower_hit_garg,"
+         << "全三,三跳两巨,两跳三巨,全两,下跳两巨,"
+         << "\n";
 
     for (int tick = START_TICK; tick <= END_TICK; tick++) {
         auto upper_cob_pogo = upper_cob[tick - START_TICK];
@@ -134,7 +145,7 @@ int main()
         auto same_cob_garg = get_cob_hit_x_range(garg_hit_box, row_to_cob_hit_y(SCENE_TYPE, 1)).first;
         auto lower_cob_garg = get_cob_hit_x_range(garg_hit_box, row_to_cob_hit_y(SCENE_TYPE, 2)).first;
 
-        std::cout
+        file
             << tick << ","
             << upper_cob_pogo << ","
             << same_cob_pogo << ","
@@ -149,5 +160,7 @@ int main()
             << bool_to_string((upper_cob_garg <= upper_cob_pogo) && (same_cob_garg <= upper_cob_pogo)) << ","
             << "\n";
     }
+
+    file.close();
     return 0;
 }

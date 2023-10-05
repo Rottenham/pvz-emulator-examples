@@ -6,7 +6,6 @@
             "type": "shell",
             "command": "g++",
             "args": [
-                "-fexec-charset=GBK",
                 "-O3",
                 "-o",
                 "dest/bin/${fileBasenameNoExtension}",
@@ -21,7 +20,7 @@
         {
             "label": "run",
             "type": "shell",
-            "command": "cd dest; ./bin/${fileBasenameNoExtension} > ${fileBasenameNoExtension}.csv; cd ..",
+            "command": "cd dest; ./bin/${fileBasenameNoExtension}; cd ..",
             "dependsOn": [
                 "compile"
             ],

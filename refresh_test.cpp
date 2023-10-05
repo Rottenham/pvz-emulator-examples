@@ -1,7 +1,7 @@
 /* 测试意外刷新概率.
  *
  * WINDOWS POWERSHELL
- * g++ -O3 -o dest/bin/refresh_test refresh_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors -fexec-charset=GBK; cd dest; ./bin/refresh_test > refresh_test.csv; cd ..
+ * g++ -O3 -o dest/bin/refresh_test refresh_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest; ./bin/refresh_test; cd ..
  */
 
 #include "common.h"
@@ -10,6 +10,9 @@
 
 using namespace pvz_emulator;
 using namespace pvz_emulator::object;
+
+const std::string OUTPUT_FILE = "refresh_test";
+const std::string OUTPUT_FILE_EXT = ".csv";
 
 const int COB_TIME = 225;
 const int TOTAL_ROUND_NUM = 1000;
@@ -52,6 +55,14 @@ void test_one_round(int round, world& w)
 
 int main(void)
 {
+    const auto filename = OUTPUT_FILE + " (" + get_timestamp() + ") " + OUTPUT_FILE_EXT;
+    std::ofstream file(filename, std::ios::binary);
+    if (!file) {
+        std::cerr << "打开文件失败: " << filename << std::endl;
+        return 1;
+    }
+    file << "\xEF\xBB\xBF"; // UTF-8 BOM
+
     auto start = std::chrono::high_resolution_clock::now();
     init_rnd();
 
@@ -72,7 +83,7 @@ int main(void)
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
     std::cout << "Finished in " << elapsed.count() << "s with " << threads.size() << " threads.\n";
 
-    std::cout << "index,wave,hp,accident_rate\n";
+    file << "index,wave,hp,accident_rate\n";
     double hp_ratio_sum = 0.0, accident_rate_sum = 0.0;
     for (int round = 1; round <= TOTAL_ROUND_NUM; round++) {
         for (int wave = 1; wave <= WAVE_PER_ROUND; wave++) {
@@ -80,18 +91,19 @@ int main(void)
             accident_rate_sum += accident_rate[round][wave];
         }
     }
-    std::cout << ",,"
+    file << ",,"
               << std::fixed << std::setprecision(3)
               << hp_ratio_sum / (TOTAL_ROUND_NUM * WAVE_PER_ROUND) << ","
               << 100.0 * accident_rate_sum / (TOTAL_ROUND_NUM * WAVE_PER_ROUND) << "%,\n";
 
     for (int round = 1; round <= TOTAL_ROUND_NUM; round++) {
         for (int wave = 1; wave <= WAVE_PER_ROUND; wave++) {
-            std::cout << round << "," << wave << ","
+            file << round << "," << wave << ","
                       << hp_ratio[round][wave] << ","
                       << accident_rate[round][wave] << ",\n";
         }
     }
 
+    file.close();
     return 0;
 }
