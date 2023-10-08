@@ -1,3 +1,4 @@
+#pragma once
 
 #include "world.h"
 
@@ -8,34 +9,48 @@
 #include <iostream>
 #include <sstream>
 
-bool is_roof(const pvz_emulator::object::scene_type& scene_type)
+bool is_roof(const pvz_emulator::object::scene_type &scene_type)
 {
     using namespace pvz_emulator::object;
     return scene_type == scene_type::roof || scene_type == scene_type::moon_night;
 }
 
-bool is_frontyard(const pvz_emulator::object::scene_type& scene_type)
+bool is_frontyard(const pvz_emulator::object::scene_type &scene_type)
 {
     using namespace pvz_emulator::object;
     return scene_type == scene_type::day || scene_type == scene_type::night;
 }
 
-void dump(pvz_emulator::world& w)
+bool is_backyard(const pvz_emulator::object::scene_type &scene_type)
+{
+    using namespace pvz_emulator::object;
+    return scene_type == scene_type::pool || scene_type == scene_type::fog;
+}
+
+std::string dump(pvz_emulator::world &w)
 {
     std::string str;
     w.to_json(str);
-    std::cout << str << std::endl;
+    return str + "\n";
 }
 
-void dump(pvz_emulator::object::scene& scene, pvz_emulator::object::zombie& zombie)
+std::string dump(pvz_emulator::object::scene &scene, pvz_emulator::object::zombie &zombie)
 {
     rapidjson::StringBuffer sb;
     rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
     zombie.to_json(scene, writer);
-    std::cout << sb.GetString() << std::endl;
+    return std::string(sb.GetString()) + "\n";
 }
 
-void run(pvz_emulator::world& w, int ticks)
+std::string dump(pvz_emulator::object::scene &scene, pvz_emulator::object::plant &plant)
+{
+    rapidjson::StringBuffer sb;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+    plant.to_json(scene, writer);
+    return std::string(sb.GetString()) + "\n";
+}
+
+void run(pvz_emulator::world &w, int ticks)
 {
     for (int i = 0; i < ticks; i++)
         w.update();
@@ -43,7 +58,7 @@ void run(pvz_emulator::world& w, int ticks)
 
 // TODO: implement for roof and moon_night
 // row: [1, 6]
-float row_to_cob_hit_y(const pvz_emulator::object::scene_type& scene_type, int row)
+float row_to_cob_hit_y(const pvz_emulator::object::scene_type &scene_type, int row)
 {
     using namespace pvz_emulator::object;
     assert(!is_roof(scene_type) && "unimplemented");
@@ -53,13 +68,13 @@ float row_to_cob_hit_y(const pvz_emulator::object::scene_type& scene_type, int r
 
 // row: [1, 6]
 // col: [0.0, 10.0]
-void launch_cob(pvz_emulator::world& w, int row, float col)
+int launch_cob(pvz_emulator::world &w, unsigned int row, float col)
 {
     using namespace pvz_emulator::object;
     assert(row >= 1 && row <= w.scene.get_max_row());
     assert(col >= 0.0 && col <= 10.0);
 
-    auto& p = w.plant_factory.create(plant_type::cob_cannon, 1, 1);
+    auto &p = w.plant_factory.create(plant_type::cob_cannon, 1, 1);
 
     p.status = plant_status::cob_cannon_launch;
     p.countdown.launch = 206;
@@ -67,21 +82,28 @@ void launch_cob(pvz_emulator::world& w, int row, float col)
 
     p.cannon.x = static_cast<int>(col * 80.0 - 47.0);
     p.cannon.y = row_to_cob_hit_y(w.scene.type, row);
+
+    return p.uuid;
 }
 
-int distance_from_point_to_range(const std::pair<int, int>& range, int point)
+int distance_from_point_to_range(const std::pair<int, int> &range, int point)
 {
     assert(range.first <= range.second);
-    if (point < range.first) {
+    if (point < range.first)
+    {
         return range.first - point;
-    } else if (point > range.second) {
+    }
+    else if (point > range.second)
+    {
         return point - range.second;
-    } else {
+    }
+    else
+    {
         return 0;
     }
 }
 
-pvz_emulator::object::rect get_hit_box(const pvz_emulator::object::zombie& zombie)
+pvz_emulator::object::rect get_hit_box(const pvz_emulator::object::zombie &zombie)
 {
     pvz_emulator::object::rect rect;
     zombie.get_hit_box(rect);
@@ -91,16 +113,20 @@ pvz_emulator::object::rect get_hit_box(const pvz_emulator::object::zombie& zombi
 // returns a range (min_x, max_x)
 // min_x : min cob hit x when cob is to the left of zombie
 // max_x : max cob hit x when cob is to the right of zombie
-std::pair<int, int> get_cob_hit_x_range(const pvz_emulator::object::rect& zombie_hit_box, int cob_y)
+std::pair<int, int> get_cob_hit_x_range(const pvz_emulator::object::rect &zombie_hit_box, int cob_y)
 {
-    int y_dist = distance_from_point_to_range({zombie_hit_box.y, zombie_hit_box.y + zombie_hit_box.height}, cob_y);
-    cob_y > zombie_hit_box.x;
+    int y_dist = distance_from_point_to_range(
+        {zombie_hit_box.y, zombie_hit_box.y + zombie_hit_box.height}, cob_y);
 
-    if (y_dist > 115) {
+    if (y_dist > 115)
+    {
         return {-1, 999};
-    } else {
+    }
+    else
+    {
         int cob_dist = static_cast<int>(sqrt(115 * 115 - y_dist * y_dist));
-        return {zombie_hit_box.x - cob_dist + 7, zombie_hit_box.x + zombie_hit_box.width + cob_dist + 7};
+        return {zombie_hit_box.x - cob_dist + 7,
+                zombie_hit_box.x + zombie_hit_box.width + cob_dist + 7};
     }
 }
 
@@ -108,7 +134,7 @@ std::pair<int, int> get_cob_hit_x_range(const pvz_emulator::object::rect& zombie
 std::string get_timestamp()
 {
     std::time_t t = std::time(nullptr);
-    std::tm* tm = std::localtime(&t);
+    std::tm *tm = std::localtime(&t);
 
     std::stringstream ss;
     ss << std::put_time(tm, "%Y.%m.%d_%H.%M.%S");

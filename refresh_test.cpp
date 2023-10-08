@@ -27,7 +27,7 @@ void test_one_round(int round, world& w)
     auto type_list = random_type_list(w.scene, {GARGANTUAR, GIGA_GARGANTUAR});
 
     for (int wave = 1; wave <= WAVE_PER_ROUND; wave++) {
-        auto spawn_list = simulate_wave(w.scene, type_list);
+        auto spawn_list = simulate_wave(type_list);
 
         w.reset();
         w.scene.stop_spawn = true;
@@ -38,7 +38,6 @@ void test_one_round(int round, world& w)
         run(w, 373 - COB_TIME);
 
         w.scene.spawn.wave = 1;
-        auto spawn = spawn_list[wave - 1];
         for (const auto& z : spawn_list)
             w.zombie_factory.create(static_cast<zombie_type>(z));
 
@@ -68,7 +67,7 @@ int main(void)
 
     std::atomic<int> i = 0;
     std::vector<std::thread> threads;
-    for (auto j = 0; j < std::thread::hardware_concurrency(); j++) {
+    for (size_t j = 0; j < std::thread::hardware_concurrency(); j++) {
         threads.emplace_back([&]() {
             world w(scene_type::fog);
             for (auto round = i.fetch_add(1); round <= TOTAL_ROUND_NUM; round = i.fetch_add(1)) {

@@ -1,5 +1,6 @@
 lib
 dest
-.vscode/settings.json
+.vscode
 hello.cpp
 data
+smash

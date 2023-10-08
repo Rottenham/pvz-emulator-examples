@@ -1,4 +1,5 @@
-BasedOnStyle: WebKit
+BasedOnStyle: Microsoft  
 AlignTrailingComments: true
 Cpp11BracedListStyle: true
 SortIncludes: true
+ColumnLimit: 100

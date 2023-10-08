@@ -75,7 +75,7 @@ std::vector<int> random_type_list(const pvz_emulator::object::scene& s,
     std::vector<int> out = {0, 19, sel};
     for (auto x : required)
         out.push_back(x);
-    for (int i = 0; i < 9 - required.size(); i++) {
+    for (size_t i = 0; i < 9 - required.size(); i++) {
         int idx = _setzombies_internal::rng() % cand.size();
         if (cand[idx] >= 0)
             out.push_back(cand[idx]);
@@ -85,14 +85,11 @@ std::vector<int> random_type_list(const pvz_emulator::object::scene& s,
     return out;
 }
 
-std::array<int, 50> simulate_wave(const pvz_emulator::object::scene& s,
-    std::vector<int> type_list,
+std::array<int, 50> simulate_wave(std::vector<int> type_list,
     bool is_huge_wave = false,
     int giga_limit = 50,
     int giga_count = -1)
 {
-    auto scene = s; // make a copy
-
     if (giga_count != -1)
         type_list.erase(find(type_list.begin(), type_list.end(), GIGA_GARGANTUAR));
     std::vector<int> weights;

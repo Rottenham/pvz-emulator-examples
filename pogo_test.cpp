@@ -1,4 +1,5 @@
 /* 测试收跳跳的最左炮准星.
+ * 注意: PvZ Emulator 模拟跳跳与玉米炮互动不准确, 无法测定有炮时的情况.
  *
  * WINDOWS POWERSHELL
  * g++ -O3 -o dest/bin/pogo_test pogo_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest; ./bin/pogo_test; cd ..
@@ -126,7 +127,7 @@ int main()
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
     std::cout << "Finished in " << elapsed.count() << "s with " << threads.size() << " threads.\n";
 
-    file << "tick,upper_hit_pogo,same_hit_pogo,lower_hit_pogo,upper_hit_garg,same_hit_garg,lower_hit_garg,"
+    file << "tick,收上行跳跳,收本行跳跳,收下行跳跳,收上行巨人,收本行巨人,收下行巨人,"
          << "全三,三跳两巨,两跳三巨,全两,下跳两巨,"
          << "\n";
 
@@ -147,12 +148,12 @@ int main()
 
         file
             << tick << ","
-            << upper_cob_pogo << ","
-            << same_cob_pogo << ","
             << lower_cob_pogo << ","
-            << upper_cob_garg << ","
-            << same_cob_garg << ","
+            << same_cob_pogo << ","
+            << upper_cob_pogo << ","
             << lower_cob_garg << ","
+            << same_cob_garg << ","
+            << upper_cob_garg << ","
             << bool_to_string(lower_cob_garg <= lower_cob_pogo) << ","
             << bool_to_string((upper_cob_garg <= lower_cob_pogo) && (same_cob_garg <= lower_cob_pogo)) << ","
             << bool_to_string(lower_cob_garg <= same_cob_pogo) << "," // assume lower pogo is always easier than same pogo
