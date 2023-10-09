@@ -1,10 +1,12 @@
 /* 测试各个时刻各类僵尸的最小/最大x坐标.
  *
  * WINDOWS POWERSHELL
- * g++ -O3 -o dest/bin/pos_test pos_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest; ./bin/pos_test; cd ..
+ * g++ -O3 -o dest/bin/pos_test pos_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd
+ * dest; ./bin/pos_test; cd ..
  */
 
-#include "common.h"
+#include "common/io.h"
+#include "common/pe.h"
 #include "world.h"
 
 #include <mutex>
@@ -21,7 +23,8 @@ const int ZOMBIE_NUM_PER_WAVE = 1000; // must not exceed 1024
 const int START_TICK = 0;
 const int END_TICK = 3000;
 const std::vector<zombie_type> ZOMBIE_TYPES = {zombie_type::gargantuar};
-const bool OUTPUT_AS_INT = true; // if true, output float * 32768, which is guaranteed to be an integer when >= 256
+const bool OUTPUT_AS_INT
+    = true; // if true, output float * 32768, which is guaranteed to be an integer when >= 256
 
 std::mutex mtx;
 
@@ -58,8 +61,10 @@ void test_one(const zombie_type& type, world& w, int wave_num_per_thread)
     std::lock_guard<std::mutex> lock(mtx);
     for (int tick = START_TICK; tick <= END_TICK; tick++) {
         int idx = static_cast<int>(type);
-        min_x[idx][tick - START_TICK] = std::min(min_x[idx][tick - START_TICK], local_min_x[tick - START_TICK]);
-        max_x[idx][tick - START_TICK] = std::max(max_x[idx][tick - START_TICK], local_max_x[tick - START_TICK]);
+        min_x[idx][tick - START_TICK]
+            = std::min(min_x[idx][tick - START_TICK], local_min_x[tick - START_TICK]);
+        max_x[idx][tick - START_TICK]
+            = std::max(max_x[idx][tick - START_TICK], local_max_x[tick - START_TICK]);
     }
 }
 
@@ -101,7 +106,7 @@ int main()
     file << "tick,";
     for (const auto& zombie_type : ZOMBIE_TYPES) {
         file << zombie::type_to_string(zombie_type) << "_min,"
-                  << zombie::type_to_string(zombie_type) << "_max,";
+             << zombie::type_to_string(zombie_type) << "_max,";
     }
     file << "\n";
 
@@ -115,10 +120,10 @@ int main()
 
             if (OUTPUT_AS_INT) {
                 file << static_cast<int>(32768.0 * min_x[idx][tick - START_TICK]) << ","
-                          << static_cast<int>(32768.0 * max_x[idx][tick - START_TICK]) << ",";
+                     << static_cast<int>(32768.0 * max_x[idx][tick - START_TICK]) << ",";
             } else {
-                file << min_x[idx][tick - START_TICK] << ","
-                          << max_x[idx][tick - START_TICK] << ",";
+                file << min_x[idx][tick - START_TICK] << "," << max_x[idx][tick - START_TICK]
+                     << ",";
             }
         }
         file << "\n";

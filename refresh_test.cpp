@@ -1,10 +1,12 @@
 /* 测试意外刷新概率.
  *
  * WINDOWS POWERSHELL
- * g++ -O3 -o dest/bin/refresh_test refresh_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest; ./bin/refresh_test; cd ..
+ * g++ -O3 -o dest/bin/refresh_test refresh_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu
+ * -Wfatal-errors; cd dest; ./bin/refresh_test; cd ..
  */
 
-#include "common.h"
+#include "common/io.h"
+#include "common/pe.h"
 #include "refresh/simulate_summon.h"
 #include "world.h"
 
@@ -41,7 +43,8 @@ void test_one_round(int round, world& w)
         for (const auto& z : spawn_list)
             w.zombie_factory.create(static_cast<zombie_type>(z));
 
-        w.scene.spawn.wave = 2; // as if we are already at the next wave, so get_current_hp() works correctly
+        w.scene.spawn.wave
+            = 2; // as if we are already at the next wave, so get_current_hp() works correctly
         auto init_hp = w.spawn.get_current_hp();
         run(w, 401);
         auto curr_hp = w.spawn.get_current_hp();
@@ -90,16 +93,14 @@ int main(void)
             accident_rate_sum += accident_rate[round][wave];
         }
     }
-    file << ",,"
-              << std::fixed << std::setprecision(3)
-              << hp_ratio_sum / (TOTAL_ROUND_NUM * WAVE_PER_ROUND) << ","
-              << 100.0 * accident_rate_sum / (TOTAL_ROUND_NUM * WAVE_PER_ROUND) << "%,\n";
+    file << ",," << std::fixed << std::setprecision(3)
+         << hp_ratio_sum / (TOTAL_ROUND_NUM * WAVE_PER_ROUND) << ","
+         << 100.0 * accident_rate_sum / (TOTAL_ROUND_NUM * WAVE_PER_ROUND) << "%,\n";
 
     for (int round = 1; round <= TOTAL_ROUND_NUM; round++) {
         for (int wave = 1; wave <= WAVE_PER_ROUND; wave++) {
-            file << round << "," << wave << ","
-                      << hp_ratio[round][wave] << ","
-                      << accident_rate[round][wave] << ",\n";
+            file << round << "," << wave << "," << hp_ratio[round][wave] << ","
+                 << accident_rate[round][wave] << ",\n";
         }
     }
 

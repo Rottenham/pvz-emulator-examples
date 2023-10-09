@@ -2,39 +2,33 @@
 
 #include "world.h"
 
-#include <chrono>
-#include <ctime>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-
-bool is_roof(const pvz_emulator::object::scene_type &scene_type)
+[[nodiscard]] bool is_roof(const pvz_emulator::object::scene_type& scene_type)
 {
     using namespace pvz_emulator::object;
     return scene_type == scene_type::roof || scene_type == scene_type::moon_night;
 }
 
-bool is_frontyard(const pvz_emulator::object::scene_type &scene_type)
+[[nodiscard]] bool is_frontyard(const pvz_emulator::object::scene_type& scene_type)
 {
     using namespace pvz_emulator::object;
     return scene_type == scene_type::day || scene_type == scene_type::night;
 }
 
-bool is_backyard(const pvz_emulator::object::scene_type &scene_type)
+[[nodiscard]] bool is_backyard(const pvz_emulator::object::scene_type& scene_type)
 {
     using namespace pvz_emulator::object;
     return scene_type == scene_type::pool || scene_type == scene_type::fog;
 }
 
-std::string dump(pvz_emulator::world &w)
+[[nodiscard]] std::string dump(pvz_emulator::world& w)
 {
     std::string str;
     w.to_json(str);
     return str + "\n";
 }
 
-std::string dump(pvz_emulator::object::scene &scene, pvz_emulator::object::zombie &zombie)
+[[nodiscard]] std::string dump(
+    pvz_emulator::object::scene& scene, pvz_emulator::object::zombie& zombie)
 {
     rapidjson::StringBuffer sb;
     rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
@@ -42,7 +36,8 @@ std::string dump(pvz_emulator::object::scene &scene, pvz_emulator::object::zombi
     return std::string(sb.GetString()) + "\n";
 }
 
-std::string dump(pvz_emulator::object::scene &scene, pvz_emulator::object::plant &plant)
+[[nodiscard]] std::string dump(
+    pvz_emulator::object::scene& scene, pvz_emulator::object::plant& plant)
 {
     rapidjson::StringBuffer sb;
     rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
@@ -50,15 +45,16 @@ std::string dump(pvz_emulator::object::scene &scene, pvz_emulator::object::plant
     return std::string(sb.GetString()) + "\n";
 }
 
-void run(pvz_emulator::world &w, int ticks)
+void run(pvz_emulator::world& w, int ticks)
 {
+    assert(ticks >= 0);
     for (int i = 0; i < ticks; i++)
         w.update();
 }
 
 // TODO: implement for roof and moon_night
 // row: [1, 6]
-float row_to_cob_hit_y(const pvz_emulator::object::scene_type &scene_type, int row)
+[[nodiscard]] float row_to_cob_hit_y(const pvz_emulator::object::scene_type& scene_type, int row)
 {
     using namespace pvz_emulator::object;
     assert(!is_roof(scene_type) && "unimplemented");
@@ -68,42 +64,37 @@ float row_to_cob_hit_y(const pvz_emulator::object::scene_type &scene_type, int r
 
 // row: [1, 6]
 // col: [0.0, 10.0]
-int launch_cob(pvz_emulator::world &w, unsigned int row, float col)
+int launch_cob(pvz_emulator::world& w, unsigned int row, float col)
 {
     using namespace pvz_emulator::object;
     assert(row >= 1 && row <= w.scene.get_max_row());
     assert(col >= 0.0 && col <= 10.0);
 
-    auto &p = w.plant_factory.create(plant_type::cob_cannon, 1, 1);
+    auto& p = w.plant_factory.create(plant_type::cob_cannon, 1, 1);
 
     p.status = plant_status::cob_cannon_launch;
     p.countdown.launch = 206;
     p.set_reanim(plant_reanim_name::anim_shooting, reanim_type::once, 12);
 
-    p.cannon.x = static_cast<int>(col * 80.0 - 47.0);
+    p.cannon.x = static_cast<int>(std::round(col * 80.0)) - 47;
     p.cannon.y = row_to_cob_hit_y(w.scene.type, row);
 
     return p.uuid;
 }
 
-int distance_from_point_to_range(const std::pair<int, int> &range, int point)
+[[nodiscard]] int distance_from_point_to_range(const std::pair<int, int>& range, int point)
 {
     assert(range.first <= range.second);
-    if (point < range.first)
-    {
+    if (point < range.first) {
         return range.first - point;
-    }
-    else if (point > range.second)
-    {
+    } else if (point > range.second) {
         return point - range.second;
-    }
-    else
-    {
+    } else {
         return 0;
     }
 }
 
-pvz_emulator::object::rect get_hit_box(const pvz_emulator::object::zombie &zombie)
+[[nodiscard]] pvz_emulator::object::rect get_hit_box(const pvz_emulator::object::zombie& zombie)
 {
     pvz_emulator::object::rect rect;
     zombie.get_hit_box(rect);
@@ -113,31 +104,17 @@ pvz_emulator::object::rect get_hit_box(const pvz_emulator::object::zombie &zombi
 // returns a range (min_x, max_x)
 // min_x : min cob hit x when cob is to the left of zombie
 // max_x : max cob hit x when cob is to the right of zombie
-std::pair<int, int> get_cob_hit_x_range(const pvz_emulator::object::rect &zombie_hit_box, int cob_y)
+[[nodiscard]] std::pair<int, int> get_cob_hit_x_range(
+    const pvz_emulator::object::rect& zombie_hit_box, int cob_y)
 {
     int y_dist = distance_from_point_to_range(
         {zombie_hit_box.y, zombie_hit_box.y + zombie_hit_box.height}, cob_y);
 
-    if (y_dist > 115)
-    {
+    if (y_dist > 115) {
         return {-1, 999};
-    }
-    else
-    {
+    } else {
         int cob_dist = static_cast<int>(sqrt(115 * 115 - y_dist * y_dist));
         return {zombie_hit_box.x - cob_dist + 7,
-                zombie_hit_box.x + zombie_hit_box.width + cob_dist + 7};
+            zombie_hit_box.x + zombie_hit_box.width + cob_dist + 7};
     }
-}
-
-// format: 2009.12.25_21.41.37
-std::string get_timestamp()
-{
-    std::time_t t = std::time(nullptr);
-    std::tm *tm = std::localtime(&t);
-
-    std::stringstream ss;
-    ss << std::put_time(tm, "%Y.%m.%d_%H.%M.%S");
-
-    return ss.str();
 }

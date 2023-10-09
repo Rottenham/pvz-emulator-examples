@@ -2,10 +2,12 @@
  * 注意: PvZ Emulator 模拟跳跳与玉米炮互动不准确, 无法测定有炮时的情况.
  *
  * WINDOWS POWERSHELL
- * g++ -O3 -o dest/bin/pogo_test pogo_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest; ./bin/pogo_test; cd ..
+ * g++ -O3 -o dest/bin/pogo_test pogo_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors;
+ * cd dest; ./bin/pogo_test; cd ..
  */
 
-#include "common.h"
+#include "common/io.h"
+#include "common/pe.h"
 #include "constants/constants.h"
 #include "world.h"
 
@@ -60,13 +62,19 @@ void test(int wave_num_per_thread)
             for (auto& z : w.scene.zombies) {
                 assert(z.type == zombie_type::pogo);
 
-                auto upper_cob_x_range = get_cob_hit_x_range(get_hit_box(z), row_to_cob_hit_y(w.scene.type, z.row));
-                auto same_cob_x_range = get_cob_hit_x_range(get_hit_box(z), row_to_cob_hit_y(w.scene.type, z.row + 1));
-                auto lower_cob_x_range = get_cob_hit_x_range(get_hit_box(z), row_to_cob_hit_y(w.scene.type, z.row + 2));
+                auto upper_cob_x_range
+                    = get_cob_hit_x_range(get_hit_box(z), row_to_cob_hit_y(w.scene.type, z.row));
+                auto same_cob_x_range = get_cob_hit_x_range(
+                    get_hit_box(z), row_to_cob_hit_y(w.scene.type, z.row + 1));
+                auto lower_cob_x_range = get_cob_hit_x_range(
+                    get_hit_box(z), row_to_cob_hit_y(w.scene.type, z.row + 2));
 
-                local_upper_cob[tick - START_TICK] = std::min(local_upper_cob[tick - START_TICK], upper_cob_x_range.second);
-                local_same_cob[tick - START_TICK] = std::min(local_same_cob[tick - START_TICK], same_cob_x_range.second);
-                local_lower_cob[tick - START_TICK] = std::min(local_lower_cob[tick - START_TICK], lower_cob_x_range.second);
+                local_upper_cob[tick - START_TICK]
+                    = std::min(local_upper_cob[tick - START_TICK], upper_cob_x_range.second);
+                local_same_cob[tick - START_TICK]
+                    = std::min(local_same_cob[tick - START_TICK], same_cob_x_range.second);
+                local_lower_cob[tick - START_TICK]
+                    = std::min(local_lower_cob[tick - START_TICK], lower_cob_x_range.second);
             }
             run(w, 1);
         }
@@ -74,9 +82,12 @@ void test(int wave_num_per_thread)
 
     std::lock_guard<std::mutex> lock(mtx);
     for (int tick = START_TICK; tick <= END_TICK; tick++) {
-        upper_cob[tick - START_TICK] = std::min(upper_cob[tick - START_TICK], local_upper_cob[tick - START_TICK]);
-        same_cob[tick - START_TICK] = std::min(same_cob[tick - START_TICK], local_same_cob[tick - START_TICK]);
-        lower_cob[tick - START_TICK] = std::min(lower_cob[tick - START_TICK], local_lower_cob[tick - START_TICK]);
+        upper_cob[tick - START_TICK]
+            = std::min(upper_cob[tick - START_TICK], local_upper_cob[tick - START_TICK]);
+        same_cob[tick - START_TICK]
+            = std::min(same_cob[tick - START_TICK], local_same_cob[tick - START_TICK]);
+        lower_cob[tick - START_TICK]
+            = std::min(lower_cob[tick - START_TICK], local_lower_cob[tick - START_TICK]);
     }
 }
 
@@ -92,10 +103,7 @@ int min_garg_walk(int tick)
     }
 }
 
-std::string bool_to_string(bool b)
-{
-    return b ? "OK" : "ERROR";
-}
+std::string bool_to_string(bool b) { return b ? "OK" : "ERROR"; }
 
 int main()
 {
@@ -116,9 +124,7 @@ int main()
 
     std::vector<std::thread> threads;
     for (auto j = 0; j < THREAD_NUM; j++) {
-        threads.emplace_back([&]() {
-            test(TOTAL_WAVE_NUM / THREAD_NUM);
-        });
+        threads.emplace_back([&]() { test(TOTAL_WAVE_NUM / THREAD_NUM); });
     }
     for (auto& t : threads) {
         t.join();
@@ -142,24 +148,27 @@ int main()
         garg_hit_box.width = 125;
         garg_hit_box.height = 154;
 
-        auto upper_cob_garg = get_cob_hit_x_range(garg_hit_box, row_to_cob_hit_y(SCENE_TYPE, 0)).first;
-        auto same_cob_garg = get_cob_hit_x_range(garg_hit_box, row_to_cob_hit_y(SCENE_TYPE, 1)).first;
-        auto lower_cob_garg = get_cob_hit_x_range(garg_hit_box, row_to_cob_hit_y(SCENE_TYPE, 2)).first;
+        auto upper_cob_garg
+            = get_cob_hit_x_range(garg_hit_box, row_to_cob_hit_y(SCENE_TYPE, 0)).first;
+        auto same_cob_garg
+            = get_cob_hit_x_range(garg_hit_box, row_to_cob_hit_y(SCENE_TYPE, 1)).first;
+        auto lower_cob_garg
+            = get_cob_hit_x_range(garg_hit_box, row_to_cob_hit_y(SCENE_TYPE, 2)).first;
 
-        file
-            << tick << ","
-            << lower_cob_pogo << ","
-            << same_cob_pogo << ","
-            << upper_cob_pogo << ","
-            << lower_cob_garg << ","
-            << same_cob_garg << ","
-            << upper_cob_garg << ","
-            << bool_to_string(lower_cob_garg <= lower_cob_pogo) << ","
-            << bool_to_string((upper_cob_garg <= lower_cob_pogo) && (same_cob_garg <= lower_cob_pogo)) << ","
-            << bool_to_string(lower_cob_garg <= same_cob_pogo) << "," // assume lower pogo is always easier than same pogo
-            << bool_to_string((upper_cob_garg <= same_cob_pogo) && (same_cob_garg <= same_cob_pogo)) << ","
-            << bool_to_string((upper_cob_garg <= upper_cob_pogo) && (same_cob_garg <= upper_cob_pogo)) << ","
-            << "\n";
+        file << tick << "," << lower_cob_pogo << "," << same_cob_pogo << "," << upper_cob_pogo
+             << "," << lower_cob_garg << "," << same_cob_garg << "," << upper_cob_garg << ","
+             << bool_to_string(lower_cob_garg <= lower_cob_pogo) << ","
+             << bool_to_string(
+                    (upper_cob_garg <= lower_cob_pogo) && (same_cob_garg <= lower_cob_pogo))
+             << "," << bool_to_string(lower_cob_garg <= same_cob_pogo)
+             << "," // assume lower pogo is always easier than same pogo
+             << bool_to_string(
+                    (upper_cob_garg <= same_cob_pogo) && (same_cob_garg <= same_cob_pogo))
+             << ","
+             << bool_to_string(
+                    (upper_cob_garg <= upper_cob_pogo) && (same_cob_garg <= upper_cob_pogo))
+             << ","
+             << "\n";
     }
 
     file.close();
