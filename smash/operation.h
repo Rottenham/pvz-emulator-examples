@@ -53,7 +53,7 @@ void insert_spawn(std::vector<Op>& ops, Info& info, int tick, int wave, int garg
 
         for (int i = 0; i < garg_num; i++) {
             auto& z = w.zombie_factory.create(pvz_emulator::object::zombie_type::giga_gargantuar);
-            info.garg_infos.push_back({{&z, z.uuid}, tick, 0, {}, {}, {}});
+            info.garg_infos.push_back({{&z, z.uuid}, z.row, wave, tick, 0, {}, {}, {}});
         }
     };
     ops.push_back({tick, f});
@@ -70,12 +70,13 @@ void insert_ice(std::vector<Op>& ops, int tick)
 void insert_cob(
     std::vector<Op>& ops, Info& info, int tick, int wave, const Cob* cob, bool is_backyard)
 {
-    info.op_infos.push_back({_SmashInternal::OpInfo::Type::Cob, wave, tick, cob->desc(), {}});
-    auto idx = info.op_infos.size() - 1;
+    info.action_infos.push_back(
+        {_SmashInternal::ActionInfo::Type::Cob, wave, tick, cob->desc(), {}});
+    auto idx = info.action_infos.size() - 1;
 
     for (const auto& pos : cob->positions) {
         auto f = [&info, idx, pos](pvz_emulator::world& w) {
-            info.op_infos[idx].plants.push_back({nullptr, launch_cob(w, pos.row, pos.col)});
+            info.action_infos[idx].plants.push_back({nullptr, launch_cob(w, pos.row, pos.col)});
         };
 
         int cob_fly_time = (is_backyard && (pos.row == 3 || pos.row == 4)) ? 378 : 373;
@@ -86,8 +87,9 @@ void insert_cob(
 void insert_fixed_fodder(
     std::vector<Op>& ops, Info& info, int tick, int wave, const FixedFodder* fodder)
 {
-    info.op_infos.push_back({_SmashInternal::OpInfo::Type::Card, wave, tick, fodder->desc(), {}});
-    auto idx = info.op_infos.size() - 1;
+    info.action_infos.push_back(
+        {_SmashInternal::ActionInfo::Type::Card, wave, tick, fodder->desc(), {}});
+    auto idx = info.action_infos.size() - 1;
     auto positions = fodder->positions;
 
     auto f = [&info, idx, positions](pvz_emulator::world& w) {
@@ -96,14 +98,14 @@ void insert_fixed_fodder(
                 ? pvz_emulator::object::plant_type::wallnut
                 : pvz_emulator::object::plant_type::sunshroom;
             auto& p = w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
-            info.op_infos[idx].plants.push_back({&p, p.uuid});
+            info.action_infos[idx].plants.push_back({&p, p.uuid});
         }
     };
     ops.push_back({tick, f});
 
     if (fodder->shovel_time != -1) {
         auto f = [&info, idx](pvz_emulator::world& w) {
-            for (const auto& plant : info.op_infos[idx].plants) {
+            for (const auto& plant : info.action_infos[idx].plants) {
                 if (plant.ptr && plant.ptr->uuid == plant.uuid) {
                     w.plant_factory.destroy(*plant.ptr);
                 }
@@ -121,6 +123,8 @@ std::vector<Op> load_config(const Config& config, Info& info, int garg_total = 1
     using namespace _SmashInternal;
 
     info = {};
+    info.protect_positions.reserve(config.setting.protect_positions.size());
+    info.garg_infos.reserve(garg_total);
 
     std::vector<Op> ops;
 

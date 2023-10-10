@@ -26,8 +26,11 @@ void read_action(const rapidjson::Value& val, Action& action)
 
     if (op == "Cob") {
         Cob cob;
+        const auto positions = val["positions"].GetArray();
+        cob.positions.reserve(positions.Size());
+
         cob.time = val["time"].GetInt();
-        for (const auto& pos_val : val["positions"].GetArray()) {
+        for (const auto& pos_val : positions) {
             Cob::CobPos pos;
             pos.row = pos_val["row"].GetInt();
             pos.col = pos_val["col"].GetFloat();
@@ -36,11 +39,14 @@ void read_action(const rapidjson::Value& val, Action& action)
         action = cob;
     } else if (op == "FixedFodder") {
         FixedFodder fodder;
+        const auto positions = val["positions"].GetArray();
+        fodder.positions.reserve(positions.Size());
+
         fodder.time = val["time"].GetInt();
         if (val.HasMember("shovelTime")) {
             fodder.shovel_time = val["shovelTime"].GetInt();
         }
-        for (const auto& pos_val : val["positions"].GetArray()) {
+        for (const auto& pos_val : positions) {
             FodderPos pos;
             read_fodder_pos(pos_val, pos);
             fodder.positions.push_back(pos);
@@ -48,17 +54,22 @@ void read_action(const rapidjson::Value& val, Action& action)
         action = fodder;
     } else if (op == "SmartFodder") {
         SmartFodder fodder;
+        const auto positions = val["positions"].GetArray();
+        const auto waves = val["waves"].GetArray();
+        fodder.positions.reserve(positions.Size());
+        fodder.waves.reserve(waves.Size());
+
         fodder.time = val["time"].GetInt();
         if (val.HasMember("shovelTime")) {
             fodder.shovel_time = val["shovelTime"].GetInt();
         }
-        for (const auto& pos_val : val["positions"].GetArray()) {
+        for (const auto& pos_val : positions) {
             FodderPos pos;
             read_fodder_pos(pos_val, pos);
             fodder.positions.push_back(pos);
         }
         fodder.choose = val["choose"].GetInt();
-        for (const auto& waveVal : val["waves"].GetArray()) {
+        for (const auto& waveVal : waves) {
             fodder.waves.push_back(waveVal.GetInt());
         }
         action = fodder;
@@ -69,11 +80,16 @@ void read_action(const rapidjson::Value& val, Action& action)
 
 void read_wave(const rapidjson::Value& val, Wave& wave)
 {
-    for (const auto& iceTime : val["iceTimes"].GetArray()) {
+    const auto ice_times = val["iceTimes"].GetArray();
+    const auto actions = val["actions"].GetArray();
+    wave.ice_times.reserve(ice_times.Size());
+    wave.actions.reserve(actions.Size());
+
+    for (const auto& iceTime : ice_times) {
         wave.ice_times.push_back(iceTime.GetInt());
     }
     wave.wave_length = val["waveLength"].GetInt();
-    for (const auto& actionVal : val["actions"].GetArray()) {
+    for (const auto& actionVal : actions) {
         Action action;
         read_action(actionVal, action);
         wave.actions.push_back(action);
@@ -95,12 +111,15 @@ void read_setting(const rapidjson::Value& val, Setting& setting)
                 assert(false && "unreachable");
             }
         } else if (strcmp(it->name.GetString(), "protect") == 0) {
-            for (const auto& protectVal : it->value.GetArray()) {
-                std::string type = protectVal["type"].GetString();
+            auto protect_positions = it->value.GetArray();
+            setting.protect_positions.reserve(protect_positions.Size());
+
+            for (const auto& protect_position : protect_positions) {
+                std::string type = protect_position["type"].GetString();
                 setting.protect_positions.push_back(
                     {type == "Cob" ? Setting::ProtectPos::Type::Cob
                                    : Setting::ProtectPos::Type::Normal,
-                        protectVal["row"].GetInt(), protectVal["col"].GetInt()});
+                        protect_position["row"].GetInt(), protect_position["col"].GetInt()});
             }
         } else {
             assert(false && "unreachable");
@@ -110,10 +129,14 @@ void read_setting(const rapidjson::Value& val, Setting& setting)
 
 void read_config(const rapidjson::Value& val, Config& config)
 {
+    config = {};
+    config.waves.reserve(val.MemberCount());
+
     for (auto it = val.MemberBegin(); it != val.MemberEnd(); it++) {
         if (strcmp(it->name.GetString(), "setting") == 0) {
             read_setting(it->value, config.setting);
         } else {
+            assert(std::atoi(it->name.GetString()) == config.waves.size() + 1);
             Wave wave;
             read_wave(it->value, wave);
             config.waves.push_back(wave);

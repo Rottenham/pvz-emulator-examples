@@ -2,6 +2,8 @@
 
 #include "types.h"
 
+#include <set>
+
 enum OpState : char {
     Dead,
     Hit,
@@ -24,27 +26,40 @@ struct OpStatesHash {
 };
 
 struct Data {
+    int wave = -1;
     int total_garg_count = 0;
     int smashed_garg_count = 0;
+    std::array<int, 6> smashed_garg_count_by_row = {};
 };
 
 using RawTable = std::unordered_map<OpStates, Data, OpStatesHash>;
 using Table = std::vector<std::pair<OpStates, Data>>;
 
-OpState categorize(const _SmashInternal::OpInfo& op_info, const _SmashInternal::GargInfo& garg_info)
-{
-    if (op_info.tick < garg_info.spawn_tick) {
-        return OpState::NotBorn;
-    } else if (op_info.tick > garg_info.spawn_tick + garg_info.alive_time) {
-        return OpState::Dead;
-    } else if (op_info.type == _SmashInternal::OpInfo::Type::Cob
-        || op_info.type == _SmashInternal::OpInfo::Type::Card) {
+struct Summary {
+    std::set<int> waves;
+    struct GargSummary {
+        int total_garg_count = 0;
+        int smashed_garg_count = 0;
+        std::array<int, 6> smashed_garg_count_by_row = {};
+    };
+    std::unordered_map<int, GargSummary> garg_summary_by_wave;
+};
 
-        auto effective_uuids = op_info.type == _SmashInternal::OpInfo::Type::Cob
+OpState categorize(
+    const _SmashInternal::ActionInfo& action_info, const _SmashInternal::GargInfo& garg_info)
+{
+    if (action_info.tick < garg_info.spawn_tick) {
+        return OpState::NotBorn;
+    } else if (action_info.tick > garg_info.spawn_tick + garg_info.alive_time) {
+        return OpState::Dead;
+    } else if (action_info.type == _SmashInternal::ActionInfo::Type::Cob
+        || action_info.type == _SmashInternal::ActionInfo::Type::Card) {
+
+        auto effective_uuids = action_info.type == _SmashInternal::ActionInfo::Type::Cob
             ? garg_info.hit_by_cob
             : garg_info.attempted_smashes;
 
-        for (const auto& plant : op_info.plants) {
+        for (const auto& plant : action_info.plants) {
             if (effective_uuids.count(plant.uuid)) {
                 return OpState::Hit;
                 continue;
@@ -60,20 +75,37 @@ void update_raw_table(const Info& info, RawTable& raw_table)
 {
     for (const auto& garg_info : info.garg_infos) {
         OpStates op_states;
-        for (const auto& op_info : info.op_infos) {
-            op_states.push_back(categorize(op_info, garg_info));
+        op_states.reserve(info.action_infos.size());
+        for (const auto& action_info : info.action_infos) {
+            op_states.push_back(categorize(action_info, garg_info));
         }
 
-        assert(op_states.size() == info.op_infos.size());
+        assert(op_states.size() == info.action_infos.size());
+        assert(
+            raw_table[op_states].wave == -1 || raw_table[op_states].wave == garg_info.spawn_wave);
 
+        raw_table[op_states].wave = garg_info.spawn_wave;
         raw_table[op_states].total_garg_count++;
         if (!garg_info.ignored_smashes.empty()) {
             raw_table[op_states].smashed_garg_count++;
+            raw_table[op_states].smashed_garg_count_by_row[garg_info.row]++;
         }
     }
 }
 
-Table generate_table(const RawTable& raw_table)
+void merge_raw_table(const RawTable& src, RawTable& dst)
+{
+    for (const auto& [op_states, data] : src) {
+        dst[op_states].wave = data.wave;
+        dst[op_states].total_garg_count += data.total_garg_count;
+        dst[op_states].smashed_garg_count += data.smashed_garg_count;
+        for (int i = 0; i < 6; i++) {
+            dst[op_states].smashed_garg_count_by_row[i] += data.smashed_garg_count_by_row[i];
+        }
+    }
+}
+
+std::pair<Table, Summary> generate_table_and_summary(const RawTable& raw_table)
 {
     Table table(raw_table.begin(), raw_table.end());
     std::sort(table.begin(), table.end(), [](const auto& a, const auto& b) {
@@ -87,7 +119,19 @@ Table generate_table(const RawTable& raw_table)
         return false;
     });
 
-    return table;
+    Summary summary;
+    for (const auto& [op_states, data] : table) {
+        summary.waves.insert(data.wave);
+
+        auto& garg_summary = summary.garg_summary_by_wave[data.wave];
+        garg_summary.total_garg_count += data.total_garg_count;
+        garg_summary.smashed_garg_count += data.smashed_garg_count;
+        for (int i = 0; i < 6; i++) {
+            garg_summary.smashed_garg_count_by_row[i] += data.smashed_garg_count_by_row[i];
+        }
+    }
+
+    return {table, summary};
 }
 
 std::string op_state_to_string(const OpState& op_state)
@@ -100,7 +144,7 @@ std::string op_state_to_string(const OpState& op_state)
     case OpState::Miss:
         return "MISS";
     case OpState::Dead:
-        return "X";
+        return "";
     default:
         assert(false && "unreachable");
         return "";

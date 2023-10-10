@@ -2,6 +2,11 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "buildLib",
+            "type": "shell",
+            "command": "cd ../PvZ-Emulator/build; ninja; cd ../../min-pvz-emulator"
+        },
+        {
             "label": "compile",
             "type": "shell",
             "command": "g++",
@@ -10,11 +15,20 @@
                 "-o",
                 "dest/bin/${fileBasenameNoExtension}",
                 "${file}",
-                "-Ilib",
-                "-Ilib/lib",
-                "-Llib/build",
+                "-I.",
+                "-I../PvZ-Emulator",
+                "-I../PvZ-Emulator/lib",
+                "-L../PvZ-Emulator/build",
                 "-lpvzemu",
+                "-Wall",
+                "-Wextra",
+                "-Wno-class-memaccess",
+                "-Wno-sign-compare",
+                "-Werror",
                 "-Wfatal-errors"
+            ],
+            "dependsOn": [
+                "buildLib"
             ],
         },
         {
@@ -28,6 +42,6 @@
                 "kind": "build",
                 "isDefault": true
             },
-        }
+        },
     ]
 }

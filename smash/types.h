@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <sstream>
 #include <unordered_set>
 #include <variant>
 #include <vector>
@@ -21,10 +22,7 @@ struct Cob {
     std::string desc() const
     {
         std::stringstream ss;
-        ss << time << "P ";
-        for (const auto& p : positions)
-            ss << p.row;
-        ss << " " << positions.at(0).col;
+        ss << time << "P";
         return ss.str();
     }
 };
@@ -47,13 +45,7 @@ struct FixedFodder {
         if (shovel_time != -1) {
             ss << "~" << shovel_time;
         }
-        ss << "C ";
-        for (const auto& p : positions) {
-            ss << p.row;
-            if (p.type != FodderPos::Type::Normal)
-                ss << "'";
-        }
-        ss << " " << positions.at(0).col;
+        ss << "C";
         return ss.str();
     }
 };
@@ -90,6 +82,8 @@ struct GargInfo {
         pvz_emulator::object::zombie* ptr;
         int uuid;
     } zombie;
+    unsigned int row; // [0, 5]
+    int spawn_wave;
     int spawn_tick;
     int alive_time;
     std::unordered_set<int> hit_by_cob;
@@ -97,7 +91,7 @@ struct GargInfo {
     std::unordered_set<int> ignored_smashes;
 };
 
-struct OpInfo {
+struct ActionInfo {
     enum class Type { Cob, Card } type;
     int wave;
     int tick;
@@ -120,7 +114,7 @@ struct Config {
 struct Info {
     std::vector<_SmashInternal::Setting::ProtectPos> protect_positions;
     std::vector<_SmashInternal::GargInfo> garg_infos;
-    std::vector<_SmashInternal::OpInfo> op_infos;
+    std::vector<_SmashInternal::ActionInfo> action_infos;
 };
 
 struct Op {
