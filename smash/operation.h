@@ -115,29 +115,90 @@ void insert_fixed_fodder(
     }
 }
 
+void insert_smart_fodder(
+    std::vector<Op>& ops, Info& info, int tick, int wave, const SmartFodder* fodder)
+{
+    info.action_infos.push_back(
+        {_SmashInternal::ActionInfo::Type::Card, wave, tick, fodder->desc(), {}});
+    auto idx = info.action_infos.size() - 1;
+    auto positions = fodder->positions;
+    auto choose = fodder->choose;
+    auto waves = fodder->waves;
+
+    auto f = [&info, idx, positions, choose, waves](pvz_emulator::world& w) {
+        std::array<int, 6> giga_min_x = {};
+        for (const auto& z : w.scene.zombies) {
+            if (!z.is_dead && z.is_not_dying
+                && z.type == pvz_emulator::object::zombie_type::giga_gargantuar
+                && (waves.empty() || waves.count(z.spawn_wave))
+                && (giga_min_x[z.row] == 0 || z.int_x < giga_min_x[z.row])) {
+                giga_min_x[z.row] = z.int_x;
+            }
+        }
+
+        std::unordered_set<int> indices;
+        for (int i = 0; i < positions.size(); i++) {
+            if (giga_min_x[positions[i].row - 1] != 0) {
+                indices.insert(i);
+            }
+        }
+        for (int i = 0; i < choose; i++) {
+            int min_x = 1000;
+            int best_index = -1;
+            for (const auto& index : indices) {
+                if (giga_min_x[positions[index].row - 1] < min_x) {
+                    min_x = giga_min_x[positions[index].row - 1];
+                    best_index = index;
+                }
+            }
+            if (best_index == -1) {
+                break;
+            } else {
+                indices.erase(best_index);
+                const auto& pos = positions[best_index];
+                auto plant_type = (pos.type == FodderPos::Type::Normal)
+                    ? pvz_emulator::object::plant_type::wallnut
+                    : pvz_emulator::object::plant_type::sunshroom;
+                auto& p = w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
+                info.action_infos[idx].plants.push_back({&p, p.uuid});
+            }
+        }
+    };
+    ops.push_back({tick, f});
+
+    if (fodder->shovel_time != -1) {
+        auto f = [&info, idx](pvz_emulator::world& w) {
+            for (const auto& plant : info.action_infos[idx].plants) {
+                if (plant.ptr && plant.ptr->uuid == plant.uuid) {
+                    w.plant_factory.destroy(*plant.ptr);
+                }
+            }
+        };
+        ops.push_back({tick + fodder->shovel_time - fodder->time, f});
+    }
+}
+
 } // namespace _SmashInternal
 
-std::vector<Op> load_config(const Config& config, Info& info, int garg_total = 1000)
+std::vector<Op> load_config(const Config& config, Info& info)
 {
     using namespace pvz_emulator::object;
     using namespace _SmashInternal;
 
     info = {};
     info.protect_positions.reserve(config.setting.protect_positions.size());
-    info.garg_infos.reserve(garg_total);
+    info.garg_infos.reserve(config.setting.garg_total);
 
     std::vector<Op> ops;
 
-    int garg_num_per_wave = std::max(garg_total / config.waves.size(), 1ull);
-
-    insert_setup(ops, 0, config.setting.protect_positions);
-
     int base_tick = 0;
+    insert_setup(ops, base_tick, config.setting.protect_positions);
     for (int i = 0; i < config.waves.size(); i++) {
         const int wave_num = i + 1;
         const auto& wave = config.waves[i];
 
-        insert_spawn(ops, info, base_tick, wave_num, garg_num_per_wave);
+        insert_spawn(ops, info, base_tick, wave_num,
+            std::max(config.setting.garg_total / config.waves.size(), 1ull));
 
         for (const auto& ice_time : wave.ice_times) {
             insert_ice(ops, base_tick + ice_time - 100);
@@ -149,8 +210,10 @@ std::vector<Op> load_config(const Config& config, Info& info, int garg_total = 1
                     is_backyard(config.setting.scene_type));
             } else if (auto a = std::get_if<FixedFodder>(&action)) {
                 insert_fixed_fodder(ops, info, base_tick + a->time, wave_num, a);
+            } else if (auto a = std::get_if<SmartFodder>(&action)) {
+                insert_smart_fodder(ops, info, base_tick + a->time, wave_num, a);
             } else {
-                assert(false && "unimplemented");
+                assert(false && "unreachable");
             }
         }
 
@@ -159,7 +222,8 @@ std::vector<Op> load_config(const Config& config, Info& info, int garg_total = 1
 
     std::stable_sort(
         ops.begin(), ops.end(), [](const Op& a, const Op& b) { return a.tick < b.tick; });
-    insert_spawn(ops, info, ops.back().tick + 1, config.waves.size() + 1, 0);
+    insert_spawn(ops, info, ops.back().tick + 1, config.waves.size() + 1,
+        0); // make sure garg info is synced at the end
 
     return ops;
 }

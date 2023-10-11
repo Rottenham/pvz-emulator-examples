@@ -13,15 +13,6 @@
 using namespace pvz_emulator;
 using namespace pvz_emulator::object;
 
-const std::string CONFIG_FILE = "1.json";
-const std::string OUTPUT_FILE = "smash_test";
-const std::string OUTPUT_FILE_EXT = ".csv";
-
-const int TOTAL_REPEAT_NUM = 320;
-const int THREAD_NUM = 32;            // if not sure, use number of CPU cores
-const int GIGA_NUM_PER_REPEAT = 1000; // must not exceed 1024
-                                      // is the total of giga from all waves
-
 std::mutex mtx;
 
 RawTable raw_table;
@@ -49,33 +40,39 @@ void test_one(const Config& config, int repeat)
         update_raw_table(info, local_raw_table);
     }
 
-    mtx.lock();
+    std::lock_guard<std::mutex> guard(mtx);
     merge_raw_table(local_raw_table, raw_table);
-    mtx.unlock();
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    ::system("chcp 65001 > nul");
-
-    auto file = open_csv(OUTPUT_FILE);
-
     auto start = std::chrono::high_resolution_clock::now();
 
-    auto config = read_json("1.json");
+    ::system("chcp 65001 > nul");
+
+    std::vector<std::string> args(argv, argv + argc);
+    auto config_file = get_cmd_arg(args, "f");
+    auto output_file = get_cmd_arg(args, "o", "smash_test");
+    auto total_repeat_num = std::stoi(get_cmd_arg(args, "r", "300"));
+    auto thread_num
+        = std::stoi(get_cmd_arg(args, "t", std::to_string(std::thread::hardware_concurrency())));
+
+    auto [file, full_output_file] = open_csv(output_file);
+
+    auto config = read_json(config_file);
+    if (config.setting.garg_total != 1000) {
+        total_repeat_num = static_cast<int>(total_repeat_num * 1000.0 / config.setting.garg_total);
+    }
 
     std::vector<std::thread> threads;
-    for (auto j = 0; j < THREAD_NUM; j++) {
-        threads.emplace_back([config]() { test_one(config, TOTAL_REPEAT_NUM / THREAD_NUM); });
+    for (const auto& repeat : assign_repeat(total_repeat_num, thread_num)) {
+        threads.emplace_back([config, repeat]() { test_one(config, repeat); });
     }
     for (auto& t : threads) {
         t.join();
     }
 
-    std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
-    std::cout << "Finished in " << elapsed.count() << "s with " << threads.size() << " threads.\n";
-
-    const auto [table, summary] = generate_table_and_summary(raw_table);
+    auto [table, summary] = generate_table_and_summary(raw_table);
 
     file << "砸率,";
     for (const auto& wave : summary.waves) {
@@ -83,11 +80,10 @@ int main()
     }
     file << "\n";
     file << "总和,";
-    for (const auto& wave: summary.waves) {
+    for (const auto& wave : summary.waves) {
         const auto& garg_summary = summary.garg_summary_by_wave.at(wave);
         file << std::fixed << std::setprecision(2)
-             << 100.0 * garg_summary.smashed_garg_count / garg_summary.total_garg_count
-             << "%,";
+             << 100.0 * garg_summary.smashed_garg_count / garg_summary.total_garg_count << "%,";
     }
     file << "\n";
 
@@ -108,7 +104,7 @@ int main()
     load_config(config, info);
 
     file << "\n出生波数,砸率,砸炮数,总数,";
-    int prev_wave = -1;
+    auto prev_wave = -1;
     for (const auto& action_info : info.action_infos) {
         if (action_info.wave != prev_wave) {
             file << "[w" << action_info.wave << "] ";
@@ -136,5 +132,11 @@ int main()
     }
 
     file.close();
+
+    std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
+    std::cout << "输出文件已保存至 " << full_output_file << ".\n"
+              << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
+              << threads.size() << " 个线程.";
+
     return 0;
 }

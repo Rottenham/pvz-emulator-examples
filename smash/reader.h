@@ -29,6 +29,7 @@ void read_action(const rapidjson::Value& val, Action& action)
         const auto positions = val["positions"].GetArray();
         cob.positions.reserve(positions.Size());
 
+        cob.symbol = val["symbol"].GetString();
         cob.time = val["time"].GetInt();
         for (const auto& pos_val : positions) {
             Cob::CobPos pos;
@@ -42,6 +43,7 @@ void read_action(const rapidjson::Value& val, Action& action)
         const auto positions = val["positions"].GetArray();
         fodder.positions.reserve(positions.Size());
 
+        fodder.symbol = val["symbol"].GetString();
         fodder.time = val["time"].GetInt();
         if (val.HasMember("shovelTime")) {
             fodder.shovel_time = val["shovelTime"].GetInt();
@@ -59,6 +61,7 @@ void read_action(const rapidjson::Value& val, Action& action)
         fodder.positions.reserve(positions.Size());
         fodder.waves.reserve(waves.Size());
 
+        fodder.symbol = val["symbol"].GetString();
         fodder.time = val["time"].GetInt();
         if (val.HasMember("shovelTime")) {
             fodder.shovel_time = val["shovelTime"].GetInt();
@@ -69,8 +72,8 @@ void read_action(const rapidjson::Value& val, Action& action)
             fodder.positions.push_back(pos);
         }
         fodder.choose = val["choose"].GetInt();
-        for (const auto& waveVal : waves) {
-            fodder.waves.push_back(waveVal.GetInt());
+        for (const auto& wave_val : waves) {
+            fodder.waves.insert(wave_val.GetInt());
         }
         action = fodder;
     } else {
@@ -85,13 +88,13 @@ void read_wave(const rapidjson::Value& val, Wave& wave)
     wave.ice_times.reserve(ice_times.Size());
     wave.actions.reserve(actions.Size());
 
-    for (const auto& iceTime : ice_times) {
-        wave.ice_times.push_back(iceTime.GetInt());
+    for (const auto& ice_time : ice_times) {
+        wave.ice_times.push_back(ice_time.GetInt());
     }
     wave.wave_length = val["waveLength"].GetInt();
-    for (const auto& actionVal : actions) {
+    for (const auto& action_val : actions) {
         Action action;
-        read_action(actionVal, action);
+        read_action(action_val, action);
         wave.actions.push_back(action);
     }
 }
@@ -132,6 +135,7 @@ void read_config(const rapidjson::Value& val, Config& config)
     config = {};
     config.waves.reserve(val.MemberCount());
 
+    bool contains_smart_fodder = false;
     for (auto it = val.MemberBegin(); it != val.MemberEnd(); it++) {
         if (strcmp(it->name.GetString(), "setting") == 0) {
             read_setting(it->value, config.setting);
@@ -140,17 +144,30 @@ void read_config(const rapidjson::Value& val, Config& config)
             Wave wave;
             read_wave(it->value, wave);
             config.waves.push_back(wave);
+
+            if (!contains_smart_fodder) {
+                for (const auto& action : wave.actions) {
+                    if (std::holds_alternative<SmartFodder>(action)) {
+                        contains_smart_fodder = true;
+                        break;
+                    }
+                }
+            }
         }
+    }
+
+    if (contains_smart_fodder) {
+        config.setting.garg_total = 5 * config.waves.size();
     }
 }
 
 } // namespace _SmashInternal
 
-Config read_json(const char* filename)
+Config read_json(const std::string& filename)
 {
     ::system("chcp 65001 > nul");
 
-    FILE* fp = std::fopen(filename, "rb");
+    FILE* fp = std::fopen(filename.c_str(), "rb");
 
     if (!fp) {
         std::cerr << "无法打开文件: " << filename << std::endl;

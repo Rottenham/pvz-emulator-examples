@@ -16,13 +16,14 @@ struct Cob {
         float col;
     };
 
+    std::string symbol;
     int time;
     std::vector<CobPos> positions;
 
     std::string desc() const
     {
         std::stringstream ss;
-        ss << time << "P";
+        ss << time << symbol;
         return ss.str();
     }
 };
@@ -34,6 +35,7 @@ struct FodderPos {
 };
 
 struct FixedFodder {
+    std::string symbol;
     int time;
     int shovel_time = -1;
     std::vector<FodderPos> positions;
@@ -45,17 +47,33 @@ struct FixedFodder {
         if (shovel_time != -1) {
             ss << "~" << shovel_time;
         }
-        ss << "C";
+        ss << symbol;
         return ss.str();
     }
 };
 
 struct SmartFodder {
+    std::string symbol;
     int time;
     int shovel_time = -1;
     std::vector<FodderPos> positions;
     int choose;
-    std::vector<int> waves;
+    std::unordered_set<int> waves;
+
+    std::string desc() const
+    {
+        std::stringstream ss;
+        ss << time;
+        if (shovel_time != -1) {
+            ss << "~" << shovel_time;
+        }
+        ss << symbol << " ";
+        for (const auto& position : positions) {
+            ss << position.row;
+        }
+        ss << ">" << choose;
+        return ss.str();
+    }
 };
 
 using Action = std::variant<Cob, FixedFodder, SmartFodder>;
@@ -75,6 +93,7 @@ struct Setting {
 
     pvz_emulator::object::scene_type scene_type = pvz_emulator::object::scene_type::fog;
     std::vector<ProtectPos> protect_positions;
+    int garg_total = 1000;
 };
 
 struct GargInfo {

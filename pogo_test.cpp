@@ -17,7 +17,6 @@ using namespace pvz_emulator;
 using namespace pvz_emulator::object;
 
 const std::string OUTPUT_FILE = "pogo_test";
-const std::string OUTPUT_FILE_EXT = ".csv";
 
 const int TOTAL_WAVE_NUM = 10240;
 const int THREAD_NUM = 32;            // if not sure, use number of CPU cores
@@ -34,7 +33,7 @@ int upper_cob[END_TICK - START_TICK + 1];
 int same_cob[END_TICK - START_TICK + 1];
 int lower_cob[END_TICK - START_TICK + 1];
 
-void test(int wave_num_per_thread)
+void test(int repeat)
 {
     world w(SCENE_TYPE);
 
@@ -42,10 +41,10 @@ void test(int wave_num_per_thread)
     int local_same_cob[END_TICK - START_TICK + 1];
     int local_lower_cob[END_TICK - START_TICK + 1];
     for (int i = 0; i < (END_TICK - START_TICK + 1); i++) {
-        local_upper_cob[i] = local_same_cob[i] = local_lower_cob[i] = 1437.0f;
+        local_upper_cob[i] = local_same_cob[i] = local_lower_cob[i] = 999.0f;
     }
 
-    for (int r = 0; r < wave_num_per_thread; r++) {
+    for (int r = 0; r < repeat; r++) {
         w.reset();
         w.scene.stop_spawn = true;
 
@@ -114,31 +113,21 @@ std::string bool_to_string(bool b) { return b ? "OK" : "ERROR"; }
 
 int main()
 {
-    static_assert(TOTAL_WAVE_NUM % THREAD_NUM == 0);
-
-    const auto filename = OUTPUT_FILE + " (" + get_timestamp() + ") " + OUTPUT_FILE_EXT;
-    std::ofstream file(filename, std::ios::binary);
-    if (!file) {
-        std::cerr << "打开文件失败: " << filename << std::endl;
-        return 1;
-    }
-    file << "\xEF\xBB\xBF"; // UTF-8 BOM
-
     auto start = std::chrono::high_resolution_clock::now();
+    ::system("chcp 65001 > nul");
+    auto file = open_csv(OUTPUT_FILE).first;
+
     for (int i = 0; i < (END_TICK - START_TICK + 1); ++i) {
         upper_cob[i] = same_cob[i] = lower_cob[i] = 999.0f;
     }
 
     std::vector<std::thread> threads;
-    for (auto j = 0; j < THREAD_NUM; j++) {
-        threads.emplace_back([&]() { test(TOTAL_WAVE_NUM / THREAD_NUM); });
+    for (const auto& repeat : assign_repeat(TOTAL_WAVE_NUM, THREAD_NUM)) {
+        threads.emplace_back([repeat]() { test(repeat); });
     }
     for (auto& t : threads) {
         t.join();
     }
-
-    std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
-    std::cout << "Finished in " << elapsed.count() << "s with " << threads.size() << " threads.\n";
 
     file << "tick,收上行跳跳,收本行跳跳,收下行跳跳,收上行巨人,收本行巨人,收下行巨人,"
          << "全三,三跳两巨,两跳三巨,全两,下跳两巨,"
@@ -179,5 +168,9 @@ int main()
     }
 
     file.close();
+
+    std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
+    std::cout << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
+              << threads.size() << " 个线程.";
     return 0;
 }

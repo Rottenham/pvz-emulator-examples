@@ -14,8 +14,6 @@ using namespace pvz_emulator;
 using namespace pvz_emulator::object;
 
 const std::string OUTPUT_FILE = "refresh_test";
-const std::string OUTPUT_FILE_EXT = ".csv";
-
 const int COB_TIME = 225;
 const int TOTAL_ROUND_NUM = 1000;
 const int WAVE_PER_ROUND = 20;
@@ -57,15 +55,9 @@ void test_one_round(int round, world& w)
 
 int main(void)
 {
-    const auto filename = OUTPUT_FILE + " (" + get_timestamp() + ") " + OUTPUT_FILE_EXT;
-    std::ofstream file(filename, std::ios::binary);
-    if (!file) {
-        std::cerr << "打开文件失败: " << filename << std::endl;
-        return 1;
-    }
-    file << "\xEF\xBB\xBF"; // UTF-8 BOM
-
     auto start = std::chrono::high_resolution_clock::now();
+    ::system("chcp 65001 > nul");
+    auto file = open_csv(OUTPUT_FILE).first;
     init_rnd();
 
     std::atomic<int> i = 0;
@@ -81,9 +73,6 @@ int main(void)
     for (auto& t : threads) {
         t.join();
     }
-
-    std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
-    std::cout << "Finished in " << elapsed.count() << "s with " << threads.size() << " threads.\n";
 
     file << "index,wave,hp,accident_rate\n";
     double hp_ratio_sum = 0.0, accident_rate_sum = 0.0;
@@ -105,5 +94,9 @@ int main(void)
     }
 
     file.close();
+
+    std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
+    std::cout << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
+              << threads.size() << " 个线程.";
     return 0;
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <ctime>
 #include <fstream>
 #include <iomanip>
@@ -22,11 +23,11 @@
     return ss.str();
 }
 
-[[nodiscard]] std::ofstream open_csv(const std::string& filename)
+[[nodiscard]] std::pair<std::ofstream, std::string> open_csv(const std::string& filename)
 {
     ::system("chcp 65001 > nul");
 
-    const auto& full_filename = filename + " (" + get_timestamp() + ") .csv";
+    auto full_filename = filename + " (" + get_timestamp() + ") .csv";
     std::ofstream file(full_filename, std::ios::binary);
 
     if (!file) {
@@ -35,5 +36,36 @@
     }
 
     file << "\xEF\xBB\xBF"; // UTF-8 BOM
-    return file;
+    return {std::move(file), full_filename};
+}
+
+[[nodiscard]] std::string get_cmd_arg(const std::vector<std::string>& args,
+    const std::string& option, const std::string& default_value = "")
+{
+    auto it = std::find(args.begin(), args.end(), "-" + option);
+    if (it != args.end() && ++it != args.end()) {
+        return *it;
+    }
+    if (!default_value.empty()) {
+        return default_value;
+    } else {
+        std::cerr << "请提供参数: " << option << std::endl;
+        exit(1);
+        return "";
+    }
+}
+
+[[nodiscard]] std::vector<int> assign_repeat(int total_repeat_num, int thread_num)
+{
+    std::vector<int> res;
+    int step = (total_repeat_num + thread_num - 1) / thread_num;
+    for (int i = 0; i < thread_num; i++) {
+        int repeat = std::min(total_repeat_num, step);
+        if (repeat == 0) {
+            break;
+        }
+        total_repeat_num -= repeat;
+        res.push_back(repeat);
+    }
+    return res;
 }

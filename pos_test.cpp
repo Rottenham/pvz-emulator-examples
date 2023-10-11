@@ -15,7 +15,6 @@ using namespace pvz_emulator;
 using namespace pvz_emulator::object;
 
 const std::string OUTPUT_FILE = "pos_test";
-const std::string OUTPUT_FILE_EXT = ".csv";
 
 const int TOTAL_WAVE_NUM = 10240;
 const int THREAD_NUM = 32;            // if not sure, use number of CPU cores
@@ -70,17 +69,10 @@ void test_one(const zombie_type& type, world& w, int wave_num_per_thread)
 
 int main()
 {
-    static_assert(TOTAL_WAVE_NUM % THREAD_NUM == 0);
-
-    const auto filename = OUTPUT_FILE + " (" + get_timestamp() + ") " + OUTPUT_FILE_EXT;
-    std::ofstream file(filename, std::ios::binary);
-    if (!file) {
-        std::cerr << "打开文件失败: " << filename << std::endl;
-        return 1;
-    }
-    file << "\xEF\xBB\xBF"; // UTF-8 BOM
-
     auto start = std::chrono::high_resolution_clock::now();
+    ::system("chcp 65001 > nul");
+    auto file = open_csv(OUTPUT_FILE).first;
+
     for (int i = 0; i < 33; ++i) {
         for (int j = 0; j < (END_TICK - START_TICK + 1); ++j) {
             min_x[i][j] = 999.0f;
@@ -89,11 +81,12 @@ int main()
     }
 
     std::vector<std::thread> threads;
-    for (auto j = 0; j < THREAD_NUM; j++) {
-        threads.emplace_back([&]() {
+    for (const auto& repeat : assign_repeat(TOTAL_WAVE_NUM, THREAD_NUM)) {
+        threads.emplace_back([repeat]() {
             world w(scene_type::fog);
-            for (const auto& zombie_type : ZOMBIE_TYPES)
-                test_one(zombie_type, w, TOTAL_WAVE_NUM / THREAD_NUM);
+            for (const auto& zombie_type : ZOMBIE_TYPES) {
+                test_one(zombie_type, w, repeat);
+            }
         });
     }
     for (auto& t : threads) {
