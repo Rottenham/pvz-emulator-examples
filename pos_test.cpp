@@ -93,9 +93,6 @@ int main()
         t.join();
     }
 
-    std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
-    std::cout << "Finished in " << elapsed.count() << "s with " << threads.size() << " threads.\n";
-
     file << "tick,";
     for (const auto& zombie_type : ZOMBIE_TYPES) {
         file << zombie::type_to_string(zombie_type) << "_min,"
@@ -123,5 +120,10 @@ int main()
     }
 
     file.close();
+
+    std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
+    std::cout << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
+              << threads.size() << " 个线程.";
+
     return 0;
 }
