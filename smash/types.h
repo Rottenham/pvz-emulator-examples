@@ -10,12 +10,12 @@
 
 namespace _SmashInternal {
 
-struct Cob {
-    struct CobPos {
-        int row;
-        float col;
-    };
+struct CobPos {
+    int row;
+    int col;
+};
 
+struct Cob {
     std::string symbol;
     int time;
     std::vector<CobPos> positions;
@@ -28,8 +28,13 @@ struct Cob {
     }
 };
 
+enum class Card {
+    Normal,
+    Puff,
+    Pot,
+};
+
 struct FodderPos {
-    enum class Type { Normal, Puff } type;
     int row;
     int col;
 };
@@ -38,6 +43,7 @@ struct FixedFodder {
     std::string symbol;
     int time;
     int shovel_time = -1;
+    std::vector<Card> cards;
     std::vector<FodderPos> positions;
 
     std::string desc() const
@@ -56,6 +62,7 @@ struct SmartFodder {
     std::string symbol;
     int time;
     int shovel_time = -1;
+    std::vector<Card> cards;
     std::vector<FodderPos> positions;
     int choose;
     std::unordered_set<int> waves;
@@ -94,6 +101,8 @@ struct Setting {
     pvz_emulator::object::scene_type scene_type = pvz_emulator::object::scene_type::fog;
     std::vector<ProtectPos> protect_positions;
     int garg_total = 1000;
+    int op_count = 2; // initial setup, and final clean up
+    int action_count = 0;
 };
 
 struct GargInfo {

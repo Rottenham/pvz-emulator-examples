@@ -84,20 +84,31 @@ void insert_cob(
     }
 }
 
+pvz_emulator::object::plant& plant(pvz_emulator::world& w, const Card& card, const FodderPos& pos)
+{
+    auto plant_type = pvz_emulator::object::plant_type::wallnut;
+    if (card == Card::Puff) {
+        plant_type = pvz_emulator::object::plant_type::sunshroom;
+    } else if (card == Card::Pot) {
+        plant_type = pvz_emulator::object::plant_type::flower_pot;
+    }
+    return w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
+}
+
 void insert_fixed_fodder(
     std::vector<Op>& ops, Info& info, int tick, int wave, const FixedFodder* fodder)
 {
     info.action_infos.push_back(
         {_SmashInternal::ActionInfo::Type::Card, wave, tick, fodder->desc(), {}});
     auto idx = info.action_infos.size() - 1;
+    auto cards = fodder->cards;
     auto positions = fodder->positions;
 
-    auto f = [&info, idx, positions](pvz_emulator::world& w) {
-        for (const auto& pos : positions) {
-            auto plant_type = (pos.type == FodderPos::Type::Normal)
-                ? pvz_emulator::object::plant_type::wallnut
-                : pvz_emulator::object::plant_type::sunshroom;
-            auto& p = w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
+    auto f = [&info, idx, cards, positions](pvz_emulator::world& w) {
+        assert(cards.size() == positions.size());
+
+        for (int i = 0; i < cards.size(); i++) {
+            auto& p = plant(w, cards[i], positions[i]);
             info.action_infos[idx].plants.push_back({&p, p.uuid});
         }
     };
@@ -115,53 +126,118 @@ void insert_fixed_fodder(
     }
 }
 
+std::vector<int> choose_by_pos(pvz_emulator::world& w, const std::vector<FodderPos>& positions,
+    int choose, const std::unordered_set<int>& waves)
+{
+    const int GARG_X_MAX = 1000;
+    std::array<int, 6> giga_min_x;
+    std::fill(giga_min_x.begin(), giga_min_x.end(), GARG_X_MAX);
+    for (const auto& z : w.scene.zombies) {
+        if (!z.is_dead && z.is_not_dying
+            && z.type == pvz_emulator::object::zombie_type::giga_gargantuar
+            && (waves.empty() || waves.count(z.spawn_wave))
+            && (giga_min_x[z.row] == 0 || z.int_x < giga_min_x[z.row])) {
+            giga_min_x[z.row] = z.int_x;
+        }
+    }
+
+    std::unordered_set<int> indices;
+    indices.reserve(positions.size());
+    for (int i = 0; i < positions.size(); i++) {
+        indices.insert(i);
+    }
+
+    std::vector<int> res;
+    res.reserve(choose);
+    for (int i = 0; i < choose; i++) {
+        int min_x = GARG_X_MAX, best_index = -1;
+        for (const auto& index : indices) {
+            if (giga_min_x[positions[index].row - 1] < min_x) {
+                min_x = giga_min_x[positions[index].row - 1];
+                best_index = index;
+            }
+        }
+        if (best_index == -1) {
+            break;
+        } else {
+            indices.erase(best_index);
+            res.push_back(best_index);
+        }
+    }
+    return res;
+}
+
+std::vector<int> choose_by_num(pvz_emulator::world& w, const std::vector<FodderPos>& positions,
+    int choose, const std::unordered_set<int>& waves)
+{
+    std::array<int, 6> ladder_jack_count = {};
+    for (const auto& z : w.scene.zombies) {
+        if (!z.is_dead && z.is_not_dying
+            && (z.type == pvz_emulator::object::zombie_type::ladder
+                || z.type == pvz_emulator::object::zombie_type::jack_in_the_box)
+            && (waves.empty() || waves.count(z.spawn_wave))) {
+            ladder_jack_count[z.row]++;
+        }
+    }
+
+    std::unordered_set<int> indices;
+    indices.reserve(positions.size());
+    for (int i = 0; i < positions.size(); i++) {
+        indices.insert(i);
+    }
+
+    std::vector<int> res;
+    res.reserve(choose);
+    for (int i = 0; i < choose; i++) {
+        int max_count = -1, best_index = -1;
+        for (const auto& index : indices) {
+            if (ladder_jack_count[positions[index].row - 1] > max_count) {
+                max_count = ladder_jack_count[positions[index].row - 1];
+                best_index = index;
+            }
+        }
+        if (best_index == -1) {
+            break;
+        } else {
+            indices.erase(best_index);
+            res.push_back(best_index);
+        }
+    }
+    return res;
+}
+
 void insert_smart_fodder(
     std::vector<Op>& ops, Info& info, int tick, int wave, const SmartFodder* fodder)
 {
     info.action_infos.push_back(
         {_SmashInternal::ActionInfo::Type::Card, wave, tick, fodder->desc(), {}});
     auto idx = info.action_infos.size() - 1;
+    auto symbol = fodder->symbol;
+    auto cards = fodder->cards;
     auto positions = fodder->positions;
     auto choose = fodder->choose;
     auto waves = fodder->waves;
 
-    auto f = [&info, idx, positions, choose, waves](pvz_emulator::world& w) {
-        std::array<int, 6> giga_min_x = {};
-        for (const auto& z : w.scene.zombies) {
-            if (!z.is_dead && z.is_not_dying
-                && z.type == pvz_emulator::object::zombie_type::giga_gargantuar
-                && (waves.empty() || waves.count(z.spawn_wave))
-                && (giga_min_x[z.row] == 0 || z.int_x < giga_min_x[z.row])) {
-                giga_min_x[z.row] = z.int_x;
+    auto f = [&info, idx, symbol, cards, positions, choose, waves](pvz_emulator::world& w) {
+        assert(cards.size() == positions.size());
+
+        std::vector<int> chosen;
+        if (symbol == "C") {
+            chosen.reserve(positions.size());
+            for (int i = 0; i < positions.size(); i++) {
+                chosen.push_back(i);
             }
+        } else if (symbol == "C_POS") {
+            chosen = choose_by_pos(w, positions, choose, waves);
+        } else if (symbol == "C_NUM") {
+            chosen = choose_by_num(w, positions, choose, waves);
+        } else {
+            assert(false && "unreachable");
         }
 
-        std::unordered_set<int> indices;
-        for (int i = 0; i < positions.size(); i++) {
-            if (giga_min_x[positions[i].row - 1] != 0) {
-                indices.insert(i);
-            }
-        }
-        for (int i = 0; i < choose; i++) {
-            int min_x = 1000;
-            int best_index = -1;
-            for (const auto& index : indices) {
-                if (giga_min_x[positions[index].row - 1] < min_x) {
-                    min_x = giga_min_x[positions[index].row - 1];
-                    best_index = index;
-                }
-            }
-            if (best_index == -1) {
-                break;
-            } else {
-                indices.erase(best_index);
-                const auto& pos = positions[best_index];
-                auto plant_type = (pos.type == FodderPos::Type::Normal)
-                    ? pvz_emulator::object::plant_type::wallnut
-                    : pvz_emulator::object::plant_type::sunshroom;
-                auto& p = w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
-                info.action_infos[idx].plants.push_back({&p, p.uuid});
-            }
+        for (int i : chosen) {
+            auto& p = plant(w, cards[i], positions[i]);
+            info.action_infos[idx].plants.push_back({&p, p.uuid});
         }
     };
     ops.push_back({tick, f});
@@ -188,8 +264,10 @@ std::vector<Op> load_config(const Config& config, Info& info)
     info = {};
     info.protect_positions.reserve(config.setting.protect_positions.size());
     info.garg_infos.reserve(config.setting.garg_total);
+    info.action_infos.reserve(config.setting.action_count);
 
     std::vector<Op> ops;
+    ops.reserve(config.setting.op_count);
 
     int base_tick = 0;
     insert_setup(ops, base_tick, config.setting.protect_positions);

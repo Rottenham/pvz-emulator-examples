@@ -12,15 +12,37 @@
 
 namespace _SmashInternal {
 
-void read_fodder_pos(const rapidjson::Value& val, FodderPos& pos)
+void read_cards(
+    const rapidjson::GenericArray<true, rapidjson::Value> card_vals, std::vector<Card>& cards)
 {
-    std::string type = val["type"].GetString();
-    pos.type = (type == "Puff") ? FodderPos::Type::Puff : FodderPos::Type::Normal;
-    pos.row = val["row"].GetInt();
-    pos.col = val["col"].GetInt();
+    cards.reserve(card_vals.Size());
+    for (const auto& card_val : card_vals) {
+        std::string card = card_val.GetString();
+        if (card == "Normal") {
+            cards.push_back(Card::Normal);
+        } else if (card == "Puff") {
+            cards.push_back(Card::Puff);
+        } else if (card == "Pot") {
+            cards.push_back(Card::Pot);
+        } else {
+            assert(false && "unreachable");
+        }
+    }
 }
 
-void read_action(const rapidjson::Value& val, Action& action)
+void read_fodder_positions(const rapidjson::GenericArray<true, rapidjson::Value> pos_vals,
+    std::vector<FodderPos>& positions)
+{
+    positions.reserve(pos_vals.Size());
+    for (const auto& pos_val : pos_vals) {
+        FodderPos pos;
+        pos.row = pos_val["row"].GetInt();
+        pos.col = pos_val["col"].GetInt();
+        positions.push_back(pos);
+    }
+}
+
+void read_action(Config& config, const rapidjson::Value& val, Action& action)
 {
     std::string op = val["op"].GetString();
 
@@ -32,56 +54,54 @@ void read_action(const rapidjson::Value& val, Action& action)
         cob.symbol = val["symbol"].GetString();
         cob.time = val["time"].GetInt();
         for (const auto& pos_val : positions) {
-            Cob::CobPos pos;
+            CobPos pos;
             pos.row = pos_val["row"].GetInt();
             pos.col = pos_val["col"].GetFloat();
             cob.positions.push_back(pos);
         }
         action = cob;
+
+        config.setting.op_count += positions.Size();
     } else if (op == "FixedFodder") {
         FixedFodder fodder;
-        const auto positions = val["positions"].GetArray();
-        fodder.positions.reserve(positions.Size());
 
         fodder.symbol = val["symbol"].GetString();
         fodder.time = val["time"].GetInt();
-        if (val.HasMember("shovelTime")) {
-            fodder.shovel_time = val["shovelTime"].GetInt();
+        auto shovel_time_val = val.FindMember("shovelTime");
+        if (shovel_time_val != val.MemberEnd()) {
+            fodder.shovel_time = shovel_time_val->value.GetInt();
         }
-        for (const auto& pos_val : positions) {
-            FodderPos pos;
-            read_fodder_pos(pos_val, pos);
-            fodder.positions.push_back(pos);
-        }
+        read_cards(val["cards"].GetArray(), fodder.cards);
+        read_fodder_positions(val["positions"].GetArray(), fodder.positions);
         action = fodder;
+
+        config.setting.op_count += shovel_time_val != val.MemberEnd() ? 2 : 1;
     } else if (op == "SmartFodder") {
         SmartFodder fodder;
-        const auto positions = val["positions"].GetArray();
         const auto waves = val["waves"].GetArray();
-        fodder.positions.reserve(positions.Size());
         fodder.waves.reserve(waves.Size());
 
         fodder.symbol = val["symbol"].GetString();
         fodder.time = val["time"].GetInt();
-        if (val.HasMember("shovelTime")) {
-            fodder.shovel_time = val["shovelTime"].GetInt();
+        auto shovel_time_val = val.FindMember("shovelTime");
+        if (shovel_time_val != val.MemberEnd()) {
+            fodder.shovel_time = shovel_time_val->value.GetInt();
         }
-        for (const auto& pos_val : positions) {
-            FodderPos pos;
-            read_fodder_pos(pos_val, pos);
-            fodder.positions.push_back(pos);
-        }
+        read_cards(val["cards"].GetArray(), fodder.cards);
+        read_fodder_positions(val["positions"].GetArray(), fodder.positions);
         fodder.choose = val["choose"].GetInt();
         for (const auto& wave_val : waves) {
             fodder.waves.insert(wave_val.GetInt());
         }
         action = fodder;
+
+        config.setting.op_count += shovel_time_val != val.MemberEnd() ? 2 : 1;
     } else {
         assert(false && "unreachable");
     }
 }
 
-void read_wave(const rapidjson::Value& val, Wave& wave)
+void read_wave(Config& config, const rapidjson::Value& val, Wave& wave)
 {
     const auto ice_times = val["iceTimes"].GetArray();
     const auto actions = val["actions"].GetArray();
@@ -94,9 +114,12 @@ void read_wave(const rapidjson::Value& val, Wave& wave)
     wave.wave_length = val["waveLength"].GetInt();
     for (const auto& action_val : actions) {
         Action action;
-        read_action(action_val, action);
+        read_action(config, action_val, action);
         wave.actions.push_back(action);
     }
+
+    config.setting.op_count += 1 + ice_times.Size();
+    config.setting.action_count += actions.Size();
 }
 
 void read_setting(const rapidjson::Value& val, Setting& setting)
@@ -142,7 +165,7 @@ void read_config(const rapidjson::Value& val, Config& config)
         } else {
             assert(std::atoi(it->name.GetString()) == config.waves.size() + 1);
             Wave wave;
-            read_wave(it->value, wave);
+            read_wave(config, it->value, wave);
             config.waves.push_back(wave);
 
             if (!contains_smart_fodder) {

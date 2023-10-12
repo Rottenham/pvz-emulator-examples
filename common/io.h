@@ -57,15 +57,17 @@
 
 [[nodiscard]] std::vector<int> assign_repeat(int total_repeat_num, int thread_num)
 {
-    std::vector<int> res;
-    int step = (total_repeat_num + thread_num - 1) / thread_num;
-    for (int i = 0; i < thread_num; i++) {
-        int repeat = std::min(total_repeat_num, step);
-        if (repeat == 0) {
-            break;
-        }
-        total_repeat_num -= repeat;
-        res.push_back(repeat);
+    if (total_repeat_num < thread_num) {
+        thread_num = total_repeat_num;
     }
-    return res;
+
+    int base = total_repeat_num / thread_num;
+    int extra = total_repeat_num % thread_num;
+
+    std::vector<int> repeat_per_thread(thread_num, base);
+
+    for (int i = 0; i < extra; ++i) {
+        repeat_per_thread[i]++;
+    }
+    return repeat_per_thread;
 }
