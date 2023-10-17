@@ -12,7 +12,7 @@ namespace _SmashInternal {
 
 struct CobPos {
     int row;
-    int col;
+    float col;
 };
 
 struct Cob {

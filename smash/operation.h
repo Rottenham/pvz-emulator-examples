@@ -276,7 +276,7 @@ std::vector<Op> load_config(const Config& config, Info& info)
         const auto& wave = config.waves[i];
 
         insert_spawn(ops, info, base_tick, wave_num,
-            std::max(config.setting.garg_total / config.waves.size(), 1ull));
+            std::max(config.setting.garg_total / static_cast<int>(config.waves.size()), 1));
 
         for (const auto& ice_time : wave.ice_times) {
             insert_ice(ops, base_tick + ice_time - 100);
@@ -300,7 +300,7 @@ std::vector<Op> load_config(const Config& config, Info& info)
 
     std::stable_sort(
         ops.begin(), ops.end(), [](const Op& a, const Op& b) { return a.tick < b.tick; });
-    insert_spawn(ops, info, ops.back().tick + 1, config.waves.size() + 1,
+    insert_spawn(ops, info, ops.back().tick + 1, static_cast<int>(config.waves.size()) + 1,
         0); // make sure garg info is synced at the end
 
     return ops;

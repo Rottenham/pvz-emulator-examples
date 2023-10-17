@@ -54,7 +54,7 @@ void run(pvz_emulator::world& w, int ticks)
 
 // TODO: implement for roof and moon_night
 // row: [1, 6]
-[[nodiscard]] float row_to_cob_hit_y(const pvz_emulator::object::scene_type& scene_type, int row)
+[[nodiscard]] int row_to_cob_hit_y(const pvz_emulator::object::scene_type& scene_type, int row)
 {
     using namespace pvz_emulator::object;
     assert(!is_roof(scene_type) && "unimplemented");
