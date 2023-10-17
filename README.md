@@ -4,11 +4,7 @@
 
 ## 如何编译
 
-假设你已将所有与 PvZ Emulator 有关的文件放在了 `/lib` 目录下...
-
 如果你使用 VSCode, 直接 `Ctrl+Shift+B` 即可编译并运行任何 .cpp 源码. 输出文件在 `/dest` 目录下 (文件名后缀可以在 `.vscode/settings.json` 中按需修改).
-
-你也可以使用源码中提供的编译指令.
 
 ## PvZ Emulator 的亿些特性
 

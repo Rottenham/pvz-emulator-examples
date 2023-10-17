@@ -1,3 +1,0 @@
-C:/Users/cresc/Projects/GitHub/PvZ-Emulator-examples/lib/build/CMakeFiles/pvzemu.dir
-C:/Users/cresc/Projects/GitHub/PvZ-Emulator-examples/lib/build/CMakeFiles/edit_cache.dir
-C:/Users/cresc/Projects/GitHub/PvZ-Emulator-examples/lib/build/CMakeFiles/rebuild_cache.dir
