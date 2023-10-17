@@ -1,9 +1,4 @@
 /* 测试收跳跳的最左炮准星.
- * 注意: PvZ Emulator 模拟跳跳与玉米炮互动不准确, 无法测定有炮时的情况.
- *
- * WINDOWS POWERSHELL
- * g++ -O3 -o dest/bin/pogo_test pogo_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors;
- * cd dest; ./bin/pogo_test; cd ..
  */
 
 #include "common/io.h"

@@ -1,6 +1,4 @@
-/* WINDOWS POWERSHELL
- * g++ -O3 -o hello hello.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd dest;
- * ./bin/refresh > refresh.csv; cd ..
+/* 测试砸率.
  */
 
 #include "common/io.h"

@@ -2,25 +2,54 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "buildLib",
+            "type": "shell",
+            "command": "cd lib/build; cmake -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebugInfo ..; ninja; cd ../../"
+        },
+        {
             "label": "compile",
             "type": "shell",
             "command": "g++",
             "args": [
+                "-static",
                 "-O3",
                 "-o",
                 "dest/bin/${fileBasenameNoExtension}",
                 "${file}",
+                "-I.",
                 "-Ilib",
                 "-Ilib/lib",
                 "-Llib/build",
                 "-lpvzemu",
-                "-Wfatal-errors"
+                "-Wall",
+                "-Wextra",
+                "-Wno-class-memaccess",
+                "-Wno-sign-compare",
+                "-Werror",
+                "-Wcast-align",
+                "-Wcast-qual",
+                "-Wconversion",
+                "-Wctor-dtor-privacy",
+                "-Wdisabled-optimization",
+                "-Wformat=2",
+                "-Winit-self",
+                "-Wlogical-op",
+                "-Wmissing-include-dirs",
+                "-Wold-style-cast",
+                "-Woverloaded-virtual",
+                "-Wredundant-decls",
+                "-Wstrict-null-sentinel",
+                "-Wswitch-default",
+                "-Wundef",
+            ],
+            "dependsOn": [
+                "buildLib"
             ],
         },
         {
             "label": "run",
             "type": "shell",
-            "command": "cd dest; ./bin/${fileBasenameNoExtension}; cd ..",
+            "command": "cd dest; ./bin/${fileBasenameNoExtension} -f 1.json; cd ..",
             "dependsOn": [
                 "compile"
             ],
@@ -28,6 +57,6 @@
                 "kind": "build",
                 "isDefault": true
             },
-        }
+        },
     ]
 }

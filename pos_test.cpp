@@ -1,8 +1,4 @@
 /* 测试各个时刻各类僵尸的最小/最大x坐标.
- *
- * WINDOWS POWERSHELL
- * g++ -O3 -o dest/bin/pos_test pos_test.cpp -Ilib -Ilib/lib -Llib/build -lpvzemu -Wfatal-errors; cd
- * dest; ./bin/pos_test; cd ..
  */
 
 #include "common/io.h"
