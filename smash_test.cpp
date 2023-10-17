@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 
     auto [table, summary] = generate_table_and_summary(raw_table);
 
-    file << "砸率,";
+    file << "每波砸率,";
     for (const auto& wave : summary.waves) {
         file << "w" << wave << ",";
     }
@@ -81,7 +81,8 @@ int main(int argc, char* argv[])
     for (const auto& wave : summary.waves) {
         const auto& garg_summary = summary.garg_summary_by_wave.at(wave);
         file << std::fixed << std::setprecision(2)
-             << 100.0 * garg_summary.smashed_garg_count / garg_summary.total_garg_count << "%,";
+             << 5.0 * 100.0 * garg_summary.smashed_garg_count / garg_summary.total_garg_count
+             << "%,";
     }
     file << "\n";
 
@@ -91,7 +92,8 @@ int main(int argc, char* argv[])
             const auto& garg_summary = summary.garg_summary_by_wave.at(wave);
 
             file << std::fixed << std::setprecision(2)
-                 << 100.0 * garg_summary.smashed_garg_count_by_row.at(protect_position.row - 1)
+                 << 5.0 * 100.0
+                    * garg_summary.smashed_garg_count_by_row.at(protect_position.row - 1)
                     / garg_summary.total_garg_count
                  << "%,";
         }
@@ -101,7 +103,7 @@ int main(int argc, char* argv[])
     Info info;
     load_config(config, info);
 
-    file << "\n出生波数,砸率,砸炮数,总数,";
+    file << "\n出生波数,每波砸率,砸炮数,总数,";
     auto prev_wave = -1;
     for (const auto& action_info : info.action_infos) {
         if (action_info.wave != prev_wave) {
@@ -117,7 +119,7 @@ int main(int argc, char* argv[])
 
     for (const auto& [op_states, data] : table) {
         file << data.wave << "," << std::fixed << std::setprecision(2)
-             << 100.0 * data.smashed_garg_count
+             << 5.0* 100.0 * data.smashed_garg_count
                 / summary.garg_summary_by_wave.at(data.wave).total_garg_count
              << "%," << data.smashed_garg_count << "," << data.total_garg_count << ",";
         for (const auto& op_state : op_states) {

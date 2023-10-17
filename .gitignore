@@ -1,4 +1,7 @@
-dest
+dest/*
+!dest/bin/
+dest/bin/*
+!dest/bin/foo
 .vscode
 hello.cpp
 data

@@ -188,8 +188,6 @@ void read_config(const rapidjson::Value& val, Config& config)
 
 Config read_json(const std::string& filename)
 {
-    ::system("chcp 65001 > nul");
-
     FILE* fp = std::fopen(filename.c_str(), "rb");
 
     if (!fp) {
