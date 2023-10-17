@@ -2,3 +2,5 @@ dest
 .vscode
 hello.cpp
 data
+lib/build/*
+!lib/build/libpvzemu.a
