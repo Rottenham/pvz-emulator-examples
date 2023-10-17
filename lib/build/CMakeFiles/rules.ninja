@@ -7,14 +7,14 @@
 
 # =============================================================================
 # Project: pvz-emulator
-# Configurations: RelWithDebInfo
+# Configurations: RelWithDebugInfo
 # =============================================================================
 # =============================================================================
 
 #############################################
 # Rule for compiling CXX files.
 
-rule CXX_COMPILER__pvzemu_unscanned_RelWithDebInfo
+rule CXX_COMPILER__pvzemu_unscanned_RelWithDebugInfo
   depfile = $DEP_FILE
   deps = gcc
   command = ${LAUNCHER}${CODE_CHECK}C:\msys64\ucrt64\bin\c++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -24,7 +24,7 @@ rule CXX_COMPILER__pvzemu_unscanned_RelWithDebInfo
 #############################################
 # Rule for linking CXX static library.
 
-rule CXX_STATIC_LIBRARY_LINKER__pvzemu_RelWithDebInfo
+rule CXX_STATIC_LIBRARY_LINKER__pvzemu_RelWithDebugInfo
   command = cmd.exe /C "$PRE_LINK && "C:\Program Files\CMake\bin\cmake.exe" -E rm -f $TARGET_FILE && C:\msys64\ucrt64\bin\ar.exe qc $TARGET_FILE $LINK_FLAGS $in && C:\msys64\ucrt64\bin\ranlib.exe $TARGET_FILE && $POST_BUILD"
   description = Linking CXX static library $TARGET_FILE
   restat = $RESTAT
@@ -42,7 +42,7 @@ rule CUSTOM_COMMAND
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -SC:\Users\cresc\Projects\GitHub\PvZ-Emulator -BC:\Users\cresc\Projects\GitHub\PvZ-Emulator\build
+  command = "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -SC:\Users\cresc\Projects\GitHub\PvZ-Emulator-examples\lib -BC:\Users\cresc\Projects\GitHub\PvZ-Emulator-examples\lib\build
   description = Re-running CMake...
   generator = 1
 

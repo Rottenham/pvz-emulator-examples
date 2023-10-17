@@ -453,6 +453,18 @@ void plant::to_json(
     writer.Bool(can_attack);
     writer.Key("ignore_garg_smash");
     writer.Bool(ignore_garg_smash);
+    writer.Key("ignore_jack_explode");
+    writer.Bool(ignore_jack_explode);
+
+    writer.Key("explode");
+    writer.StartObject();
+    writer.Key("from_upper");
+    writer.Uint(explode.from_upper);
+    writer.Key("from_same");
+    writer.Uint(explode.from_same);
+    writer.Key("from_lower");
+    writer.Uint(explode.from_lower);
+    writer.EndObject();
 
     writer.EndObject();
 }

@@ -60,6 +60,11 @@ void plant_base::init(
     p.is_sleeping = false;
     p.can_attack = plant::CAN_ATTACK_TABLE[static_cast<size_t>(p.type)];
     p.ignore_garg_smash = false;
+    p.ignore_jack_explode = false;
+
+    p.explode.from_upper = 0;
+    p.explode.from_same = 0;
+    p.explode.from_lower = 0;
 
     p.threepeater_time_since_first_shot = 0;
 
