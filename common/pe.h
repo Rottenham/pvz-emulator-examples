@@ -52,23 +52,95 @@ void run(pvz_emulator::world& w, int ticks)
         w.update();
 }
 
-// TODO: implement for roof and moon_night
 // row: [1, 6]
-[[nodiscard]] int row_to_cob_hit_y(const pvz_emulator::object::scene_type& scene_type, int row)
+[[nodiscard]] std::pair<int, int> get_cob_hit_xy(const pvz_emulator::object::scene_type& scene_type,
+    int row, float col, int cob_col, int cob_row)
 {
     using namespace pvz_emulator::object;
-    assert(!is_roof(scene_type) && "unimplemented");
+    if (!is_roof(scene_type)) {
+        int x = static_cast<int>(std::round(col * 80.0));
+        if (x >= 7) {
+            x -= 7;
+        } else {
+            x -= 6;
+        }
+        return {x - 40, 120 + (row - 1) * (is_frontyard(scene_type) ? 100 : 85)};
+    } else {
+        int x = static_cast<int>(std::round(col * 80.0));
+        int y = 209 + (row - 1) * 85;
 
-    return 120 + (row - 1) * (is_frontyard(scene_type) ? 100 : 85);
+        int step1;
+        if (x <= 206) {
+            step1 = 0;
+        } else if (x >= 527) {
+            step1 = 5;
+        } else {
+            step1 = (x - 127) / 80;
+        }
+        y -= step1 * 20;
+
+        int left_edge, right_edge, step2_shift;
+        assert((cob_col != -1) && "must provide cob col");
+        if (cob_col == 1) {
+            left_edge = 87;
+            right_edge = 524;
+            step2_shift = 0;
+        } else if (cob_col >= 7) {
+            left_edge = 510;
+            right_edge = 523;
+            step2_shift = 5;
+        } else {
+            left_edge = 80 * cob_col - 13;
+            right_edge = 524;
+            step2_shift = 5;
+        }
+
+        int step2;
+        if (x <= left_edge) {
+            step2 = 0;
+        } else if (x >= right_edge) {
+            step2 = (right_edge - left_edge + 3) / 4 - step2_shift;
+        } else {
+            step2 = (x - left_edge + 3) / 4 - step2_shift;
+        }
+        y -= step2;
+
+        if (x == left_edge && cob_col >= 2 && cob_col <= 6) {
+            assert((cob_row != -1) && "must provide cob row");
+            if (cob_row >= 3 && cob_row <= 5) {
+                y += 5;
+            }
+            if (cob_row == 3 && cob_col == 6) {
+                y -= 5;
+            }
+        }
+
+        if (x >= 7) {
+            x -= 7;
+        } else {
+            x -= 6;
+        }
+
+        if (y < 0) {
+            y = 0;
+        }
+
+        return {x - 40, y};
+    }
 }
 
 // row: [1, 6]
 // col: [0.0, 10.0]
-int launch_cob(pvz_emulator::world& w, unsigned int row, float col)
+// cob_col: [1, 8] (optional)
+// cob_row: [1, 5] (optional)
+int launch_cob(
+    pvz_emulator::world& w, unsigned int row, float col, int cob_col = -1, int cob_row = -1)
 {
     using namespace pvz_emulator::object;
     assert(row >= 1 && row <= w.scene.get_max_row());
     assert(col >= 0.0 && col <= 10.0);
+    assert(cob_col == -1 || (cob_col >= 1 && cob_col <= 8));
+    assert(cob_row == -1 || (cob_row >= 1 && cob_row <= 5));
 
     auto& p = w.plant_factory.create(plant_type::cob_cannon, 1, 1);
 
@@ -76,8 +148,9 @@ int launch_cob(pvz_emulator::world& w, unsigned int row, float col)
     p.countdown.launch = 206;
     p.set_reanim(plant_reanim_name::anim_shooting, reanim_type::once, 12);
 
-    p.cannon.x = static_cast<int>(std::round(col * 80.0)) - 47;
-    p.cannon.y = row_to_cob_hit_y(w.scene.type, row);
+    auto [x, y] = get_cob_hit_xy(w.scene.type, row, col, cob_col, cob_row);
+    p.cannon.x = x;
+    p.cannon.y = y;
 
     return p.uuid;
 }

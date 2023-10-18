@@ -10,6 +10,7 @@
 
 using namespace pvz_emulator;
 using namespace pvz_emulator::object;
+using namespace pvz_emulator::system;
 
 const std::string OUTPUT_FILE = "pogo_test";
 
@@ -19,8 +20,9 @@ const int ZOMBIE_NUM_PER_WAVE = 1000; // must not exceed 1024
 const int START_TICK = 1200;
 const int END_TICK = 1800;
 const scene_type SCENE_TYPE = scene_type::fog;
-const int ICE_TIME = 1;                   // actual effect time, <= 0 means no ice
-const std::vector<int> COB_COLS = {5, 7}; // col of cob tail, [0..8]
+const int ICE_TIME = 1;                        // actual effect time, <= 0 means no ice
+const std::vector<int> IDLE_COB_COLS = {6, 8}; // [2..9]
+const int HIT_COB_COL = -1;                    // [1..8], only effective in RE/ME
 
 std::mutex mtx;
 
@@ -40,7 +42,7 @@ void test(int repeat)
     }
 
     for (int r = 0; r < repeat; r++) {
-        w.reset();
+        w.scene.reset();
         w.scene.stop_spawn = true;
 
         if (ICE_TIME > 0) {
@@ -48,14 +50,14 @@ void test(int repeat)
             run(w, 100 - ICE_TIME);
         }
 
-        for (const auto& cob_col : COB_COLS) {
+        for (const auto& cob_col : IDLE_COB_COLS) {
             for (int cob_row = 1; cob_row <= w.scene.get_max_row(); cob_row++) {
-                w.plant_factory.create(plant_type::cob_cannon, cob_row - 1, cob_col - 1);
+                w.plant_factory.create(plant_type::cob_cannon, cob_row - 1, cob_col - 2);
             }
         }
 
         for (int i = 0; i < ZOMBIE_NUM_PER_WAVE; i++) {
-            w.zombie_factory.create(zombie_type::pogo);
+            w.zombie_factory.create(zombie_type::pogo, 1);
         }
         run(w, START_TICK);
 
@@ -63,12 +65,12 @@ void test(int repeat)
             for (auto& z : w.scene.zombies) {
                 assert(z.type == zombie_type::pogo);
 
-                auto upper_cob_x_range
-                    = get_cob_hit_x_range(get_hit_box(z), row_to_cob_hit_y(w.scene.type, z.row));
-                auto same_cob_x_range = get_cob_hit_x_range(
-                    get_hit_box(z), row_to_cob_hit_y(w.scene.type, z.row + 1));
-                auto lower_cob_x_range = get_cob_hit_x_range(
-                    get_hit_box(z), row_to_cob_hit_y(w.scene.type, z.row + 2));
+                auto upper_cob_x_range = get_cob_hit_x_range(get_hit_box(z),
+                    get_cob_hit_xy(w.scene.type, z.row, 9.0f, HIT_COB_COL, -1).second);
+                auto same_cob_x_range = get_cob_hit_x_range(get_hit_box(z),
+                    get_cob_hit_xy(w.scene.type, z.row + 1, 9.0f, HIT_COB_COL, -1).second);
+                auto lower_cob_x_range = get_cob_hit_x_range(get_hit_box(z),
+                    get_cob_hit_xy(w.scene.type, z.row + 2, 9.0f, HIT_COB_COL, -1).second);
 
                 local_upper_cob[tick - START_TICK]
                     = std::min(local_upper_cob[tick - START_TICK], upper_cob_x_range.second);
@@ -125,7 +127,7 @@ int main()
     }
 
     file << "tick,收上行跳跳,收本行跳跳,收下行跳跳,收上行巨人,收本行巨人,收下行巨人,"
-         << "全三,三跳两巨,两跳三巨,全两,下跳两巨,"
+         << "上跳上巨,上跳本巨,上跳下巨,本跳上巨,本跳本巨,本跳下巨,下跳上巨,下跳本巨,下跳下巨"
          << "\n";
 
     for (int tick = START_TICK; tick <= END_TICK; tick++) {
@@ -135,31 +137,36 @@ int main()
 
         rect garg_hit_box;
         garg_hit_box.x = static_cast<int>(get_garg_x_max(min_garg_walk(tick))) - 17;
-        garg_hit_box.y = (is_roof(SCENE_TYPE) ? 40 : 50) - 38;
+        garg_hit_box.y = get_y_by_row_and_col(SCENE_TYPE, 1, 9) - 38;
         garg_hit_box.width = 125;
         garg_hit_box.height = 154;
 
-        auto upper_cob_garg
-            = get_cob_hit_x_range(garg_hit_box, row_to_cob_hit_y(SCENE_TYPE, 0)).first;
-        auto same_cob_garg
-            = get_cob_hit_x_range(garg_hit_box, row_to_cob_hit_y(SCENE_TYPE, 1)).first;
-        auto lower_cob_garg
-            = get_cob_hit_x_range(garg_hit_box, row_to_cob_hit_y(SCENE_TYPE, 2)).first;
+        auto upper_cob_garg = get_cob_hit_x_range(
+            garg_hit_box, get_cob_hit_xy(SCENE_TYPE, 1, 9.0f, HIT_COB_COL, -1).second)
+                                  .first;
+        auto same_cob_garg = get_cob_hit_x_range(
+            garg_hit_box, get_cob_hit_xy(SCENE_TYPE, 2, 9.0f, HIT_COB_COL, -1).second)
+                                 .first;
+        auto lower_cob_garg = get_cob_hit_x_range(
+            garg_hit_box, get_cob_hit_xy(SCENE_TYPE, 3, 9.0f, HIT_COB_COL, -1).second)
+                                  .first;
 
         file << tick << "," << lower_cob_pogo << "," << same_cob_pogo << "," << upper_cob_pogo
-             << "," << lower_cob_garg << "," << same_cob_garg << "," << upper_cob_garg << ","
-             << bool_to_string(lower_cob_garg <= lower_cob_pogo) << ","
-             << bool_to_string(
-                    (upper_cob_garg <= lower_cob_pogo) && (same_cob_garg <= lower_cob_pogo))
-             << "," << bool_to_string(lower_cob_garg <= same_cob_pogo)
-             << "," // assume lower pogo is always easier than same pogo
-             << bool_to_string(
-                    (upper_cob_garg <= same_cob_pogo) && (same_cob_garg <= same_cob_pogo))
-             << ","
-             << bool_to_string(
-                    (upper_cob_garg <= upper_cob_pogo) && (same_cob_garg <= upper_cob_pogo))
-             << ","
-             << "\n";
+             << "," << lower_cob_garg << "," << same_cob_garg << "," << upper_cob_garg << ",";
+
+        file << bool_to_string(lower_cob_garg <= lower_cob_pogo) << ","; // 上跳上巨
+        file << bool_to_string(same_cob_garg <= lower_cob_pogo) << ",";  // 上跳本巨
+        file << bool_to_string(upper_cob_garg <= lower_cob_pogo) << ","; // 上跳下巨
+
+        file << bool_to_string(lower_cob_garg <= same_cob_pogo) << ","; // 本跳上巨
+        file << bool_to_string(same_cob_garg <= same_cob_pogo) << ",";  // 本跳本巨
+        file << bool_to_string(upper_cob_garg <= same_cob_pogo) << ","; // 本跳下巨
+
+        file << bool_to_string(lower_cob_garg <= upper_cob_pogo) << ","; // 下跳上巨
+        file << bool_to_string(same_cob_garg <= upper_cob_pogo) << ",";  // 下跳本巨
+        file << bool_to_string(upper_cob_garg <= upper_cob_pogo) << ","; // 下跳下巨
+
+        file << "\n";
     }
 
     file.close();
