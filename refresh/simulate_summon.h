@@ -41,23 +41,21 @@ std::unordered_map<int, std::array<int, 2>> weight = {
 
 std::unordered_map<int, std::vector<int>> scene_banned
     = {{0, {SNORKEL_ZOMBIE, DOLPHIN_RIDER_ZOMBIE}},
-        {1, {SNORKEL_ZOMBIE, ZOMBONI, DOLPHIN_RIDER_ZOMBIE}},
-        {2, {}},
-        {3, {}},
+        {1, {SNORKEL_ZOMBIE, ZOMBONI, DOLPHIN_RIDER_ZOMBIE}}, {2, {}}, {3, {}},
         {4, {DANCING_ZOMBIE, SNORKEL_ZOMBIE, DOLPHIN_RIDER_ZOMBIE, DIGGER_ZOMBIE}},
         {5, {DANCING_ZOMBIE, SNORKEL_ZOMBIE, DOLPHIN_RIDER_ZOMBIE, DIGGER_ZOMBIE}}};
 
 }; // namespace _setzombies_internal
 
-void init_rnd(unsigned seed = std::chrono::system_clock::now().time_since_epoch().count())
+void init_rnd(unsigned seed
+    = static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count()))
 {
     _setzombies_internal::rng.seed(seed);
     _setzombies_internal::rng.discard(624);
 }
 
 std::vector<int> random_type_list(const pvz_emulator::object::scene& s,
-    const std::vector<ZombieType>& required = {},
-    const std::vector<ZombieType>& banned = {})
+    const std::vector<ZombieType>& required = {}, const std::vector<ZombieType>& banned = {})
 {
     auto scene = s; // make a copy
 
@@ -76,7 +74,7 @@ std::vector<int> random_type_list(const pvz_emulator::object::scene& s,
     for (auto x : required)
         out.push_back(x);
     for (size_t i = 0; i < 9 - required.size(); i++) {
-        int idx = _setzombies_internal::rng() % cand.size();
+        int idx = _setzombies_internal::rng() % static_cast<int>(cand.size());
         if (cand[idx] >= 0)
             out.push_back(cand[idx]);
         cand[idx] = cand[cand.size() - 1];
@@ -85,10 +83,8 @@ std::vector<int> random_type_list(const pvz_emulator::object::scene& s,
     return out;
 }
 
-std::array<int, 50> simulate_wave(std::vector<int> type_list,
-    bool is_huge_wave = false,
-    int giga_limit = 50,
-    int giga_count = -1)
+std::array<int, 50> simulate_wave(
+    std::vector<int> type_list, bool is_huge_wave = false, int giga_limit = 50, int giga_count = -1)
 {
     if (giga_count != -1)
         type_list.erase(find(type_list.begin(), type_list.end(), GIGA_GARGANTUAR));

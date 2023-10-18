@@ -7,19 +7,19 @@
 
 #include <mutex>
 
+using namespace pvz_emulator;
+using namespace pvz_emulator::object;
+
 /***** 配置部分开始 *****/
 
-const int TOTAL_WAVE_NUM = 10000;
+const int TOTAL_WAVE_NUM = 100;
 const int START_TICK = 0;
 const int END_TICK = 3000;
 const std::vector<zombie_type> ZOMBIE_TYPES = {zombie_type::gargantuar};
 const bool OUTPUT_AS_INT
-    = true; // if true, output float * 32768, which is guaranteed to be an integer when >= 256
+    = false; // if true, output float * 32768, which is guaranteed to be an integer when >= 256
 
 /***** 配置部分结束 *****/
-
-using namespace pvz_emulator;
-using namespace pvz_emulator::object;
 
 std::mutex mtx;
 
@@ -36,7 +36,7 @@ void test_one(const zombie_type& type, world& w, int wave_num_per_thread)
     }
 
     for (int r = 0; r < wave_num_per_thread; r++) {
-        w.reset();
+        w.scene.reset();
         w.scene.stop_spawn = true;
 
         for (int i = 0; i < 1000; i++) {

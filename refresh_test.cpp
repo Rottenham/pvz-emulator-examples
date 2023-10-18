@@ -8,9 +8,9 @@
 
 /***** 配置部分开始 *****/
 
-const int COB_TIME = 225;
 const int TOTAL_ROUND_NUM = 1000;
 const int WAVE_PER_ROUND = 20;
+const int COB_TIME = 225;
 const bool ASSUME_ACTIVATE = true;
 
 /***** 配置部分结束 *****/
@@ -28,7 +28,7 @@ void test_one_round(int round, world& w)
     for (int wave = 1; wave <= WAVE_PER_ROUND; wave++) {
         auto spawn_list = simulate_wave(type_list);
 
-        w.reset();
+        w.scene.reset();
         w.scene.stop_spawn = true;
 
         launch_cob(w, 2, 9);
@@ -81,7 +81,7 @@ int main(void)
             accident_rate_sum += accident_rate[round][wave];
         }
     }
-    file << ",," << std::fixed << std::setprecision(3)
+    file << ",avg," << std::fixed << std::setprecision(3)
          << hp_ratio_sum / (TOTAL_ROUND_NUM * WAVE_PER_ROUND) << ","
          << 100.0 * accident_rate_sum / (TOTAL_ROUND_NUM * WAVE_PER_ROUND) << "%,\n";
 
