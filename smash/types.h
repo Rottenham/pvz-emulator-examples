@@ -30,7 +30,7 @@ struct Cob {
 
 struct Jalapeno { };
 
-enum class Card {
+enum class Fodder {
     Normal,
     Puff,
     Pot,
@@ -45,7 +45,7 @@ struct FixedFodder {
     std::string symbol;
     int time;
     int shovel_time = -1;
-    std::vector<Card> cards;
+    std::vector<Fodder> fodders;
     std::vector<FodderPos> positions;
 
     std::string desc() const
@@ -64,7 +64,7 @@ struct SmartFodder {
     std::string symbol;
     int time;
     int shovel_time = -1;
-    std::vector<Card> cards;
+    std::vector<Fodder> fodders;
     std::vector<FodderPos> positions;
     int choose;
     std::unordered_set<int> waves;

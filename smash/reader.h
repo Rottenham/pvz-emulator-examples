@@ -13,17 +13,17 @@
 namespace _SmashInternal {
 
 void read_cards(
-    const rapidjson::GenericArray<true, rapidjson::Value> card_vals, std::vector<Card>& cards)
+    const rapidjson::GenericArray<true, rapidjson::Value> card_vals, std::vector<Fodder>& cards)
 {
     cards.reserve(card_vals.Size());
     for (const auto& card_val : card_vals) {
         std::string card = card_val.GetString();
         if (card == "Normal") {
-            cards.push_back(Card::Normal);
+            cards.push_back(Fodder::Normal);
         } else if (card == "Puff") {
-            cards.push_back(Card::Puff);
+            cards.push_back(Fodder::Puff);
         } else if (card == "Pot") {
-            cards.push_back(Card::Pot);
+            cards.push_back(Fodder::Pot);
         } else {
             assert(false && "unreachable");
         }
@@ -71,7 +71,7 @@ void read_action(Config& config, const rapidjson::Value& val, Action& action)
         if (shovel_time_val != val.MemberEnd()) {
             fodder.shovel_time = shovel_time_val->value.GetInt();
         }
-        read_cards(val["cards"].GetArray(), fodder.cards);
+        read_cards(val["fodders"].GetArray(), fodder.fodders);
         read_fodder_positions(val["positions"].GetArray(), fodder.positions);
         action = fodder;
 
@@ -87,7 +87,7 @@ void read_action(Config& config, const rapidjson::Value& val, Action& action)
         if (shovel_time_val != val.MemberEnd()) {
             fodder.shovel_time = shovel_time_val->value.GetInt();
         }
-        read_cards(val["cards"].GetArray(), fodder.cards);
+        read_cards(val["fodders"].GetArray(), fodder.fodders);
         read_fodder_positions(val["positions"].GetArray(), fodder.positions);
         fodder.choose = val["choose"].GetInt();
         for (const auto& wave_val : waves) {

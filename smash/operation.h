@@ -107,12 +107,12 @@ void insert_cob(
     }
 }
 
-pvz_emulator::object::plant& plant(pvz_emulator::world& w, const Card& card, const FodderPos& pos)
+pvz_emulator::object::plant& plant(pvz_emulator::world& w, const Fodder& card, const FodderPos& pos)
 {
     auto plant_type = pvz_emulator::object::plant_type::wallnut;
-    if (card == Card::Puff) {
+    if (card == Fodder::Puff) {
         plant_type = pvz_emulator::object::plant_type::sunshroom;
-    } else if (card == Card::Pot) {
+    } else if (card == Fodder::Pot) {
         plant_type = pvz_emulator::object::plant_type::flower_pot;
     }
     return w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
@@ -124,7 +124,7 @@ void insert_fixed_fodder(
     info.action_infos.push_back(
         {_SmashInternal::ActionInfo::Type::Fodder, wave, tick, fodder->desc(), {}});
     auto idx = info.action_infos.size() - 1;
-    auto cards = fodder->cards;
+    auto cards = fodder->fodders;
     auto positions = fodder->positions;
 
     auto f = [&info, idx, cards, positions](pvz_emulator::world& w) {
@@ -236,7 +236,7 @@ void insert_smart_fodder(
         {_SmashInternal::ActionInfo::Type::Fodder, wave, tick, fodder->desc(), {}});
     auto idx = info.action_infos.size() - 1;
     auto symbol = fodder->symbol;
-    auto cards = fodder->cards;
+    auto cards = fodder->fodders;
     auto positions = fodder->positions;
     auto choose = fodder->choose;
     auto waves = fodder->waves;
