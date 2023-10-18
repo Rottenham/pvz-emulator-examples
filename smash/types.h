@@ -28,6 +28,8 @@ struct Cob {
     }
 };
 
+struct Jalapeno { };
+
 enum class Card {
     Normal,
     Puff,
@@ -120,7 +122,7 @@ struct GigaInfo {
 };
 
 struct ActionInfo {
-    enum class Type { Cob, Card } type;
+    enum class Type { Ash, Fodder } type;
     int wave;
     int tick;
     std::string desc = "";

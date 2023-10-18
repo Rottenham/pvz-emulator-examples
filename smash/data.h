@@ -52,10 +52,10 @@ OpState categorize(
         return OpState::NotBorn;
     } else if (action_info.tick > garg_info.spawn_tick + garg_info.alive_time) {
         return OpState::Dead;
-    } else if (action_info.type == _SmashInternal::ActionInfo::Type::Cob
-        || action_info.type == _SmashInternal::ActionInfo::Type::Card) {
+    } else if (action_info.type == _SmashInternal::ActionInfo::Type::Ash
+        || action_info.type == _SmashInternal::ActionInfo::Type::Fodder) {
 
-        auto effective_uuids = action_info.type == _SmashInternal::ActionInfo::Type::Cob
+        auto effective_uuids = action_info.type == _SmashInternal::ActionInfo::Type::Ash
             ? garg_info.hit_by_ash
             : garg_info.attempted_smashes;
 

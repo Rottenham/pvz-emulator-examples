@@ -94,7 +94,7 @@ void insert_cob(
     std::vector<Op>& ops, Info& info, int tick, int wave, const Cob* cob, bool is_backyard)
 {
     info.action_infos.push_back(
-        {_SmashInternal::ActionInfo::Type::Cob, wave, tick, cob->desc(), {}});
+        {_SmashInternal::ActionInfo::Type::Ash, wave, tick, cob->desc(), {}});
     auto idx = info.action_infos.size() - 1;
 
     for (const auto& pos : cob->positions) {
@@ -122,7 +122,7 @@ void insert_fixed_fodder(
     std::vector<Op>& ops, Info& info, int tick, int wave, const FixedFodder* fodder)
 {
     info.action_infos.push_back(
-        {_SmashInternal::ActionInfo::Type::Card, wave, tick, fodder->desc(), {}});
+        {_SmashInternal::ActionInfo::Type::Fodder, wave, tick, fodder->desc(), {}});
     auto idx = info.action_infos.size() - 1;
     auto cards = fodder->cards;
     auto positions = fodder->positions;
@@ -233,7 +233,7 @@ void insert_smart_fodder(
     std::vector<Op>& ops, Info& info, int tick, int wave, const SmartFodder* fodder)
 {
     info.action_infos.push_back(
-        {_SmashInternal::ActionInfo::Type::Card, wave, tick, fodder->desc(), {}});
+        {_SmashInternal::ActionInfo::Type::Fodder, wave, tick, fodder->desc(), {}});
     auto idx = info.action_infos.size() - 1;
     auto symbol = fodder->symbol;
     auto cards = fodder->cards;
