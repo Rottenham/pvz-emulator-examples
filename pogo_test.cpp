@@ -8,21 +8,21 @@
 
 #include <mutex>
 
-using namespace pvz_emulator;
-using namespace pvz_emulator::object;
-using namespace pvz_emulator::system;
+/***** 配置部分开始 *****/
 
-const std::string OUTPUT_FILE = "pogo_test";
-
-const int TOTAL_WAVE_NUM = 10240;
-const int THREAD_NUM = 32;            // if not sure, use number of CPU cores
-const int ZOMBIE_NUM_PER_WAVE = 1000; // must not exceed 1024
+const int TOTAL_WAVE_NUM = 1000;
 const int START_TICK = 1200;
 const int END_TICK = 1800;
 const scene_type SCENE_TYPE = scene_type::fog;
 const int ICE_TIME = 1;                        // actual effect time, <= 0 means no ice
 const std::vector<int> IDLE_COB_COLS = {6, 8}; // [2..9]
 const int HIT_COB_COL = -1;                    // [1..8], only effective in RE/ME
+
+/***** 配置部分结束 *****/
+
+using namespace pvz_emulator;
+using namespace pvz_emulator::object;
+using namespace pvz_emulator::system;
 
 std::mutex mtx;
 
@@ -56,7 +56,7 @@ void test(int repeat)
             }
         }
 
-        for (int i = 0; i < ZOMBIE_NUM_PER_WAVE; i++) {
+        for (int i = 0; i < 1000; i++) {
             w.zombie_factory.create(zombie_type::pogo, 1);
         }
         run(w, START_TICK);
@@ -112,14 +112,14 @@ int main()
 {
     auto start = std::chrono::high_resolution_clock::now();
     ::system("chcp 65001 > nul");
-    auto file = open_csv(OUTPUT_FILE).first;
+    auto file = open_csv("pogo_test").first;
 
     for (int i = 0; i < (END_TICK - START_TICK + 1); ++i) {
         upper_cob[i] = same_cob[i] = lower_cob[i] = 999.0f;
     }
 
     std::vector<std::thread> threads;
-    for (const auto& repeat : assign_repeat(TOTAL_WAVE_NUM, THREAD_NUM)) {
+    for (const auto& repeat : assign_repeat(TOTAL_WAVE_NUM, std::thread::hardware_concurrency())) {
         threads.emplace_back([repeat]() { test(repeat); });
     }
     for (auto& t : threads) {
@@ -137,7 +137,8 @@ int main()
 
         rect garg_hit_box;
         garg_hit_box.x = static_cast<int>(get_garg_x_max(min_garg_walk(tick))) - 17;
-        garg_hit_box.y = get_y_by_row_and_col(SCENE_TYPE, 1, 9) - 38;
+        garg_hit_box.y
+            = (is_roof(SCENE_TYPE) ? 40 : 50) + (is_frontyard(SCENE_TYPE) ? 100 : 85) - 38;
         garg_hit_box.width = 125;
         garg_hit_box.height = 154;
 
