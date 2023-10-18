@@ -15,6 +15,40 @@ std::mutex mtx;
 
 RawTable raw_table;
 
+void validate_config(const Config& config)
+{
+    if (config.waves.empty()) {
+        std::cerr << "必须提供操作" << std::endl;
+        exit(1);
+    }
+
+    if (config.setting.protect_positions.empty()) {
+        std::cerr << "必须提供要保护的位置" << std::endl;
+        exit(1);
+    }
+
+    std::unordered_set<int> valid_rows;
+    if (is_backyard(config.setting.scene_type)) {
+        valid_rows = {1, 2, 5, 6};
+    } else {
+        valid_rows = {1, 2, 3, 4, 5};
+    }
+
+    for (const auto& protect_position : config.setting.protect_positions) {
+        if (!valid_rows.count(protect_position.row)) {
+            std::cerr << "保护位置所在行无效: " << protect_position.row << std::endl;
+            exit(1);
+        }
+    }
+}
+
+double calc_smash_rate(const Config& config, int smashed_garg_count, int total_garg_count)
+{
+    int total_garg_rows = is_backyard(config.setting.scene_type) ? 4 : 5;
+    return 100.0 * (smashed_garg_count / (total_garg_count / 5.0))
+        * (static_cast<double>(config.setting.protect_positions.size()) / total_garg_rows);
+}
+
 void test_one(const Config& config, int repeat)
 {
     world w(config.setting.scene_type);
@@ -24,7 +58,7 @@ void test_one(const Config& config, int repeat)
     for (int r = 0; r < repeat; r++) {
         auto ops = load_config(config, info);
 
-        w.reset();
+        w.scene.reset();
         w.scene.stop_spawn = true;
         w.scene.disable_garg_throw_imp = true;
 
@@ -58,8 +92,9 @@ int main(int argc, char* argv[])
     auto [file, full_output_file] = open_csv(output_file);
 
     auto config = read_json(config_file);
-    if (config.setting.garg_total != 1000) {
-        total_repeat_num = static_cast<int>(total_repeat_num * 1000.0 / config.setting.garg_total);
+    validate_config(config);
+    if (config.setting.giga_total != 1000) {
+        total_repeat_num = static_cast<int>(total_repeat_num * 1000.0 / config.setting.giga_total);
     }
 
     std::vector<std::thread> threads;
@@ -81,7 +116,8 @@ int main(int argc, char* argv[])
     for (const auto& wave : summary.waves) {
         const auto& garg_summary = summary.garg_summary_by_wave.at(wave);
         file << std::fixed << std::setprecision(2)
-             << 5.0 * 100.0 * garg_summary.smashed_garg_count / garg_summary.total_garg_count
+             << calc_smash_rate(
+                    config, garg_summary.smashed_garg_count, garg_summary.total_garg_count)
              << "%,";
     }
     file << "\n";
@@ -92,9 +128,9 @@ int main(int argc, char* argv[])
             const auto& garg_summary = summary.garg_summary_by_wave.at(wave);
 
             file << std::fixed << std::setprecision(2)
-                 << 5.0 * 100.0
-                    * garg_summary.smashed_garg_count_by_row.at(protect_position.row - 1)
-                    / garg_summary.total_garg_count
+                 << calc_smash_rate(config,
+                        garg_summary.smashed_garg_count_by_row.at(protect_position.row - 1),
+                        garg_summary.total_garg_count)
                  << "%,";
         }
         file << "\n";
@@ -119,8 +155,8 @@ int main(int argc, char* argv[])
 
     for (const auto& [op_states, data] : table) {
         file << data.wave << "," << std::fixed << std::setprecision(2)
-             << 5.0* 100.0 * data.smashed_garg_count
-                / summary.garg_summary_by_wave.at(data.wave).total_garg_count
+             << calc_smash_rate(config, data.smashed_garg_count,
+                    summary.garg_summary_by_wave.at(data.wave).total_garg_count)
              << "%," << data.smashed_garg_count << "," << data.total_garg_count << ",";
         for (const auto& op_state : op_states) {
             file << op_state_to_string(op_state) << ",";

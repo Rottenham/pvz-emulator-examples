@@ -10,10 +10,14 @@ namespace pvz_emulator::system {
 
 using namespace pvz_emulator::object;
 
-zombie& zombie_factory::create(zombie_type type)
+zombie& zombie_factory::create(zombie_type type, int specified_row)
 {
-	auto row = get_spawn_row(type);
-
+	unsigned int row;
+	if (specified_row >= 0 && can_spawn_at_row(type, static_cast<unsigned int>(specified_row))) {
+		row = static_cast<unsigned int>(specified_row);
+	} else {
+		row = get_spawn_row(type);
+	}
 	auto& z = scene.zombies.alloc();
 
 	switch (type) {

@@ -100,12 +100,12 @@ struct Setting {
 
     pvz_emulator::object::scene_type scene_type = pvz_emulator::object::scene_type::fog;
     std::vector<ProtectPos> protect_positions;
-    int garg_total = 1000;
+    int giga_total = 1000;
     int op_count = 2; // initial setup, and final clean up
     int action_count = 0;
 };
 
-struct GargInfo {
+struct GigaInfo {
     struct {
         pvz_emulator::object::zombie* ptr;
         int uuid;
@@ -141,8 +141,9 @@ struct Config {
 
 struct Info {
     std::vector<_SmashInternal::Setting::ProtectPos> protect_positions;
-    std::vector<_SmashInternal::GargInfo> garg_infos;
+    std::vector<_SmashInternal::GigaInfo> giga_infos;
     std::vector<_SmashInternal::ActionInfo> action_infos;
+    std::mt19937 gen;
 };
 
 struct Op {

@@ -7,6 +7,27 @@
 
 namespace _SmashInternal {
 
+std::vector<int> get_giga_rows(const Config& config)
+{
+    std::vector<int> giga_rows;
+    giga_rows.reserve(config.setting.protect_positions.size());
+    for (const auto& protect_position : config.setting.protect_positions) {
+        giga_rows.push_back(protect_position.row - 1);
+    }
+    return giga_rows;
+}
+
+int pick_giga_row(const std::vector<int>& giga_rows, std::mt19937& gen)
+{
+    if (giga_rows.empty()) {
+        return -1;
+    } else {
+        std::uniform_int_distribution<size_t> distribution(0, giga_rows.size() - 1);
+        auto index = distribution(gen);
+        return giga_rows[index];
+    }
+}
+
 void insert_setup(
     std::vector<Op>& ops, int tick, const std::vector<Setting::ProtectPos>& protect_positions)
 {
@@ -22,38 +43,40 @@ void insert_setup(
     ops.push_back({tick, f});
 }
 
-void insert_spawn(std::vector<Op>& ops, Info& info, int tick, int wave, int garg_num)
+void insert_spawn(std::vector<Op>& ops, Info& info, int tick, int wave, int giga_num,
+    const std::vector<int>& giga_rows)
 {
-    auto f = [&info, wave, garg_num, tick](pvz_emulator::world& w) {
-        // sync current gargs
-        for (auto& garg_info : info.garg_infos) {
-            auto& zombie = garg_info.zombie;
+    auto f = [&info, wave, giga_num, tick, giga_rows](pvz_emulator::world& w) {
+        // sync current gigas
+        for (auto& giga_info : info.giga_infos) {
+            auto& zombie = giga_info.zombie;
 
             if (zombie.ptr && zombie.ptr->uuid == zombie.uuid) {
-                garg_info.alive_time = garg_info.zombie.ptr->time_since_spawn;
+                giga_info.alive_time = giga_info.zombie.ptr->time_since_spawn;
 
-                garg_info.hit_by_cob.clear();
+                giga_info.hit_by_cob.clear();
                 for (int i = 0; i < zombie.ptr->hit_by_cob.size; i++) {
-                    garg_info.hit_by_cob.insert(zombie.ptr->hit_by_cob.arr[i]);
+                    giga_info.hit_by_cob.insert(zombie.ptr->hit_by_cob.arr[i]);
                 }
 
-                garg_info.attempted_smashes.clear();
+                giga_info.attempted_smashes.clear();
                 for (int i = 0; i < zombie.ptr->attempted_smashes.size; i++) {
-                    garg_info.attempted_smashes.insert(zombie.ptr->attempted_smashes.arr[i]);
+                    giga_info.attempted_smashes.insert(zombie.ptr->attempted_smashes.arr[i]);
                 }
 
-                garg_info.ignored_smashes.clear();
+                giga_info.ignored_smashes.clear();
                 for (int i = 0; i < zombie.ptr->ignored_smashes.size; i++) {
-                    garg_info.ignored_smashes.insert(zombie.ptr->ignored_smashes.arr[i]);
+                    giga_info.ignored_smashes.insert(zombie.ptr->ignored_smashes.arr[i]);
                 }
             }
         }
 
         w.scene.spawn.wave = wave;
 
-        for (int i = 0; i < garg_num; i++) {
-            auto& z = w.zombie_factory.create(pvz_emulator::object::zombie_type::giga_gargantuar);
-            info.garg_infos.push_back({{&z, z.uuid}, z.row, wave, tick, 0, {}, {}, {}});
+        for (int i = 0; i < giga_num; i++) {
+            auto& z = w.zombie_factory.create(pvz_emulator::object::zombie_type::giga_gargantuar,
+                pick_giga_row(giga_rows, info.gen));
+            info.giga_infos.push_back({{&z, z.uuid}, z.row, wave, tick, 0, {}, {}, {}});
         }
     };
     ops.push_back({tick, f});
@@ -129,9 +152,9 @@ void insert_fixed_fodder(
 std::vector<int> choose_by_pos(pvz_emulator::world& w, const std::vector<FodderPos>& positions,
     int choose, const std::unordered_set<int>& waves)
 {
-    const int GARG_X_MAX = 1000;
+    const int GIGA_X_MAX = 1000;
     std::array<int, 6> giga_min_x;
-    std::fill(giga_min_x.begin(), giga_min_x.end(), GARG_X_MAX);
+    std::fill(giga_min_x.begin(), giga_min_x.end(), GIGA_X_MAX);
     for (const auto& z : w.scene.zombies) {
         if (!z.is_dead && z.is_not_dying
             && z.type == pvz_emulator::object::zombie_type::giga_gargantuar
@@ -150,7 +173,7 @@ std::vector<int> choose_by_pos(pvz_emulator::world& w, const std::vector<FodderP
     std::vector<int> res;
     res.reserve(choose);
     for (int i = 0; i < choose; i++) {
-        int min_x = GARG_X_MAX, best_index = -1;
+        int min_x = GIGA_X_MAX, best_index = -1;
         for (const auto& index : indices) {
             if (giga_min_x[positions[index].row - 1] < min_x) {
                 min_x = giga_min_x[positions[index].row - 1];
@@ -263,20 +286,23 @@ std::vector<Op> load_config(const Config& config, Info& info)
 
     info = {};
     info.protect_positions.reserve(config.setting.protect_positions.size());
-    info.garg_infos.reserve(config.setting.garg_total);
+    info.giga_infos.reserve(config.setting.giga_total);
     info.action_infos.reserve(config.setting.action_count);
+    info.gen.seed(static_cast<unsigned>(std::random_device {}()));
 
     std::vector<Op> ops;
     ops.reserve(config.setting.op_count);
 
     int base_tick = 0;
     insert_setup(ops, base_tick, config.setting.protect_positions);
+    auto giga_rows = get_giga_rows(config);
     for (int i = 0; i < config.waves.size(); i++) {
         const int wave_num = i + 1;
         const auto& wave = config.waves[i];
 
         insert_spawn(ops, info, base_tick, wave_num,
-            std::max(config.setting.garg_total / static_cast<int>(config.waves.size()), 1));
+            std::max(config.setting.giga_total / static_cast<int>(config.waves.size()), 1),
+            giga_rows);
 
         for (const auto& ice_time : wave.ice_times) {
             insert_ice(ops, base_tick + ice_time - 100);
@@ -300,8 +326,7 @@ std::vector<Op> load_config(const Config& config, Info& info)
 
     std::stable_sort(
         ops.begin(), ops.end(), [](const Op& a, const Op& b) { return a.tick < b.tick; });
-    insert_spawn(ops, info, ops.back().tick + 1, static_cast<int>(config.waves.size()) + 1,
-        0); // make sure garg info is synced at the end
+    insert_spawn(ops, info, ops.back().tick + 1, static_cast<int>(config.waves.size()) + 1, 0, {}); // make sure giga info is synced at the end
 
     return ops;
 }

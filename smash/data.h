@@ -46,7 +46,7 @@ struct Summary {
 };
 
 OpState categorize(
-    const _SmashInternal::ActionInfo& action_info, const _SmashInternal::GargInfo& garg_info)
+    const _SmashInternal::ActionInfo& action_info, const _SmashInternal::GigaInfo& garg_info)
 {
     if (action_info.tick < garg_info.spawn_tick) {
         return OpState::NotBorn;
@@ -73,7 +73,7 @@ OpState categorize(
 
 void update_raw_table(const Info& info, RawTable& raw_table)
 {
-    for (const auto& garg_info : info.garg_infos) {
+    for (const auto& garg_info : info.giga_infos) {
         OpStates op_states;
         op_states.reserve(info.action_infos.size());
         for (const auto& action_info : info.action_infos) {

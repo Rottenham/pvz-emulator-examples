@@ -180,7 +180,7 @@ void read_config(const rapidjson::Value& val, Config& config)
     }
 
     if (contains_smart_fodder) {
-        config.setting.garg_total = 5 * static_cast<int>(config.waves.size());
+        config.setting.giga_total = 5 * static_cast<int>(config.waves.size());
     }
 }
 

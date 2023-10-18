@@ -6,4 +6,4 @@ dest/bin/*
 hello.cpp
 data
 lib/build/*
-!lib/build/libpvzemu.a
+!lib/build/foo
