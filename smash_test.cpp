@@ -123,7 +123,12 @@ int main(int argc, char* argv[])
     file << "\n";
 
     for (const auto& protect_position : config.setting.protect_positions) {
-        file << protect_position.row << "路,";
+        file << protect_position.row << "路";
+        if (protect_position.type == _SmashInternal::Setting::ProtectPos::Type::Cob) {
+            file << protect_position.col + 1 << "炮,";
+        } else {
+            file << protect_position.col << "普通,";
+        }
         for (const auto& wave : summary.waves) {
             const auto& garg_summary = summary.garg_summary_by_wave.at(wave);
 

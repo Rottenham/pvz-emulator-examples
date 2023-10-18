@@ -81,7 +81,7 @@ public:
         int grid_radius,
         bool is_ash_attack,
         unsigned char flags,
-        uint64_t from_plant = 0);
+        int from_plant);
 
     void take(object::zombie &z, unsigned int damage, unsigned int flags);
 

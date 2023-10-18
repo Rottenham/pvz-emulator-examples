@@ -56,7 +56,7 @@ OpState categorize(
         || action_info.type == _SmashInternal::ActionInfo::Type::Card) {
 
         auto effective_uuids = action_info.type == _SmashInternal::ActionInfo::Type::Cob
-            ? garg_info.hit_by_cob
+            ? garg_info.hit_by_ash
             : garg_info.attempted_smashes;
 
         for (const auto& plant : action_info.plants) {

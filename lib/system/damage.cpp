@@ -399,12 +399,12 @@ void damage::activate_plant(object::plant& p) {
         return;
 
     case plant_type::cherry_bomb:
-        take_instant_kill(p.row, x, y, 115, 1, true, p.get_attack_flags());
+        take_instant_kill(p.row, x, y, 115, 1, true, p.get_attack_flags(), p.uuid);
         plant_factory.destroy(p);
         return;
 
     case plant_type::doomshroom:
-        take_instant_kill(p.row, x, y, 250, 3, true, p.get_attack_flags());
+        take_instant_kill(p.row, x, y, 250, 3, true, p.get_attack_flags(), p.uuid);
 
         for (auto& other : scene.plants) {
             if (other.row == p.row && other.col == p.col) {
@@ -417,7 +417,7 @@ void damage::activate_plant(object::plant& p) {
         plant_factory.destroy(p);
         return;
 
-    case plant_type::jalapeno:
+    case plant_type::jalapeno:    
         for (auto& z : scene.zombies) {
             if (z.row != p.row || !can_be_attacked(z, flags)) {
                 continue;
@@ -430,6 +430,9 @@ void damage::activate_plant(object::plant& p) {
             }
 
             take_ash_attack(z);
+            if (z.hit_by_ash.size < 4) {
+                z.hit_by_ash.arr[z.hit_by_ash.size++] = p.uuid;
+            }
         }
 
         for (auto& item : scene.griditems) {
@@ -480,7 +483,7 @@ void damage::activate_plant(object::plant& p) {
         return;
 
     case plant_type::potato_mine:
-        take_instant_kill(p.row, x, y, 60, 0, 0, p.get_attack_flags());
+        take_instant_kill(p.row, x, y, 60, 0, 0, p.get_attack_flags(), p.uuid);
         plant_factory.destroy(p);
         return;
 
@@ -548,7 +551,7 @@ void damage::take_instant_kill(
     int grid_radius,
     bool is_ash_attack,
     unsigned char flags,
-    uint64_t from_plant)
+    int from_plant)
 {
     for (auto& z : scene.zombies) {
         if (!can_be_attacked(z, flags)) {
@@ -562,8 +565,8 @@ void damage::take_instant_kill(
             rect.is_overlap_with_circle(x, y, radius))
         {
             if (is_ash_attack) {
-                if (from_plant != -1 && z.hit_by_cob.size < 4) {
-                    z.hit_by_cob.arr[z.hit_by_cob.size++] = from_plant;
+                if (from_plant != -1 && z.hit_by_ash.size < 4) {
+                    z.hit_by_ash.arr[z.hit_by_ash.size++] = from_plant;
                 }
                 take_ash_attack(z);
             } else {

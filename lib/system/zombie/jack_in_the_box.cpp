@@ -55,7 +55,8 @@ void zombie_jack_in_the_box::update(zombie &z) {
                     attack_flags::lurking_snorkel |
                     attack_flags::flying_balloon |
                     attack_flags::ground |
-                    0x8);
+                    0x8,
+                    z.uuid);
             }
             else {
                 damage(scene).take_instant_kill(
@@ -72,7 +73,8 @@ void zombie_jack_in_the_box::update(zombie &z) {
                     attack_flags::lurking_snorkel |
                     attack_flags::flying_balloon |
                     attack_flags::ground |
-                    0x8);
+                    0x8,
+                    z.uuid);
 
                 kill_plants(z, x, y);
             }

@@ -146,7 +146,7 @@ public:
     struct {
         int arr[4];
         int size;
-    } hit_by_cob;
+    } hit_by_ash;
 
     zombie_type type;
     zombie_status status;

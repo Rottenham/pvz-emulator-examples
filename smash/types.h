@@ -114,7 +114,7 @@ struct GigaInfo {
     int spawn_wave;
     int spawn_tick;
     int alive_time;
-    std::unordered_set<int> hit_by_cob;
+    std::unordered_set<int> hit_by_ash;
     std::unordered_set<int> attempted_smashes;
     std::unordered_set<int> ignored_smashes;
 };

@@ -54,9 +54,9 @@ void insert_spawn(std::vector<Op>& ops, Info& info, int tick, int wave, int giga
             if (zombie.ptr && zombie.ptr->uuid == zombie.uuid) {
                 giga_info.alive_time = giga_info.zombie.ptr->time_since_spawn;
 
-                giga_info.hit_by_cob.clear();
-                for (int i = 0; i < zombie.ptr->hit_by_cob.size; i++) {
-                    giga_info.hit_by_cob.insert(zombie.ptr->hit_by_cob.arr[i]);
+                giga_info.hit_by_ash.clear();
+                for (int i = 0; i < zombie.ptr->hit_by_ash.size; i++) {
+                    giga_info.hit_by_ash.insert(zombie.ptr->hit_by_ash.arr[i]);
                 }
 
                 giga_info.attempted_smashes.clear();
@@ -294,8 +294,10 @@ std::vector<Op> load_config(const Config& config, Info& info)
     ops.reserve(config.setting.op_count);
 
     int base_tick = 0;
-    insert_setup(ops, base_tick, config.setting.protect_positions);
+    int latest_effect_time = 0;
     auto giga_rows = get_giga_rows(config);
+
+    insert_setup(ops, base_tick, config.setting.protect_positions);
     for (int i = 0; i < config.waves.size(); i++) {
         const int wave_num = i + 1;
         const auto& wave = config.waves[i];
@@ -309,16 +311,21 @@ std::vector<Op> load_config(const Config& config, Info& info)
         }
 
         for (const auto& action : wave.actions) {
+            int effect_time = base_tick;
             if (auto a = std::get_if<Cob>(&action)) {
                 insert_cob(ops, info, base_tick + a->time, wave_num, a,
                     is_backyard(config.setting.scene_type));
+                effect_time += a->time + 3;
             } else if (auto a = std::get_if<FixedFodder>(&action)) {
                 insert_fixed_fodder(ops, info, base_tick + a->time, wave_num, a);
+                effect_time += std::max(a->time, a->shovel_time);
             } else if (auto a = std::get_if<SmartFodder>(&action)) {
                 insert_smart_fodder(ops, info, base_tick + a->time, wave_num, a);
+                effect_time += std::max(a->time, a->shovel_time);
             } else {
                 assert(false && "unreachable");
             }
+            latest_effect_time = std::max(latest_effect_time, effect_time);
         }
 
         base_tick += wave.wave_length;
@@ -326,7 +333,9 @@ std::vector<Op> load_config(const Config& config, Info& info)
 
     std::stable_sort(
         ops.begin(), ops.end(), [](const Op& a, const Op& b) { return a.tick < b.tick; });
-    insert_spawn(ops, info, ops.back().tick + 1, static_cast<int>(config.waves.size()) + 1, 0, {}); // make sure giga info is synced at the end
+    insert_spawn(ops, info, std::max(base_tick + 1, latest_effect_time + 1),
+        static_cast<int>(config.waves.size()) + 1, 0,
+        {}); // make sure giga info is synced at the end
 
     return ops;
 }

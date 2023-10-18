@@ -11,7 +11,7 @@ void zombie_base::init(object::zombie &z, zombie_type type, unsigned int row) {
     z.uuid = get_uuid();
     z.attempted_smashes.size = 0;
     z.ignored_smashes.size = 0;
-    z.hit_by_cob.size = 0;
+    z.hit_by_ash.size = 0;
 
     z.type = type;
 

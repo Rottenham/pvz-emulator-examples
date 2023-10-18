@@ -127,11 +127,11 @@ void read_setting(const rapidjson::Value& val, Setting& setting)
     for (auto it = val.MemberBegin(); it != val.MemberEnd(); it++) {
         if (strcmp(it->name.GetString(), "scene") == 0) {
             std::string scene = it->value.GetString();
-            if (scene == "NE") {
+            if (scene == "NE" || scene == "DE") {
                 setting.scene_type = pvz_emulator::object::scene_type::night;
-            } else if (scene == "FE") {
+            } else if (scene == "FE" || scene == "PE") {
                 setting.scene_type = pvz_emulator::object::scene_type::fog;
-            } else if (scene == "ME") {
+            } else if (scene == "ME" || scene == "RE") {
                 setting.scene_type = pvz_emulator::object::scene_type::moon_night;
             } else {
                 assert(false && "unreachable");

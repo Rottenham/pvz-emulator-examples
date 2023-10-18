@@ -36,7 +36,7 @@ class zombie;
 
 class projectile {
 public:
-    uint64_t from_plant;
+    int from_plant;
     projectile_type type;
     projectile_motion_type motion_type;
 
