@@ -7,19 +7,19 @@
 
 #include <mutex>
 
-using namespace pvz_emulator;
-using namespace pvz_emulator::object;
+/***** 配置部分开始 *****/
 
-const std::string OUTPUT_FILE = "pos_test";
-
-const int TOTAL_WAVE_NUM = 10240;
-const int THREAD_NUM = 32;            // if not sure, use number of CPU cores
-const int ZOMBIE_NUM_PER_WAVE = 1000; // must not exceed 1024
+const int TOTAL_WAVE_NUM = 10000;
 const int START_TICK = 0;
 const int END_TICK = 3000;
 const std::vector<zombie_type> ZOMBIE_TYPES = {zombie_type::gargantuar};
 const bool OUTPUT_AS_INT
     = true; // if true, output float * 32768, which is guaranteed to be an integer when >= 256
+
+/***** 配置部分结束 *****/
+
+using namespace pvz_emulator;
+using namespace pvz_emulator::object;
 
 std::mutex mtx;
 
@@ -39,7 +39,7 @@ void test_one(const zombie_type& type, world& w, int wave_num_per_thread)
         w.reset();
         w.scene.stop_spawn = true;
 
-        for (int i = 0; i < ZOMBIE_NUM_PER_WAVE; i++) {
+        for (int i = 0; i < 1000; i++) {
             w.zombie_factory.create(type);
         }
         run(w, START_TICK);
@@ -67,7 +67,7 @@ int main()
 {
     auto start = std::chrono::high_resolution_clock::now();
     ::system("chcp 65001 > nul");
-    auto file = open_csv(OUTPUT_FILE).first;
+    auto file = open_csv("pos_test").first;
 
     for (int i = 0; i < 33; ++i) {
         for (int j = 0; j < (END_TICK - START_TICK + 1); ++j) {
@@ -77,7 +77,7 @@ int main()
     }
 
     std::vector<std::thread> threads;
-    for (const auto& repeat : assign_repeat(TOTAL_WAVE_NUM, THREAD_NUM)) {
+    for (const auto& repeat : assign_repeat(TOTAL_WAVE_NUM, std::thread::hardware_concurrency())) {
         threads.emplace_back([repeat]() {
             world w(scene_type::fog);
             for (const auto& zombie_type : ZOMBIE_TYPES) {

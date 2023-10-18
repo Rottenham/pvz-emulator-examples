@@ -6,14 +6,17 @@
 #include "refresh/simulate_summon.h"
 #include "world.h"
 
-using namespace pvz_emulator;
-using namespace pvz_emulator::object;
+/***** 配置部分开始 *****/
 
-const std::string OUTPUT_FILE = "refresh_test";
 const int COB_TIME = 225;
 const int TOTAL_ROUND_NUM = 1000;
 const int WAVE_PER_ROUND = 20;
 const bool ASSUME_ACTIVATE = true;
+
+/***** 配置部分结束 *****/
+
+using namespace pvz_emulator;
+using namespace pvz_emulator::object;
 
 double hp_ratio[TOTAL_ROUND_NUM + 1][WAVE_PER_ROUND + 1];
 double accident_rate[TOTAL_ROUND_NUM + 1][WAVE_PER_ROUND + 1];
@@ -53,7 +56,7 @@ int main(void)
 {
     auto start = std::chrono::high_resolution_clock::now();
     ::system("chcp 65001 > nul");
-    auto file = open_csv(OUTPUT_FILE).first;
+    auto file = open_csv("refresh_test").first;
     init_rnd();
 
     std::atomic<int> i = 0;
