@@ -42,6 +42,27 @@ void validate_config(const Config& config)
     }
 }
 
+bool contains_smart_fodder(const Config& config)
+{
+    for (const auto& wave : config.waves) {
+        for (const auto& action : wave.actions) {
+            if (std::holds_alternative<_SmashInternal::SmartFodder>(action)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+int get_giga_total(const Config& config)
+{
+    if (contains_smart_fodder(config)) {
+        return 5 * static_cast<int>(config.waves.size());
+    } else {
+        return 1000;
+    }
+}
+
 double calc_smash_rate(const Config& config, int smashed_garg_count, int total_garg_count)
 {
     int total_garg_rows = is_backyard(config.setting.scene_type) ? 4 : 5;
@@ -49,14 +70,14 @@ double calc_smash_rate(const Config& config, int smashed_garg_count, int total_g
         * (static_cast<double>(config.setting.protect_positions.size()) / total_garg_rows);
 }
 
-void test_one(const Config& config, int repeat)
+void test_one(const Config& config, int repeat, int giga_total)
 {
     world w(config.setting.scene_type);
     Info info;
     RawTable local_raw_table;
 
     for (int r = 0; r < repeat; r++) {
-        auto ops = load_config(config, info);
+        auto ops = load_config(config, info, giga_total);
 
         w.scene.reset();
         w.scene.stop_spawn = true;
@@ -93,13 +114,15 @@ int main(int argc, char* argv[])
 
     auto config = read_json(config_file);
     validate_config(config);
-    if (config.setting.giga_total != 1000) {
-        total_repeat_num = static_cast<int>(total_repeat_num * 1000.0 / config.setting.giga_total);
+    auto giga_total = get_giga_total(config);
+    if (giga_total != 1000) {
+        total_repeat_num = static_cast<int>(total_repeat_num * 1000.0 / giga_total);
     }
 
     std::vector<std::thread> threads;
     for (const auto& repeat : assign_repeat(total_repeat_num, thread_num)) {
-        threads.emplace_back([config, repeat]() { test_one(config, repeat); });
+        threads.emplace_back(
+            [config, repeat, giga_total]() { test_one(config, repeat, giga_total); });
     }
     for (auto& t : threads) {
         t.join();
@@ -123,11 +146,11 @@ int main(int argc, char* argv[])
     file << "\n";
 
     for (const auto& protect_position : config.setting.protect_positions) {
-        file << protect_position.row << "路";
+        file << protect_position.row << "路" << protect_position.col;
         if (protect_position.type == _SmashInternal::Setting::ProtectPos::Type::Cob) {
-            file << protect_position.col + 1 << "炮,";
+            file << "炮,";
         } else {
-            file << protect_position.col << "普通,";
+            file << "普通,";
         }
         for (const auto& wave : summary.waves) {
             const auto& garg_summary = summary.garg_summary_by_wave.at(wave);
@@ -142,7 +165,7 @@ int main(int argc, char* argv[])
     }
 
     Info info;
-    load_config(config, info);
+    load_config(config, info, 1000);
 
     file << "\n出生波数,每波砸率,砸炮数,总数,";
     auto prev_wave = -1;

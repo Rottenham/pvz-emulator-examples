@@ -15,30 +15,31 @@ struct CobPos {
     float col;
 };
 
-struct Cob {
-    std::string symbol;
-    int time;
-    std::vector<CobPos> positions;
-
-    std::string desc() const
-    {
-        std::stringstream ss;
-        ss << time << symbol;
-        return ss.str();
-    }
-};
-
-struct Jalapeno { };
-
 enum class Fodder {
     Normal,
     Puff,
     Pot,
 };
 
-struct FodderPos {
+struct CardPos {
     int row;
     int col;
+};
+
+struct Cob {
+    std::string symbol;
+    int time;
+    std::vector<CobPos> positions;
+
+    std::string desc() const { return std::to_string(time) + symbol; }
+};
+
+struct Jalapeno {
+    std::string symbol;
+    int time;
+    CardPos position;
+
+    std::string desc() const { return std::to_string(time) + symbol; }
 };
 
 struct FixedFodder {
@@ -46,7 +47,7 @@ struct FixedFodder {
     int time;
     int shovel_time = -1;
     std::vector<Fodder> fodders;
-    std::vector<FodderPos> positions;
+    std::vector<CardPos> positions;
 
     std::string desc() const
     {
@@ -65,7 +66,7 @@ struct SmartFodder {
     int time;
     int shovel_time = -1;
     std::vector<Fodder> fodders;
-    std::vector<FodderPos> positions;
+    std::vector<CardPos> positions;
     int choose;
     std::unordered_set<int> waves;
 
@@ -85,7 +86,7 @@ struct SmartFodder {
     }
 };
 
-using Action = std::variant<Cob, FixedFodder, SmartFodder>;
+using Action = std::variant<Cob, Jalapeno, FixedFodder, SmartFodder>;
 
 struct Wave {
     std::vector<int> ice_times;
@@ -102,9 +103,6 @@ struct Setting {
 
     pvz_emulator::object::scene_type scene_type = pvz_emulator::object::scene_type::fog;
     std::vector<ProtectPos> protect_positions;
-    int giga_total = 1000;
-    int op_count = 2; // initial setup, and final clean up
-    int action_count = 0;
 };
 
 struct GigaInfo {

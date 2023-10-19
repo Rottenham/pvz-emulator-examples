@@ -33,10 +33,12 @@ void insert_setup(
 {
     auto f = [protect_positions](pvz_emulator::world& w) {
         for (const auto& pos : protect_positions) {
-            auto& p = w.plant_factory.create((pos.type == Setting::ProtectPos::Type::Cob)
-                    ? pvz_emulator::object::plant_type::cob_cannon
-                    : pvz_emulator::object::plant_type::wallnut,
-                pos.row - 1, pos.col - 1);
+            auto plant_type = (pos.type == Setting::ProtectPos::Type::Cob)
+                ? pvz_emulator::object::plant_type::cob_cannon
+                : pvz_emulator::object::plant_type::wallnut;
+            auto col = (pos.type == Setting::ProtectPos::Type::Cob) ? pos.col - 2 : pos.col - 1;
+
+            auto& p = w.plant_factory.create(plant_type, pos.row - 1, col);
             p.ignore_garg_smash = true;
         }
     };
@@ -107,12 +109,28 @@ void insert_cob(
     }
 }
 
-pvz_emulator::object::plant& plant(pvz_emulator::world& w, const Fodder& card, const FodderPos& pos)
+void insert_jalapeno(std::vector<Op>& ops, Info& info, int tick, int wave, const Jalapeno* jalapeno)
+{
+    info.action_infos.push_back(
+        {_SmashInternal::ActionInfo::Type::Ash, wave, tick, jalapeno->desc(), {}});
+    auto idx = info.action_infos.size() - 1;
+    auto pos = jalapeno->position;
+
+    auto f = [&info, idx, pos](pvz_emulator::world& w) {
+        auto& p = w.plant_factory.create(
+            pvz_emulator::object::plant_type::jalapeno, pos.row - 1, pos.col - 1);
+        info.action_infos[idx].plants.push_back({&p, p.uuid});
+    };
+    ops.push_back({tick - 100, f});
+}
+
+pvz_emulator::object::plant& plant_fodder(
+    pvz_emulator::world& w, const Fodder& fodder, const CardPos& pos)
 {
     auto plant_type = pvz_emulator::object::plant_type::wallnut;
-    if (card == Fodder::Puff) {
+    if (fodder == Fodder::Puff) {
         plant_type = pvz_emulator::object::plant_type::sunshroom;
-    } else if (card == Fodder::Pot) {
+    } else if (fodder == Fodder::Pot) {
         plant_type = pvz_emulator::object::plant_type::flower_pot;
     }
     return w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
@@ -124,14 +142,14 @@ void insert_fixed_fodder(
     info.action_infos.push_back(
         {_SmashInternal::ActionInfo::Type::Fodder, wave, tick, fodder->desc(), {}});
     auto idx = info.action_infos.size() - 1;
-    auto cards = fodder->fodders;
+    auto fodders = fodder->fodders;
     auto positions = fodder->positions;
 
-    auto f = [&info, idx, cards, positions](pvz_emulator::world& w) {
-        assert(cards.size() == positions.size());
+    auto f = [&info, idx, fodders, positions](pvz_emulator::world& w) {
+        assert(fodders.size() == positions.size());
 
-        for (int i = 0; i < cards.size(); i++) {
-            auto& p = plant(w, cards[i], positions[i]);
+        for (int i = 0; i < fodders.size(); i++) {
+            auto& p = plant_fodder(w, fodders[i], positions[i]);
             info.action_infos[idx].plants.push_back({&p, p.uuid});
         }
     };
@@ -149,7 +167,7 @@ void insert_fixed_fodder(
     }
 }
 
-std::vector<int> choose_by_pos(pvz_emulator::world& w, const std::vector<FodderPos>& positions,
+std::vector<int> choose_by_pos(pvz_emulator::world& w, const std::vector<CardPos>& positions,
     int choose, const std::unordered_set<int>& waves)
 {
     const int GIGA_X_MAX = 1000;
@@ -190,7 +208,7 @@ std::vector<int> choose_by_pos(pvz_emulator::world& w, const std::vector<FodderP
     return res;
 }
 
-std::vector<int> choose_by_num(pvz_emulator::world& w, const std::vector<FodderPos>& positions,
+std::vector<int> choose_by_num(pvz_emulator::world& w, const std::vector<CardPos>& positions,
     int choose, const std::unordered_set<int>& waves)
 {
     std::array<int, 6> ladder_jack_count = {};
@@ -236,13 +254,13 @@ void insert_smart_fodder(
         {_SmashInternal::ActionInfo::Type::Fodder, wave, tick, fodder->desc(), {}});
     auto idx = info.action_infos.size() - 1;
     auto symbol = fodder->symbol;
-    auto cards = fodder->fodders;
+    auto fodders = fodder->fodders;
     auto positions = fodder->positions;
     auto choose = fodder->choose;
     auto waves = fodder->waves;
 
-    auto f = [&info, idx, symbol, cards, positions, choose, waves](pvz_emulator::world& w) {
-        assert(cards.size() == positions.size());
+    auto f = [&info, idx, symbol, fodders, positions, choose, waves](pvz_emulator::world& w) {
+        assert(fodders.size() == positions.size());
 
         std::vector<int> chosen;
         if (symbol == "C") {
@@ -259,7 +277,7 @@ void insert_smart_fodder(
         }
 
         for (int i : chosen) {
-            auto& p = plant(w, cards[i], positions[i]);
+            auto& p = plant_fodder(w, fodders[i], positions[i]);
             info.action_infos[idx].plants.push_back({&p, p.uuid});
         }
     };
@@ -279,19 +297,17 @@ void insert_smart_fodder(
 
 } // namespace _SmashInternal
 
-std::vector<Op> load_config(const Config& config, Info& info)
+std::vector<Op> load_config(const Config& config, Info& info, int giga_total)
 {
     using namespace pvz_emulator::object;
     using namespace _SmashInternal;
 
     info = {};
     info.protect_positions.reserve(config.setting.protect_positions.size());
-    info.giga_infos.reserve(config.setting.giga_total);
-    info.action_infos.reserve(config.setting.action_count);
+    info.giga_infos.reserve(giga_total);
     info.gen.seed(static_cast<unsigned>(std::random_device {}()));
 
     std::vector<Op> ops;
-    ops.reserve(config.setting.op_count);
 
     int base_tick = 0;
     int latest_effect_time = 0;
@@ -303,8 +319,7 @@ std::vector<Op> load_config(const Config& config, Info& info)
         const auto& wave = config.waves[i];
 
         insert_spawn(ops, info, base_tick, wave_num,
-            std::max(config.setting.giga_total / static_cast<int>(config.waves.size()), 1),
-            giga_rows);
+            std::max(giga_total / static_cast<int>(config.waves.size()), 1), giga_rows);
 
         for (const auto& ice_time : wave.ice_times) {
             insert_ice(ops, base_tick + ice_time - 100);
@@ -316,6 +331,9 @@ std::vector<Op> load_config(const Config& config, Info& info)
                 insert_cob(ops, info, base_tick + a->time, wave_num, a,
                     is_backyard(config.setting.scene_type));
                 effect_time += a->time + 3;
+            } else if (auto a = std::get_if<Jalapeno>(&action)) {
+                insert_jalapeno(ops, info, base_tick + a->time, wave_num, a);
+                effect_time += a->time;
             } else if (auto a = std::get_if<FixedFodder>(&action)) {
                 insert_fixed_fodder(ops, info, base_tick + a->time, wave_num, a);
                 effect_time += std::max(a->time, a->shovel_time);

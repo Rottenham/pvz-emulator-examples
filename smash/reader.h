@@ -30,19 +30,19 @@ void read_cards(
     }
 }
 
-void read_fodder_positions(const rapidjson::GenericArray<true, rapidjson::Value> pos_vals,
-    std::vector<FodderPos>& positions)
+void read_fodder_positions(
+    const rapidjson::GenericArray<true, rapidjson::Value> pos_vals, std::vector<CardPos>& positions)
 {
     positions.reserve(pos_vals.Size());
     for (const auto& pos_val : pos_vals) {
-        FodderPos pos;
+        CardPos pos;
         pos.row = pos_val["row"].GetInt();
         pos.col = pos_val["col"].GetInt();
         positions.push_back(pos);
     }
 }
 
-void read_action(Config& config, const rapidjson::Value& val, Action& action)
+void read_action(const rapidjson::Value& val, Action& action)
 {
     std::string op = val["op"].GetString();
 
@@ -59,9 +59,17 @@ void read_action(Config& config, const rapidjson::Value& val, Action& action)
             pos.col = pos_val["col"].GetFloat();
             cob.positions.push_back(pos);
         }
-        action = cob;
 
-        config.setting.op_count += positions.Size();
+        action = cob;
+    } else if (op == "Jalapeno") {
+        Jalapeno jalapeno;
+
+        jalapeno.symbol = val["symbol"].GetString();
+        jalapeno.time = val["time"].GetInt();
+        jalapeno.position.row = val["position"]["row"].GetInt();
+        jalapeno.position.col = val["position"]["col"].GetInt();
+
+        action = jalapeno;
     } else if (op == "FixedFodder") {
         FixedFodder fodder;
 
@@ -73,9 +81,8 @@ void read_action(Config& config, const rapidjson::Value& val, Action& action)
         }
         read_cards(val["fodders"].GetArray(), fodder.fodders);
         read_fodder_positions(val["positions"].GetArray(), fodder.positions);
-        action = fodder;
 
-        config.setting.op_count += shovel_time_val != val.MemberEnd() ? 2 : 1;
+        action = fodder;
     } else if (op == "SmartFodder") {
         SmartFodder fodder;
         const auto waves = val["waves"].GetArray();
@@ -93,15 +100,14 @@ void read_action(Config& config, const rapidjson::Value& val, Action& action)
         for (const auto& wave_val : waves) {
             fodder.waves.insert(wave_val.GetInt());
         }
+        
         action = fodder;
-
-        config.setting.op_count += shovel_time_val != val.MemberEnd() ? 2 : 1;
     } else {
         assert(false && "unreachable");
     }
 }
 
-void read_wave(Config& config, const rapidjson::Value& val, Wave& wave)
+void read_wave(const rapidjson::Value& val, Wave& wave)
 {
     const auto ice_times = val["iceTimes"].GetArray();
     const auto actions = val["actions"].GetArray();
@@ -114,12 +120,9 @@ void read_wave(Config& config, const rapidjson::Value& val, Wave& wave)
     wave.wave_length = val["waveLength"].GetInt();
     for (const auto& action_val : actions) {
         Action action;
-        read_action(config, action_val, action);
+        read_action(action_val, action);
         wave.actions.push_back(action);
     }
-
-    config.setting.op_count += 1 + ice_times.Size();
-    config.setting.action_count += actions.Size();
 }
 
 void read_setting(const rapidjson::Value& val, Setting& setting)
@@ -158,29 +161,15 @@ void read_config(const rapidjson::Value& val, Config& config)
     config = {};
     config.waves.reserve(val.MemberCount());
 
-    bool contains_smart_fodder = false;
     for (auto it = val.MemberBegin(); it != val.MemberEnd(); it++) {
         if (strcmp(it->name.GetString(), "setting") == 0) {
             read_setting(it->value, config.setting);
         } else {
             assert(std::atoi(it->name.GetString()) == config.waves.size() + 1);
             Wave wave;
-            read_wave(config, it->value, wave);
+            read_wave(it->value, wave);
             config.waves.push_back(wave);
-
-            if (!contains_smart_fodder) {
-                for (const auto& action : wave.actions) {
-                    if (std::holds_alternative<SmartFodder>(action)) {
-                        contains_smart_fodder = true;
-                        break;
-                    }
-                }
-            }
         }
-    }
-
-    if (contains_smart_fodder) {
-        config.setting.giga_total = 5 * static_cast<int>(config.waves.size());
     }
 }
 
