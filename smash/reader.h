@@ -59,6 +59,10 @@ void read_action(const rapidjson::Value& val, Action& action)
             pos.col = pos_val["col"].GetFloat();
             cob.positions.push_back(pos);
         }
+        auto cob_col_val = val.FindMember("cobCol");
+        if (cob_col_val != val.MemberEnd()) {
+            cob.cob_col = cob_col_val->value.GetInt();
+        }
 
         action = cob;
     } else if (op == "Jalapeno") {
@@ -100,7 +104,7 @@ void read_action(const rapidjson::Value& val, Action& action)
         for (const auto& wave_val : waves) {
             fodder.waves.insert(wave_val.GetInt());
         }
-        
+
         action = fodder;
     } else {
         assert(false && "unreachable");

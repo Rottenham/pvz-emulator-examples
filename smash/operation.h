@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "common/pe.h"
+#include "constants/constants.h"
 #include "reader.h"
 
 namespace _SmashInternal {
@@ -92,19 +93,29 @@ void insert_ice(std::vector<Op>& ops, int tick)
     ops.push_back({tick, f});
 }
 
-void insert_cob(
-    std::vector<Op>& ops, Info& info, int tick, int wave, const Cob* cob, bool is_backyard)
+void insert_cob(std::vector<Op>& ops, Info& info, int tick, int wave, const Cob* cob,
+    const pvz_emulator::object::scene_type& scene_type)
 {
     info.action_infos.push_back(
         {_SmashInternal::ActionInfo::Type::Ash, wave, tick, cob->desc(), {}});
     auto idx = info.action_infos.size() - 1;
+    auto cob_col = cob->cob_col;
 
     for (const auto& pos : cob->positions) {
-        auto f = [&info, idx, pos](pvz_emulator::world& w) {
-            info.action_infos[idx].plants.push_back({nullptr, launch_cob(w, pos.row, pos.col)});
+        auto f = [&info, idx, pos, cob_col](pvz_emulator::world& w) {
+            info.action_infos[idx].plants.push_back(
+                {nullptr, launch_cob(w, pos.row, pos.col, cob_col)});
         };
 
-        int cob_fly_time = (is_backyard && (pos.row == 3 || pos.row == 4)) ? 378 : 373;
+        int cob_fly_time;
+        if (is_backyard(scene_type) && (pos.row == 3 || pos.row == 4)) {
+            cob_fly_time = 378;
+        } else if (is_roof(scene_type)) {
+            cob_fly_time = get_roof_cob_fly_time(pos.col, cob_col);
+        } else {
+            cob_fly_time = 373;
+        }
+        
         ops.push_back({tick - cob_fly_time, f});
     }
 }
@@ -328,8 +339,7 @@ std::vector<Op> load_config(const Config& config, Info& info, int giga_total)
         for (const auto& action : wave.actions) {
             int effect_time = base_tick;
             if (auto a = std::get_if<Cob>(&action)) {
-                insert_cob(ops, info, base_tick + a->time, wave_num, a,
-                    is_backyard(config.setting.scene_type));
+                insert_cob(ops, info, base_tick + a->time, wave_num, a, config.setting.scene_type);
                 effect_time += a->time + 3;
             } else if (auto a = std::get_if<Jalapeno>(&action)) {
                 insert_jalapeno(ops, info, base_tick + a->time, wave_num, a);

@@ -107,9 +107,7 @@ int main(int argc, char* argv[])
     auto config_file = get_cmd_arg(args, "f");
     auto output_file = get_cmd_arg(args, "o", "smash_test");
     auto total_repeat_num = std::stoi(get_cmd_arg(args, "r", "300"));
-    auto thread_num
-        = std::stoi(get_cmd_arg(args, "t", std::to_string(std::thread::hardware_concurrency())));
-
+    
     auto [file, full_output_file] = open_csv(output_file);
 
     auto config = read_json(config_file);
@@ -120,7 +118,7 @@ int main(int argc, char* argv[])
     }
 
     std::vector<std::thread> threads;
-    for (const auto& repeat : assign_repeat(total_repeat_num, thread_num)) {
+    for (const auto& repeat : assign_repeat(total_repeat_num, std::thread::hardware_concurrency())) {
         threads.emplace_back(
             [config, repeat, giga_total]() { test_one(config, repeat, giga_total); });
     }

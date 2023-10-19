@@ -333,6 +333,13 @@ void zombie::to_json(
     }
     writer.EndArray();
 
+    writer.Key("ignored_smashes");
+    writer.StartArray();
+    for (int i = 0; i < ignored_smashes.size; i++) {
+        writer.Int(ignored_smashes.arr[i]);
+    }
+    writer.EndArray();
+
     writer.Key("hit_by_ash");
     writer.StartArray();
     for (int i = 0; i < hit_by_ash.size; i++) {

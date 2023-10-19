@@ -54,7 +54,7 @@ void run(pvz_emulator::world& w, int ticks)
 
 // row: [1, 6]
 [[nodiscard]] std::pair<int, int> get_cob_hit_xy(const pvz_emulator::object::scene_type& scene_type,
-    int row, float col, int cob_col, int cob_row)
+    int row, double col, int cob_col, int cob_row)
 {
     using namespace pvz_emulator::object;
     if (!is_roof(scene_type)) {
@@ -131,26 +131,29 @@ void run(pvz_emulator::world& w, int ticks)
 
 // row: [1, 6]
 // col: [0.0, 10.0]
-// cob_col: [1, 8] (optional)
-// cob_row: [1, 5] (optional)
-int launch_cob(
-    pvz_emulator::world& w, unsigned int row, float col, int cob_col = -1, int cob_row = -1)
+// cob_col: [1, 8] (required for RE/ME)
+int launch_cob(pvz_emulator::world& w, unsigned int row, double col, int cob_col = -1)
 {
     using namespace pvz_emulator::object;
     assert(row >= 1 && row <= w.scene.get_max_row());
     assert(col >= 0.0 && col <= 10.0);
-    assert(cob_col == -1 || (cob_col >= 1 && cob_col <= 8));
-    assert(cob_row == -1 || (cob_row >= 1 && cob_row <= 5));
+    if (is_roof(w.scene.type)) {
+        assert((cob_col >= 1 && cob_col <= 8));
+    } else {
+        assert(cob_col == -1);
+        cob_col = 1;
+    }
 
-    auto& p = w.plant_factory.create(plant_type::cob_cannon, 1, 1);
+    int cob_row = is_backyard(w.scene.type) ? 3 : 6;
+
+    auto& p = w.plant_factory.create(plant_type::cob_cannon, cob_row - 1, cob_col - 1);
 
     p.status = plant_status::cob_cannon_launch;
     p.countdown.launch = 206;
     p.set_reanim(plant_reanim_name::anim_shooting, reanim_type::once, 12);
 
-    auto [x, y] = get_cob_hit_xy(w.scene.type, row, col, cob_col, cob_row);
-    p.cannon.x = x;
-    p.cannon.y = y;
+    p.cannon.x = static_cast<int>(std::round(col * 80.0)) - 47;
+    p.cannon.y = 120 + (row - 1) * (is_frontyard(w.scene.type) ? 100 : 85);
 
     return p.uuid;
 }

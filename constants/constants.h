@@ -4,7 +4,7 @@ namespace _constants_internal {
 
 const float DIVISOR = 32768.0;
 
-const std::array<float, 3001> garg_x_min = {
+const std::array<int, 3001> GARG_X_MIN = {
     27688960, 27678836, 27668712, 27658588, 27648464, 27638340, 27628216, 27618092, 27607968, 27597844, 27587720,
     27577596, 27567472, 27557348, 27547224, 27537100, 27526976, 27516852, 27506728, 27496604, 27486480, 27476356,
     27466232, 27456108, 27445984, 27435860, 27425736, 27415612, 27405488, 27395364, 27385240, 27375116, 27364992,
@@ -280,7 +280,7 @@ const std::array<float, 3001> garg_x_min = {
     9884410,  9877663,  9870916,  9864169,  9857422,  9850675,  9843928,  9837181,  9830434,
 };
 
-const std::array<float, 3001> garg_x_max = {
+const std::array<int, 3001> GARG_X_MAX = {
     27983872, 27977578, 27971284, 27964990, 27958696, 27952402, 27946108, 27939814, 27933520, 27927226, 27920932,
     27914638, 27908344, 27902050, 27895756, 27889462, 27883168, 27876874, 27870580, 27864286, 27857992, 27851698,
     27845404, 27839110, 27832816, 27826522, 27820228, 27813934, 27807640, 27801346, 27795052, 27788758, 27782464,
@@ -556,8 +556,27 @@ const std::array<float, 3001> garg_x_max = {
     17088676, 17081264, 17073852, 17066440, 17059028, 17051616, 17044204, 17036792, 17029380,
 };
 
+const std::array<std::pair<int, int>, 8> FLY_TIME_DATA = {
+    {{515, 359}, {499, 362}, {515, 364}, {499, 367}, {515, 369}, {499, 372}, {511, 373}, {511, 373}}};
+
 } // namespace _constants_internal
 
-float get_garg_x_min(int tick) { return _constants_internal::garg_x_min[tick] / _constants_internal::DIVISOR; }
+float get_garg_x_min(int tick) {
+  return static_cast<float>(_constants_internal::GARG_X_MIN[tick]) / _constants_internal::DIVISOR;
+}
 
-float get_garg_x_max(int tick) { return _constants_internal::garg_x_max[tick] / _constants_internal::DIVISOR; }
+float get_garg_x_max(int tick) {
+  return static_cast<float>(_constants_internal::GARG_X_MAX[tick]) / _constants_internal::DIVISOR;
+}
+
+int get_roof_cob_fly_time(double col, int cob_col) {
+  int drop_x = static_cast<int>(std::round(col * 80.0));
+  int min_drop_x = _constants_internal::FLY_TIME_DATA[cob_col - 1].first,
+      min_fly_time = _constants_internal::FLY_TIME_DATA[cob_col - 1].second;
+
+  if (drop_x >= min_drop_x) {
+    return min_fly_time;
+  } else {
+    return min_fly_time + 1 - (drop_x - (min_drop_x - 1)) / 32;
+  }
+}

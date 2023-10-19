@@ -30,6 +30,7 @@ struct Cob {
     std::string symbol;
     int time;
     std::vector<CobPos> positions;
+    int cob_col = -1;
 
     std::string desc() const { return std::to_string(time) + symbol; }
 };
