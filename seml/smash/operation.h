@@ -4,7 +4,7 @@
 
 #include "common/pe.h"
 #include "constants/constants.h"
-#include "reader.h"
+#include "smash_types.h"
 
 namespace _SmashInternal {
 
@@ -34,10 +34,9 @@ void insert_setup(
 {
     auto f = [protect_positions](pvz_emulator::world& w) {
         for (const auto& pos : protect_positions) {
-            auto plant_type = (pos.type == Setting::ProtectPos::Type::Cob)
-                ? pvz_emulator::object::plant_type::cob_cannon
-                : pvz_emulator::object::plant_type::wallnut;
-            auto col = (pos.type == Setting::ProtectPos::Type::Cob) ? pos.col - 2 : pos.col - 1;
+            auto plant_type = is_cob(pos) ? pvz_emulator::object::plant_type::cob_cannon
+                                          : pvz_emulator::object::plant_type::wallnut;
+            auto col = is_cob(pos) ? pos.col - 2 : pos.col - 1;
 
             auto& p = w.plant_factory.create(plant_type, pos.row - 1, col);
             p.ignore_garg_smash = true;
@@ -96,8 +95,7 @@ void insert_ice(std::vector<Op>& ops, int tick)
 void insert_cob(std::vector<Op>& ops, Info& info, int tick, int wave, const Cob* cob,
     const pvz_emulator::object::scene_type& scene_type)
 {
-    info.action_infos.push_back(
-        {_SmashInternal::ActionInfo::Type::Ash, wave, tick, cob->desc(), {}});
+    info.action_infos.push_back({ActionInfo::Type::Ash, wave, tick, cob->desc(), {}});
     auto idx = info.action_infos.size() - 1;
     auto cob_col = cob->cob_col;
 
@@ -115,15 +113,14 @@ void insert_cob(std::vector<Op>& ops, Info& info, int tick, int wave, const Cob*
         } else {
             cob_fly_time = 373;
         }
-        
+
         ops.push_back({tick - cob_fly_time, f});
     }
 }
 
 void insert_jalapeno(std::vector<Op>& ops, Info& info, int tick, int wave, const Jalapeno* jalapeno)
 {
-    info.action_infos.push_back(
-        {_SmashInternal::ActionInfo::Type::Ash, wave, tick, jalapeno->desc(), {}});
+    info.action_infos.push_back({ActionInfo::Type::Ash, wave, tick, jalapeno->desc(), {}});
     auto idx = info.action_infos.size() - 1;
     auto pos = jalapeno->position;
 
@@ -150,8 +147,7 @@ pvz_emulator::object::plant& plant_fodder(
 void insert_fixed_fodder(
     std::vector<Op>& ops, Info& info, int tick, int wave, const FixedFodder* fodder)
 {
-    info.action_infos.push_back(
-        {_SmashInternal::ActionInfo::Type::Fodder, wave, tick, fodder->desc(), {}});
+    info.action_infos.push_back({ActionInfo::Type::Fodder, wave, tick, fodder->desc(), {}});
     auto idx = info.action_infos.size() - 1;
     auto fodders = fodder->fodders;
     auto positions = fodder->positions;
@@ -261,8 +257,7 @@ std::vector<int> choose_by_num(pvz_emulator::world& w, const std::vector<CardPos
 void insert_smart_fodder(
     std::vector<Op>& ops, Info& info, int tick, int wave, const SmartFodder* fodder)
 {
-    info.action_infos.push_back(
-        {_SmashInternal::ActionInfo::Type::Fodder, wave, tick, fodder->desc(), {}});
+    info.action_infos.push_back({ActionInfo::Type::Fodder, wave, tick, fodder->desc(), {}});
     auto idx = info.action_infos.size() - 1;
     auto symbol = fodder->symbol;
     auto fodders = fodder->fodders;

@@ -1,8 +1,10 @@
 #pragma once
 
-#include "types.h"
-
 #include <set>
+
+#include "smash_types.h"
+
+namespace _SmashInternal {
 
 enum OpState : char {
     Dead,
@@ -32,30 +34,27 @@ struct Data {
     std::array<int, 6> smashed_garg_count_by_row = {};
 };
 
-using RawTable = std::unordered_map<OpStates, Data, OpStatesHash>;
-using Table = std::vector<std::pair<OpStates, Data>>;
-
 struct Summary {
-    std::set<int> waves;
     struct GargSummary {
         int total_garg_count = 0;
         int smashed_garg_count = 0;
         std::array<int, 6> smashed_garg_count_by_row = {};
     };
+
+    std::set<int> waves;
     std::unordered_map<int, GargSummary> garg_summary_by_wave;
 };
 
-OpState categorize(
-    const _SmashInternal::ActionInfo& action_info, const _SmashInternal::GigaInfo& garg_info)
+OpState categorize(const ActionInfo& action_info, const GigaInfo& garg_info)
 {
     if (action_info.tick < garg_info.spawn_tick) {
         return OpState::NotBorn;
     } else if (action_info.tick > garg_info.spawn_tick + garg_info.alive_time) {
         return OpState::Dead;
-    } else if (action_info.type == _SmashInternal::ActionInfo::Type::Ash
-        || action_info.type == _SmashInternal::ActionInfo::Type::Fodder) {
+    } else if (action_info.type == ActionInfo::Type::Ash
+        || action_info.type == ActionInfo::Type::Fodder) {
 
-        auto effective_uuids = action_info.type == _SmashInternal::ActionInfo::Type::Ash
+        auto effective_uuids = action_info.type == ActionInfo::Type::Ash
             ? garg_info.hit_by_ash
             : garg_info.attempted_smashes;
 
@@ -71,13 +70,19 @@ OpState categorize(
     }
 }
 
+} // namespace _SmashInternal
+
+using RawTable = std::unordered_map<_SmashInternal::OpStates, _SmashInternal::Data,
+    _SmashInternal::OpStatesHash>;
+using Table = std::vector<std::pair<_SmashInternal::OpStates, _SmashInternal::Data>>;
+
 void update_raw_table(const Info& info, RawTable& raw_table)
 {
     for (const auto& garg_info : info.giga_infos) {
-        OpStates op_states;
+        _SmashInternal::OpStates op_states;
         op_states.reserve(info.action_infos.size());
         for (const auto& action_info : info.action_infos) {
-            op_states.push_back(categorize(action_info, garg_info));
+            op_states.push_back(_SmashInternal::categorize(action_info, garg_info));
         }
 
         assert(op_states.size() == info.action_infos.size());
@@ -105,7 +110,7 @@ void merge_raw_table(const RawTable& src, RawTable& dst)
     }
 }
 
-std::pair<Table, Summary> generate_table_and_summary(const RawTable& raw_table)
+std::pair<Table, _SmashInternal::Summary> generate_table_and_summary(const RawTable& raw_table)
 {
     Table table(raw_table.begin(), raw_table.end());
     std::sort(table.begin(), table.end(), [](const auto& a, const auto& b) {
@@ -119,7 +124,7 @@ std::pair<Table, Summary> generate_table_and_summary(const RawTable& raw_table)
         return false;
     });
 
-    Summary summary;
+    _SmashInternal::Summary summary;
     for (const auto& [op_states, data] : table) {
         summary.waves.insert(data.wave);
 
@@ -134,16 +139,16 @@ std::pair<Table, Summary> generate_table_and_summary(const RawTable& raw_table)
     return {table, summary};
 }
 
-std::string op_state_to_string(const OpState& op_state)
+std::string op_state_to_string(const _SmashInternal::OpState& op_state)
 {
     switch (op_state) {
-    case OpState::NotBorn:
+    case _SmashInternal::OpState::NotBorn:
         return "";
-    case OpState::Hit:
+    case _SmashInternal::OpState::Hit:
         return "HIT";
-    case OpState::Miss:
+    case _SmashInternal::OpState::Miss:
         return "MISS";
-    case OpState::Dead:
+    case _SmashInternal::OpState::Dead:
         return "";
     default:
         assert(false && "unreachable");

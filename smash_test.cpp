@@ -3,7 +3,7 @@
 
 #include "common/io.h"
 #include "common/pe.h"
-#include "smash/lib.h"
+#include "seml/smash/lib.h"
 #include "world.h"
 
 #include <mutex>
@@ -19,6 +19,11 @@ void validate_config(const Config& config)
 {
     if (config.waves.empty()) {
         std::cerr << "必须提供操作" << std::endl;
+        exit(1);
+    }
+
+    if (config.waves.size() > 200) {
+        std::cerr << "波数不能超过 200" << std::endl;
         exit(1);
     }
 
@@ -46,7 +51,7 @@ bool contains_smart_fodder(const Config& config)
 {
     for (const auto& wave : config.waves) {
         for (const auto& action : wave.actions) {
-            if (std::holds_alternative<_SmashInternal::SmartFodder>(action)) {
+            if (std::holds_alternative<SmartFodder>(action)) {
                 return true;
             }
         }
@@ -107,7 +112,7 @@ int main(int argc, char* argv[])
     auto config_file = get_cmd_arg(args, "f");
     auto output_file = get_cmd_arg(args, "o", "smash_test");
     auto total_repeat_num = std::stoi(get_cmd_arg(args, "r", "300"));
-    
+
     auto [file, full_output_file] = open_csv(output_file);
 
     auto config = read_json(config_file);
@@ -118,7 +123,8 @@ int main(int argc, char* argv[])
     }
 
     std::vector<std::thread> threads;
-    for (const auto& repeat : assign_repeat(total_repeat_num, std::thread::hardware_concurrency())) {
+    for (const auto& repeat :
+        assign_repeat(total_repeat_num, std::thread::hardware_concurrency())) {
         threads.emplace_back(
             [config, repeat, giga_total]() { test_one(config, repeat, giga_total); });
     }
@@ -145,7 +151,7 @@ int main(int argc, char* argv[])
 
     for (const auto& protect_position : config.setting.protect_positions) {
         file << protect_position.row << "路" << protect_position.col;
-        if (protect_position.type == _SmashInternal::Setting::ProtectPos::Type::Cob) {
+        if (is_cob(protect_position)) {
             file << "炮,";
         } else {
             file << "普通,";

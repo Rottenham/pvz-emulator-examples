@@ -7,10 +7,9 @@
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+#include "reader_types.h"
 
-#include "types.h"
-
-namespace _SmashInternal {
+namespace _SemlInternal {
 
 void read_cards(
     const rapidjson::GenericArray<true, rapidjson::Value> card_vals, std::vector<Fodder>& cards)
@@ -177,7 +176,7 @@ void read_config(const rapidjson::Value& val, Config& config)
     }
 }
 
-} // namespace _SmashInternal
+} // namespace _SemlInternal
 
 Config read_json(const std::string& filename)
 {
@@ -201,7 +200,7 @@ Config read_json(const std::string& filename)
     }
 
     Config config;
-    _SmashInternal::read_config(doc, config);
+    _SemlInternal::read_config(doc, config);
 
     return config;
 }
