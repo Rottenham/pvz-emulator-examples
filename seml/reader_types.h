@@ -91,6 +91,7 @@ struct Wave {
     std::vector<int> ice_times;
     int wave_length;
     std::vector<Action> actions;
+    int start_tick = -1;
 };
 
 struct Setting {

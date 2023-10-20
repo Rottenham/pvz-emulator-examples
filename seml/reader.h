@@ -126,6 +126,11 @@ void read_wave(const rapidjson::Value& val, Wave& wave)
         read_action(action_val, action);
         wave.actions.push_back(action);
     }
+
+    auto start_tick_val = val.FindMember("startTick");
+    if (start_tick_val != val.MemberEnd()) {
+        wave.start_tick = start_tick_val->value.GetInt();
+    }
 }
 
 void read_setting(const rapidjson::Value& val, Setting& setting)
