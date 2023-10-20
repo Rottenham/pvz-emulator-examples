@@ -87,11 +87,26 @@ struct SmartFodder {
 
 using Action = std::variant<Cob, Jalapeno, FixedFodder, SmartFodder>;
 
+std::string desc(const Action& action)
+{
+    if (auto a = std::get_if<Cob>(&action)) {
+        return a->desc();
+    } else if (auto a = std::get_if<Jalapeno>(&action)) {
+        return a->desc();
+    } else if (auto a = std::get_if<FixedFodder>(&action)) {
+        return a->desc();
+    } else if (auto a = std::get_if<SmartFodder>(&action)) {
+        return a->desc();
+    } else {
+        assert(false && "unreachable");
+    }
+}
+
 struct Wave {
     std::vector<int> ice_times;
     int wave_length;
     std::vector<Action> actions;
-    int start_tick = -1;
+    int start_tick = 0;
 };
 
 struct Setting {

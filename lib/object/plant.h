@@ -200,11 +200,12 @@ public:
     bool ignore_garg_smash;
     bool ignore_jack_explode;
     
-    struct {
+    struct explode_info {
         unsigned int from_upper;
         unsigned int from_same;
         unsigned int from_lower;
-    } explode;
+    };
+    explode_info explode;
 
     static const std::array<unsigned int, 49> EFFECT_INTERVAL_TABLE;
     static const std::array<bool, 49> CAN_ATTACK_TABLE;

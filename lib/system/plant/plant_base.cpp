@@ -62,9 +62,7 @@ void plant_base::init(
     p.ignore_garg_smash = false;
     p.ignore_jack_explode = false;
 
-    p.explode.from_upper = 0;
-    p.explode.from_same = 0;
-    p.explode.from_lower = 0;
+    p.explode = {0, 0, 0};
 
     p.threepeater_time_since_first_shot = 0;
 

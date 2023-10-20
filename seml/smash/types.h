@@ -6,7 +6,8 @@
 #include <variant>
 #include <vector>
 
-#include "seml/reader_types.h"
+#include "seml/reader/types.h"
+#include "seml/types.h"
 #include "world.h"
 
 struct Op {
@@ -15,10 +16,7 @@ struct Op {
 };
 
 struct GigaInfo {
-    struct {
-        pvz_emulator::object::zombie* ptr;
-        int uuid;
-    } zombie;
+    unique_zombie zombie;
     unsigned int row; // [0, 5]
     int spawn_wave;
     int spawn_tick;
@@ -34,11 +32,7 @@ struct ActionInfo {
     int tick;
     std::string desc = "";
 
-    struct plant {
-        pvz_emulator::object::plant* ptr;
-        int uuid;
-    };
-    std::vector<plant> plants;
+    std::vector<unique_plant> plants;
 };
 
 struct Info {

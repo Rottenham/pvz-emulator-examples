@@ -15,7 +15,8 @@ using namespace pvz_emulator::object;
 const int TOTAL_WAVE_NUM = 100;
 const int START_TICK = 0;
 const int END_TICK = 3000;
-const std::vector<zombie_type> ZOMBIE_TYPES = {zombie_type::gargantuar};
+const int ICE_TIME = 1;
+const std::vector<zombie_type> ZOMBIE_TYPES = {zombie_type::jack_in_the_box};
 const bool OUTPUT_AS_INT
     = false; // if true, output float * 32768, which is guaranteed to be an integer when >= 256
 
@@ -39,8 +40,16 @@ void test_one(const zombie_type& type, world& w, int wave_num_per_thread)
         w.scene.reset();
         w.scene.stop_spawn = true;
 
+        if (ICE_TIME > 0) {
+            w.plant_factory.create(plant_type::iceshroom, 0, 0);
+            run(w, 100 - ICE_TIME);
+        }
+
         for (int i = 0; i < 1000; i++) {
-            w.zombie_factory.create(type);
+            auto& z = w.zombie_factory.create(type);
+            if (z.type == zombie_type::jack_in_the_box) {
+                z.countdown.action = END_TICK + 1;
+            }
         }
         run(w, START_TICK);
 

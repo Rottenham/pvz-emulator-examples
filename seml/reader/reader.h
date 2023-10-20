@@ -7,7 +7,7 @@
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "reader_types.h"
+#include "types.h"
 
 namespace _SemlInternal {
 

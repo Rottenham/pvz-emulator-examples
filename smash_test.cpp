@@ -185,12 +185,12 @@ int main(int argc, char* argv[])
     }
     file << "\n";
 
-    for (const auto& [op_states, data] : table) {
-        file << data.wave << "," << std::fixed << std::setprecision(2)
+    for (const auto& [os, data] : table) {
+        file << os.wave << "," << std::fixed << std::setprecision(2)
              << calc_smash_rate(config, data.smashed_garg_count,
-                    summary.garg_summary_by_wave.at(data.wave).total_garg_count)
+                    summary.garg_summary_by_wave.at(os.wave).total_garg_count)
              << "%," << data.smashed_garg_count << "," << data.total_garg_count << ",";
-        for (const auto& op_state : op_states) {
+        for (const auto& op_state : os.op_states) {
             file << op_state_to_string(op_state) << ",";
         }
         for (const auto& protect_position : config.setting.protect_positions) {

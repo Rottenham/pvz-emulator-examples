@@ -11,17 +11,18 @@ void zombie_jack_in_the_box::kill_plants(zombie& z, int x, int y) {
         rect rect;
         p.get_hit_box(rect);
         
-        if (rect.is_overlap_with_circle(x, y, 90) 
-            && !p.ignore_jack_explode) {
-            plant_factory(scene).destroy(p);
-        }
-        
-        if (z.row == p.row) {
-            p.explode.from_same++;
-        } else if (z.row < p.row) {
-            p.explode.from_upper++;
-        } else {
-            p.explode.from_lower++;
+        if (rect.is_overlap_with_circle(x, y, 90)) {
+            if (z.row == p.row) {
+                p.explode.from_same++;
+            } else if (z.row < p.row) {
+                p.explode.from_upper++;
+            } else {
+                p.explode.from_lower++;
+            }
+
+            if (!p.ignore_jack_explode){
+                plant_factory(scene).destroy(p);
+            }
         }
     }
 }
