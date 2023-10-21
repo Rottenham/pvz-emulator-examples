@@ -72,7 +72,7 @@ void test_one(const Config& config, int repeat)
             w.scene.stop_spawn = true;
 
             Test test;
-            load_setting_and_round(config.setting, round, test);
+            load_round(config.setting, round, test);
 
             auto it = test.ops.begin();
             int curr_tick = it->tick; // there are at least 2 op (setup and spawning)

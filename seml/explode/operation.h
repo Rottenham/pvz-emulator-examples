@@ -157,7 +157,7 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
 
 } // namespace _ExplodeInternal
 
-void load_setting_and_round(const Setting& setting, const Round& round, Test& test)
+void load_round(const Setting& setting, const Round& round, Test& test)
 {
     using namespace pvz_emulator::object;
     using namespace _ExplodeInternal;

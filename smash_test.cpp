@@ -87,7 +87,7 @@ void test_one(const Config& config, int repeat, int giga_total)
     RawTable local_raw_table;
 
     for (int r = 0; r < repeat; r++) {
-        auto ops = load_config(config, info, giga_total);
+        auto ops = load_round(config.setting, config.rounds[0], info, giga_total);
 
         w.scene.reset();
         w.scene.stop_spawn = true;
@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
     }
 
     Info info;
-    load_config(config, info, 1000);
+    load_round(config.setting, config.rounds[0], info, 1000);
 
     file << "\n出生波数,每波砸率,砸炮数,总数,";
     auto prev_wave = -1;

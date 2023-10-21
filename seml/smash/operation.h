@@ -10,11 +10,11 @@
 
 namespace _SmashInternal {
 
-std::vector<int> get_giga_rows(const Config& config)
+std::vector<int> get_giga_rows(const Setting& setting)
 {
     std::vector<int> giga_rows;
-    giga_rows.reserve(config.setting.protect_positions.size());
-    for (const auto& protect_position : config.setting.protect_positions) {
+    giga_rows.reserve(setting.protect_positions.size());
+    for (const auto& protect_position : setting.protect_positions) {
         giga_rows.push_back(protect_position.row - 1);
     }
     return giga_rows;
@@ -204,13 +204,13 @@ void insert_smart_fodder(
 
 } // namespace _SmashInternal
 
-std::vector<Op> load_config(const Config& config, Info& info, int giga_total)
+std::vector<Op> load_round(const Setting& setting, const Round& round, Info& info, int giga_total)
 {
     using namespace pvz_emulator::object;
     using namespace _SmashInternal;
 
     info = {};
-    info.protect_positions.reserve(config.setting.protect_positions.size());
+    info.protect_positions.reserve(setting.protect_positions.size());
     info.giga_infos.reserve(giga_total);
     info.gen.seed(static_cast<unsigned>(std::random_device {}()));
 
@@ -218,15 +218,15 @@ std::vector<Op> load_config(const Config& config, Info& info, int giga_total)
 
     int base_tick = 0;
     int latest_effect_time = 0;
-    auto giga_rows = get_giga_rows(config);
+    auto giga_rows = get_giga_rows(setting);
 
-    insert_setup(ops, base_tick, config.setting.protect_positions);
-    for (int i = 0; i < config.rounds[0].size(); i++) {
+    insert_setup(ops, base_tick, setting.protect_positions);
+    for (int i = 0; i < round.size(); i++) {
         const int wave_num = i + 1;
-        const auto& wave = config.rounds[0][i];
+        const auto& wave = round[i];
 
-        insert_spawn(ops, info, base_tick, wave_num,
-            giga_total / static_cast<int>(config.rounds[0].size()), giga_rows);
+        insert_spawn(
+            ops, info, base_tick, wave_num, giga_total / static_cast<int>(round.size()), giga_rows);
 
         for (const auto& ice_time : wave.ice_times) {
             insert_ice(ops, base_tick + ice_time - 100);
@@ -235,7 +235,7 @@ std::vector<Op> load_config(const Config& config, Info& info, int giga_total)
         for (const auto& action : wave.actions) {
             int effect_time = base_tick;
             if (auto a = std::get_if<Cob>(&action)) {
-                insert_cob(ops, info, base_tick + a->time, wave_num, a, config.setting.scene_type);
+                insert_cob(ops, info, base_tick + a->time, wave_num, a, setting.scene_type);
                 effect_time += a->time + 3;
             } else if (auto a = std::get_if<Jalapeno>(&action)) {
                 insert_jalapeno(ops, info, base_tick + a->time, wave_num, a);
@@ -258,8 +258,7 @@ std::vector<Op> load_config(const Config& config, Info& info, int giga_total)
     std::stable_sort(
         ops.begin(), ops.end(), [](const Op& a, const Op& b) { return a.tick < b.tick; });
     insert_spawn(ops, info, std::max(base_tick + 1, latest_effect_time + 1),
-        static_cast<int>(config.rounds[0].size()) + 1, 0,
-        {}); // make sure giga info is synced at the end
+        static_cast<int>(round.size()) + 1, 0, {}); // make sure giga info is synced at the end
 
     return ops;
 }
