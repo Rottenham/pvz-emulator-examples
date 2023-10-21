@@ -80,25 +80,23 @@ void test_one(const Config& config, int repeat)
             for (int wave_num = 0; wave_num < round.size(); wave_num++) {
                 const auto& wave = round[wave_num];
 
-                while (it != test.ops.end() && it->tick < base_tick + wave.start_tick) {
+                for (; it != test.ops.end() && it->tick < base_tick + wave.start_tick; it++) {
                     run(w, curr_tick, it->tick);
                     it->f(w);
-                    it++;
                 }
                 run(w, curr_tick, base_tick + wave.start_tick);
 
                 while (curr_tick <= base_tick + wave.wave_length - 200) {
-                    while (it != test.ops.end() && it->tick == curr_tick) {
+                    for (; it != test.ops.end() && it->tick == curr_tick; it++) {
                         it->f(w);
-                        it++;
                     }
 
-                    test.wave_infos[wave_num].loss_infos.push_back({});
-
+                    std::array<LossInfo, 6> loss_info = {};
                     for (const auto& plant : test.plants) {
-                        test.wave_infos[wave_num].loss_infos.back()[plant->row]
-                            = {plant->explode, plant->max_hp - plant->hp};
+                        loss_info[plant->row] = {plant->explode, plant->max_hp - plant->hp};
                     };
+                    test.wave_infos[wave_num].loss_infos.push_back(loss_info);
+
                     run(w, curr_tick, curr_tick + 1);
                 }
                 base_tick += wave.wave_length;
@@ -130,8 +128,7 @@ int main(int argc, char* argv[])
     validate_config(config);
 
     std::vector<std::thread> threads;
-    for (const auto& repeat :
-        assign_repeat(total_repeat_num, std::thread::hardware_concurrency())) {
+    for (int repeat : assign_repeat(total_repeat_num, std::thread::hardware_concurrency())) {
         threads.emplace_back([config, repeat]() { test_one(config, repeat); });
     }
     for (auto& t : threads) {
@@ -139,8 +136,8 @@ int main(int argc, char* argv[])
     }
 
     std::vector<std::vector<std::string>> headers(config.rounds.size());
-    int max_headaer_count = 0;
-    int max_wave = 0;
+    size_t max_headaer_count = 0;
+    size_t max_wave = 0;
     for (int round_num = 0; round_num < config.rounds.size(); round_num++) {
         const auto& round = config.rounds[round_num];
 
@@ -156,9 +153,8 @@ int main(int argc, char* argv[])
                 headers[round_num].push_back(prefix);
             }
         }
-        max_headaer_count
-            = std::max(max_headaer_count, static_cast<int>(headers[round_num].size()));
-        max_wave = std::max(max_wave, static_cast<int>(round.size()));
+        max_headaer_count = std::max(max_headaer_count, headers[round_num].size());
+        max_wave = std::max(max_wave, round.size());
     }
 
     std::vector<std::pair<int, int>> tick_range(max_wave, {INT_MAX, 0});
@@ -170,17 +166,12 @@ int main(int argc, char* argv[])
         }
     }
 
-    file << ",,炮伤";
-    for (int i = 0; i < headers.size(); i++) {
-        file << ",";
-    }
-    file << ",来自爆炸的炮伤";
-    for (int i = 0; i < headers.size(); i++) {
-        file << ",";
-    }
-    file << ",来自啃食的炮伤";
-    for (int i = 0; i < headers.size(); i++) {
-        file << ",";
+    file << ",";
+    for (const auto& str : {"炮伤", "来自爆炸的炮伤", "来自啃食的炮伤"}) {
+        file << "," << str;
+        for (int i = 0; i < headers.size(); i++) {
+            file << ",";
+        }
     }
     file << "\n";
 

@@ -119,7 +119,7 @@ int main()
     }
 
     std::vector<std::thread> threads;
-    for (const auto& repeat : assign_repeat(TOTAL_WAVE_NUM, std::thread::hardware_concurrency())) {
+    for (int repeat : assign_repeat(TOTAL_WAVE_NUM, std::thread::hardware_concurrency())) {
         threads.emplace_back([repeat]() { test(repeat); });
     }
     for (auto& t : threads) {

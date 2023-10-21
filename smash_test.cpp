@@ -128,8 +128,7 @@ int main(int argc, char* argv[])
     }
 
     std::vector<std::thread> threads;
-    for (const auto& repeat :
-        assign_repeat(total_repeat_num, std::thread::hardware_concurrency())) {
+    for (int repeat : assign_repeat(total_repeat_num, std::thread::hardware_concurrency())) {
         threads.emplace_back(
             [config, repeat, giga_total]() { test_one(config, repeat, giga_total); });
     }
