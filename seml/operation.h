@@ -15,7 +15,7 @@ pvz_emulator::object::plant& plant_fodder(
     return w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
 }
 
-std::vector<int> choose_by_pos(pvz_emulator::world& w, const std::vector<CardPos>& positions,
+std::vector<size_t> choose_by_pos(pvz_emulator::world& w, const std::vector<CardPos>& positions,
     int choose, const std::unordered_set<int>& waves)
 {
     const int GIGA_X_MAX = 1000;
@@ -30,20 +30,20 @@ std::vector<int> choose_by_pos(pvz_emulator::world& w, const std::vector<CardPos
         }
     }
 
-    std::unordered_set<int> indices;
+    std::unordered_set<size_t> indices;
     indices.reserve(positions.size());
-    for (int i = 0; i < positions.size(); i++) {
+    for (size_t i = 0; i < positions.size(); i++) {
         indices.insert(i);
     }
 
-    std::vector<int> res;
+    std::vector<size_t> res;
     res.reserve(choose);
     for (int i = 0; i < choose; i++) {
         int min_x = GIGA_X_MAX, best_index = -1;
         for (const auto& index : indices) {
             if (giga_min_x[positions[index].row - 1] < min_x) {
                 min_x = giga_min_x[positions[index].row - 1];
-                best_index = index;
+                best_index = static_cast<int>(index);
             }
         }
         if (best_index == -1) {
@@ -56,7 +56,7 @@ std::vector<int> choose_by_pos(pvz_emulator::world& w, const std::vector<CardPos
     return res;
 }
 
-std::vector<int> choose_by_num(pvz_emulator::world& w, const std::vector<CardPos>& positions,
+std::vector<size_t> choose_by_num(pvz_emulator::world& w, const std::vector<CardPos>& positions,
     int choose, const std::unordered_set<int>& waves)
 {
     std::array<int, 6> ladder_jack_count = {};
@@ -69,20 +69,20 @@ std::vector<int> choose_by_num(pvz_emulator::world& w, const std::vector<CardPos
         }
     }
 
-    std::unordered_set<int> indices;
+    std::unordered_set<size_t> indices;
     indices.reserve(positions.size());
-    for (int i = 0; i < positions.size(); i++) {
+    for (size_t i = 0; i < positions.size(); i++) {
         indices.insert(i);
     }
 
-    std::vector<int> res;
+    std::vector<size_t> res;
     res.reserve(choose);
     for (int i = 0; i < choose; i++) {
         int max_count = -1, best_index = -1;
         for (const auto& index : indices) {
             if (ladder_jack_count[positions[index].row - 1] > max_count) {
                 max_count = ladder_jack_count[positions[index].row - 1];
-                best_index = index;
+                best_index = static_cast<int>(index);
             }
         }
         if (best_index == -1) {

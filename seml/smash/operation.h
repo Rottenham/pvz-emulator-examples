@@ -136,7 +136,7 @@ void insert_fixed_fodder(
     auto f = [&info, idx, fodders, positions](pvz_emulator::world& w) {
         assert(fodders.size() == positions.size());
 
-        for (int i = 0; i < fodders.size(); i++) {
+        for (size_t i = 0; i < fodders.size(); i++) {
             auto& p = plant_fodder(w, fodders[i], positions[i]);
             info.action_infos[idx].plants.push_back({&p, p.uuid});
         }
@@ -169,10 +169,10 @@ void insert_smart_fodder(
     auto f = [&info, idx, symbol, fodders, positions, choose, waves](pvz_emulator::world& w) {
         assert(fodders.size() == positions.size());
 
-        std::vector<int> chosen;
+        std::vector<size_t> chosen;
         if (symbol == "C") {
             chosen.reserve(positions.size());
-            for (int i = 0; i < positions.size(); i++) {
+            for (size_t i = 0; i < positions.size(); i++) {
                 chosen.push_back(i);
             }
         } else if (symbol == "C_POS") {
@@ -183,7 +183,7 @@ void insert_smart_fodder(
             assert(false && "unreachable");
         }
 
-        for (int i : chosen) {
+        for (auto i : chosen) {
             auto& p = plant_fodder(w, fodders[i], positions[i]);
             info.action_infos[idx].plants.push_back({&p, p.uuid});
         }
@@ -221,8 +221,8 @@ std::vector<Op> load_round(const Setting& setting, const Round& round, Info& inf
     auto giga_rows = get_giga_rows(setting);
 
     insert_setup(ops, base_tick, setting.protect_positions);
-    for (int i = 0; i < round.size(); i++) {
-        const int wave_num = i + 1;
+    for (size_t i = 0; i < round.size(); i++) {
+        const int wave_num = static_cast<int>(i + 1);
         const auto& wave = round[i];
 
         insert_spawn(

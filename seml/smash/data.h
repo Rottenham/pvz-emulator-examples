@@ -19,7 +19,7 @@ struct OpStates {
 namespace std {
 
 template <> struct hash<OpStates> {
-    size_t operator()(const OpStates& os) const
+    size_t operator()(const OpStates& os) const noexcept
     {
         size_t hash = 0;
         for (const auto& state : os.op_states) {
@@ -122,7 +122,7 @@ std::pair<Table, Summary> generate_table_and_summary(const RawTable& raw_table)
                 return false;
             }
 
-            for (int i = 0; i < a.first.op_states.size(); ++i) {
+            for (size_t i = 0; i < a.first.op_states.size(); ++i) {
                 if (a.first.op_states[i] < b.first.op_states[i]) {
                     return true;
                 } else if (a.first.op_states[i] > b.first.op_states[i]) {

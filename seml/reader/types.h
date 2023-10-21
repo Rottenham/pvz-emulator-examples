@@ -77,7 +77,7 @@ struct SmartFodder {
             os << "~" << shovel_time;
         }
         os << symbol;
-        if (positions.size() != choose) {
+        if (choose != static_cast<int>(positions.size())) {
             os << " ";
             for (const auto& position : positions) {
                 os << position.row;
