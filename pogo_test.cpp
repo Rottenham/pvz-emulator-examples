@@ -66,11 +66,11 @@ void test(int repeat)
                 assert(z.type == zombie_type::pogo);
 
                 auto upper_cob_x_range = get_cob_hit_x_range(get_hit_box(z),
-                    get_cob_hit_xy(w.scene.type, z.row, 9.0f, HIT_COB_COL, -1).second);
+                    get_cob_hit_xy(w.scene.type, z.row, 9.0f, HIT_COB_COL).second);
                 auto same_cob_x_range = get_cob_hit_x_range(get_hit_box(z),
-                    get_cob_hit_xy(w.scene.type, z.row + 1, 9.0f, HIT_COB_COL, -1).second);
+                    get_cob_hit_xy(w.scene.type, z.row + 1, 9.0f, HIT_COB_COL).second);
                 auto lower_cob_x_range = get_cob_hit_x_range(get_hit_box(z),
-                    get_cob_hit_xy(w.scene.type, z.row + 2, 9.0f, HIT_COB_COL, -1).second);
+                    get_cob_hit_xy(w.scene.type, z.row + 2, 9.0f, HIT_COB_COL).second);
 
                 local_upper_cob[tick - START_TICK]
                     = std::min(local_upper_cob[tick - START_TICK], upper_cob_x_range.second);
@@ -143,13 +143,13 @@ int main()
         garg_hit_box.height = 154;
 
         auto upper_cob_garg = get_cob_hit_x_range(
-            garg_hit_box, get_cob_hit_xy(SCENE_TYPE, 1, 9.0f, HIT_COB_COL, -1).second)
+            garg_hit_box, get_cob_hit_xy(SCENE_TYPE, 1, 9.0f, HIT_COB_COL).second)
                                   .first;
         auto same_cob_garg = get_cob_hit_x_range(
-            garg_hit_box, get_cob_hit_xy(SCENE_TYPE, 2, 9.0f, HIT_COB_COL, -1).second)
+            garg_hit_box, get_cob_hit_xy(SCENE_TYPE, 2, 9.0f, HIT_COB_COL).second)
                                  .first;
         auto lower_cob_garg = get_cob_hit_x_range(
-            garg_hit_box, get_cob_hit_xy(SCENE_TYPE, 3, 9.0f, HIT_COB_COL, -1).second)
+            garg_hit_box, get_cob_hit_xy(SCENE_TYPE, 3, 9.0f, HIT_COB_COL).second)
                                   .first;
 
         file << tick << "," << lower_cob_pogo << "," << same_cob_pogo << "," << upper_cob_pogo

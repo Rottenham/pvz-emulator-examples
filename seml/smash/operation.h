@@ -212,7 +212,7 @@ std::vector<Op> load_round(const Setting& setting, const Round& round, Info& inf
     info = {};
     info.protect_positions.reserve(setting.protect_positions.size());
     info.giga_infos.reserve(giga_total);
-    info.gen.seed(static_cast<unsigned>(std::random_device {}()));
+    info.gen.seed(std::random_device {}());
 
     std::vector<Op> ops;
 

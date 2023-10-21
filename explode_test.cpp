@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
     }
 
     auto to_string = [](const std::vector<std::optional<double>>& loss_list) -> std::string {
-        double min = -1;
+        std::optional<double> min;
         std::optional<size_t> min_idx;
 
         auto valid_count = std::count_if(
@@ -205,8 +205,8 @@ int main(int argc, char* argv[])
 
         if (valid_count > 1) {
             for (size_t i = 0; i < loss_list.size(); i++) {
-                if (loss_list[i].has_value() && (min < 0 || *loss_list[i] <= min)) {
-                    min = *loss_list[i];
+                if (loss_list[i].has_value() && (!min.has_value() || loss_list[i] <= min)) {
+                    min = loss_list[i];
                     min_idx = i;
                 }
             }
