@@ -52,6 +52,12 @@ void run(pvz_emulator::world& w, int ticks)
         w.update();
 }
 
+void run(pvz_emulator::world& w, int& curr_tick, int target_tick)
+{
+    run(w, target_tick - curr_tick);
+    curr_tick = target_tick;
+}
+
 // row: [1, 6]
 [[nodiscard]] std::pair<int, int> get_cob_hit_xy(const pvz_emulator::object::scene_type& scene_type,
     int row, double col, int cob_col, int cob_row)

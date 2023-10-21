@@ -16,8 +16,13 @@ struct LossInfo {
     int hp_loss = 0;
 };
 
-struct Test {
+struct WaveInfo {
+    int start_tick;
     std::vector<std::array<LossInfo, 6>> loss_infos;
+};
+
+struct Test {
+    std::vector<WaveInfo> wave_infos;
     std::vector<pvz_emulator::object::plant*> plants;
     std::vector<std::vector<unique_plant>> fodders; // for removing fodders
     std::vector<Op> ops;

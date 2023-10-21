@@ -17,10 +17,10 @@
     std::time_t t = std::time(nullptr);
     std::tm* tm = std::localtime(&t);
 
-    std::stringstream ss;
-    ss << std::put_time(tm, "%Y.%m.%d_%H.%M.%S");
+    std::ostringstream os;
+    os << std::put_time(tm, "%Y.%m.%d_%H.%M.%S");
 
-    return ss.str();
+    return os.str();
 }
 
 [[nodiscard]] std::pair<std::ofstream, std::string> open_csv(const std::string& filename)

@@ -94,3 +94,16 @@ std::vector<int> choose_by_num(pvz_emulator::world& w, const std::vector<CardPos
     }
     return res;
 }
+
+int get_cob_fly_time(
+    const pvz_emulator::object::scene_type& scene_type, int row, double col, int cob_col = -1)
+{
+    if (is_backyard(scene_type) && (row == 3 || row == 4)) {
+        return 378;
+    } else if (is_roof(scene_type)) {
+        assert(cob_col != -1);
+        return get_roof_cob_fly_time(col, cob_col);
+    } else {
+        return 373;
+    }
+}

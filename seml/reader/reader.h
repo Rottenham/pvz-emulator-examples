@@ -133,6 +133,30 @@ void read_wave(const rapidjson::Value& val, Wave& wave)
     }
 }
 
+void read_round(const rapidjson::Value& val, Round& round)
+{
+    const auto& waves_val = val.GetArray();
+    round.reserve(waves_val.Size());
+
+    for (const auto& wave_val : waves_val) {
+        Wave wave;
+        read_wave(wave_val, wave);
+        round.push_back(wave);
+    }
+}
+
+void read_rounds(const rapidjson::Value& val, std::vector<Round>& rounds)
+{
+    const auto& rounds_val = val.GetArray();
+    rounds.reserve(rounds_val.Size());
+
+    for (const auto& round_val : rounds_val) {
+        Round round;
+        read_round(round_val, round);
+        rounds.push_back(round);
+    }
+}
+
 void read_setting(const rapidjson::Value& val, Setting& setting)
 {
     for (auto it = val.MemberBegin(); it != val.MemberEnd(); it++) {
@@ -167,16 +191,14 @@ void read_setting(const rapidjson::Value& val, Setting& setting)
 void read_config(const rapidjson::Value& val, Config& config)
 {
     config = {};
-    config.waves.reserve(val.MemberCount());
 
     for (auto it = val.MemberBegin(); it != val.MemberEnd(); it++) {
         if (strcmp(it->name.GetString(), "setting") == 0) {
             read_setting(it->value, config.setting);
+        } else if (strcmp(it->name.GetString(), "rounds") == 0) {
+            read_rounds(it->value, config.rounds);
         } else {
-            assert(std::atoi(it->name.GetString()) == config.waves.size() + 1);
-            Wave wave;
-            read_wave(it->value, wave);
-            config.waves.push_back(wave);
+            assert(false && "unreachable");
         }
     }
 }

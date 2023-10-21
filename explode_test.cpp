@@ -13,20 +13,31 @@ using namespace pvz_emulator::object;
 
 std::mutex mtx;
 
-void validate_config(const Config& config)
+void validate_config(Config& config)
 {
-    if (config.waves.empty()) {
-        std::cerr << "必须提供操作" << std::endl;
+    if (config.rounds.empty()) {
+        std::cerr << "Must provide at least one round." << std::endl;
         exit(1);
     }
 
-    if (config.waves.size() > 200) {
-        std::cerr << "波数不能超过 200" << std::endl;
-        exit(1);
+    for (auto& round : config.rounds) {
+        if (round.empty()) {
+            std::cerr << "Must provide at least one wave." << std::endl;
+            exit(1);
+        }
+        if (round.size() > 200) {
+            std::cerr << "Total number of waves must not exceed 200." << std::endl;
+            exit(1);
+        }
+        for (auto& wave : round) {
+            if (wave.start_tick == -1) {
+                wave.start_tick = wave.wave_length - 200;
+            }
+        }
     }
 
     if (config.setting.protect_positions.empty()) {
-        std::cerr << "必须提供要保护的位置" << std::endl;
+        std::cerr << "Must provide protect positions." << std::endl;
         exit(1);
     }
 
@@ -39,7 +50,7 @@ void validate_config(const Config& config)
 
     for (const auto& protect_position : config.setting.protect_positions) {
         if (!valid_rows.count(protect_position.row)) {
-            std::cerr << "保护位置所在行无效: " << protect_position.row << std::endl;
+            std::cerr << "Invalid row for protect position: " << protect_position.row << std::endl;
             exit(1);
         }
     }
@@ -54,41 +65,45 @@ void test_one(const Config& config, int repeat)
 
     for (int r = 0; r < repeat; r++) {
         std::vector<Test> tests;
-        tests.reserve(config.waves.size());
+        tests.reserve(config.rounds.size());
 
-        for (int wave_num = 0; wave_num < config.waves.size(); wave_num++) {
-            const auto& wave = config.waves[wave_num];
+        for (int round_num = 0; round_num < config.rounds.size(); round_num++) {
+            const auto& round = config.rounds[round_num];
 
             w.scene.reset();
             w.scene.stop_spawn = true;
 
             Test test;
-            load_config(config, wave_num, test);
+            load_config(config, round_num, test);
 
             auto it = test.ops.begin();
-            auto prev_tick = it->tick;
+            int curr_tick = it->tick;
+            int base_tick = 0;
+            for (int wave_num = 0; wave_num < round.size(); wave_num++) {
+                const auto& wave = round[wave_num];
 
-            while (it != test.ops.end() && it->tick < wave.start_tick) {
-                run(w, it->tick - prev_tick);
-                it->f(w);
-                prev_tick = it->tick;
-                it++;
-            }
-            run(w, wave.start_tick - prev_tick);
-
-            for (int tick = wave.start_tick; tick <= wave.wave_length - 200; tick++) {
-                while (it != test.ops.end() && it->tick == tick) {
+                while (it != test.ops.end() && it->tick < base_tick + wave.start_tick) {
+                    run(w, curr_tick, it->tick);
                     it->f(w);
                     it++;
                 }
+                run(w, curr_tick, base_tick + wave.start_tick);
 
-                test.loss_infos.push_back({});
+                while (curr_tick <= base_tick + wave.wave_length - 200) {
+                    while (it != test.ops.end() && it->tick == curr_tick) {
+                        it->f(w);
+                        it++;
+                    }
 
-                for (const auto& plant : test.plants) {
-                    test.loss_infos.back()[plant->row]
-                        = {plant->explode, plant->max_hp - plant->hp};
-                };
-                run(w, 1);
+                    test.wave_infos[wave_num].loss_infos.push_back({});
+
+                    for (const auto& plant : test.plants) {
+                        test.wave_infos[wave_num].loss_infos.back()[plant->row]
+                            = {plant->explode, plant->max_hp - plant->hp};
+                    };
+                    run(w, curr_tick, curr_tick + 1);
+                }
+                base_tick += wave.wave_length;
             }
             tests.push_back(std::move(test));
         }
@@ -109,7 +124,7 @@ int main(int argc, char* argv[])
     std::vector<std::string> args(argv, argv + argc);
     auto config_file = get_cmd_arg(args, "f");
     auto output_file = get_cmd_arg(args, "o", "explode_test");
-    auto total_repeat_num = std::stoi(get_cmd_arg(args, "r", "30000"));
+    auto total_repeat_num = std::stoi(get_cmd_arg(args, "r", "10000"));
 
     auto [file, full_output_file] = open_csv(output_file);
 
@@ -125,63 +140,136 @@ int main(int argc, char* argv[])
         t.join();
     }
 
-    int max_action_count = 0;
-    int min_start_tick = INT_MAX;
-    int max_wave_length = 0;
-    for (const auto& wave : config.waves) {
-        max_action_count = std::max(max_action_count, static_cast<int>(wave.actions.size()));
-        min_start_tick = std::min(min_start_tick, wave.start_tick);
-        max_wave_length = std::max(max_wave_length, wave.wave_length - 200);
+    int max_headaer_count = 0;
+    std::vector<std::vector<std::string>> headers(config.rounds.size());
+    int max_wave = 0;
+    for (int round_num = 0; round_num < config.rounds.size(); round_num++) {
+        const auto& round = config.rounds[round_num];
+
+        for (int wave_num = 0; wave_num < round.size(); wave_num++) {
+            const auto& wave = round[wave_num];
+
+            std::string prefix = "[w" + std::to_string(wave_num + 1) + "] ";
+            for (const auto& action : wave.actions) {
+                headers[round_num].push_back(prefix + desc(action));
+                prefix = "";
+            }
+            if (!prefix.empty()) {
+                headers[round_num].push_back(prefix);
+            }
+        }
+        max_headaer_count
+            = std::max(max_headaer_count, static_cast<int>(headers[round_num].size()));
+        max_wave = std::max(max_wave, static_cast<int>(round.size()));
     }
 
-    file << ",";
-    for (const auto& wave : config.waves) {
-        for (int i = 0; i < wave.ice_times.size(); i++) {
-            if (i != 0) {
-                file << " ";
-            }
-            file << wave.ice_times[i];
+    std::vector<std::pair<int, int>> tick_range(max_wave, {INT_MAX, 0});
+    for (const auto& round : config.rounds) {
+        for (int wave_num = 0; wave_num < round.size(); wave_num++) {
+            const auto& wave = round[wave_num];
+            tick_range[wave_num].first = std::min(tick_range[wave_num].first, wave.start_tick);
+            tick_range[wave_num].second = std::max(tick_range[wave_num].second, wave.wave_length);
         }
-        if (!wave.ice_times.empty()) {
-            file << "冰";
-        }
-        file << " " << wave.start_tick << "~" << wave.wave_length - 200 << ",";
+    }
+
+    file << ",,炮伤";
+    for (int i = 0; i < headers.size(); i++) {
+        file << ",";
+    }
+    file << ",来自爆炸的炮伤";
+    for (int i = 0; i < headers.size(); i++) {
+        file << ",";
+    }
+    file << ",来自啃食的炮伤";
+    for (int i = 0; i < headers.size(); i++) {
+        file << ",";
     }
     file << "\n";
 
-    for (int i = 0; i < max_action_count; i++) {
-        if (i == max_action_count - 1) {
-            file << "tick";
+    for (int i = 0; i < max_headaer_count; i++) {
+        if (i == max_headaer_count - 1) {
+            file << "波数,时刻,";
+        } else {
+            file << ",,";
         }
-        file << ",";
-        for (const auto& wave : config.waves) {
-            if (i < wave.actions.size()) {
-                file << desc(wave.actions[i]);
+
+        for (int r = 0; r < 3; r++) {
+            for (const auto& header : headers) {
+                if (i < header.size()) {
+                    file << header[i];
+                }
+                file << ",";
             }
             file << ",";
         }
+
         file << "\n";
     }
 
-    for (int tick = min_start_tick; tick <= max_wave_length; tick++) {
-        file << tick << ",";
-        for (int test_num = 0; test_num < config.waves.size(); test_num++) {
-            const auto& wave = config.waves[test_num];
+    auto to_string = [](const std::vector<double>& loss_list) -> std::string {
+        double min = -1;
+        int min_idx = -1;
 
-            if (tick >= wave.start_tick && tick <= wave.wave_length - 200) {
-                file << (sum(table.data[test_num][tick - wave.start_tick].explode) * 300.0
-                            + table.data[test_num][tick - wave.start_tick].hp_loss)
-                        / table.repeat;
-            }
-            file << ",";
+        auto valid_count = std::count_if(
+            loss_list.begin(), loss_list.end(), [](const auto& loss) { return loss >= 0; });
 
-             if (tick >= wave.start_tick && tick <= wave.wave_length - 200) {
-                file << static_cast<double>(table.data[test_num][tick - wave.start_tick].hp_loss)
-                        / table.repeat;
+        if (valid_count > 1) {
+            for (int i = 0; i < loss_list.size(); i++) {
+                if (loss_list[i] >= 0 && (min < 0 || loss_list[i] <= min)) {
+                    min = loss_list[i];
+                    min_idx = i;
+                }
             }
-            file << ",";
         }
-        file << "\n";
+        
+        std::ostringstream os;
+        for (int i = 0; i < loss_list.size(); i++) {
+            if (loss_list[i] >= 0) {
+                if (i == min_idx) {
+                    os << "[" << loss_list[i] << "]";
+                } else {
+                    os << loss_list[i];
+                }
+            }
+            os << ",";
+        }
+        return os.str();
+    };
+
+    for (int wave_num = 0; wave_num < max_wave; wave_num++) {
+        for (int tick = tick_range[wave_num].first; tick < tick_range[wave_num].second - 200;
+             tick++) {
+
+            file << wave_num + 1 << "," << tick << ",";
+
+            std::vector<double> loss_list;
+            std::vector<double> explode_loss_list;
+            std::vector<double> hp_loss_list;
+
+            for (const auto& merged_round_info : table.merged_round_infos) {
+                if (wave_num < merged_round_info.size()
+                    && tick >= merged_round_info[wave_num].start_tick
+                    && tick < merged_round_info[wave_num].start_tick
+                            + merged_round_info[wave_num].merged_loss_info.size()) {
+                    int idx = tick - merged_round_info[wave_num].start_tick;
+                    double explode
+                        = sum(merged_round_info[wave_num].merged_loss_info[idx].explode) * 300.0;
+                    double hp = merged_round_info[wave_num].merged_loss_info[idx].hp_loss;
+                    loss_list.push_back((explode + hp) / table.repeat);
+                    explode_loss_list.push_back(explode / table.repeat);
+                    hp_loss_list.push_back(hp / table.repeat);
+                } else {
+                    loss_list.push_back(-1);
+                    explode_loss_list.push_back(-1);
+                    hp_loss_list.push_back(-1);
+                }
+            }
+
+            file << to_string(loss_list) << "," << to_string(explode_loss_list) << ","
+                 << to_string(hp_loss_list) << ",";
+
+            file << "\n";
+        }
     }
 
     file.close();

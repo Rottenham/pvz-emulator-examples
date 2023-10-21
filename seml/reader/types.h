@@ -50,13 +50,13 @@ struct FixedFodder {
 
     std::string desc() const
     {
-        std::stringstream ss;
-        ss << time;
+        std::ostringstream os;
+        os << time;
         if (shovel_time != -1) {
-            ss << "~" << shovel_time;
+            os << "~" << shovel_time;
         }
-        ss << symbol;
-        return ss.str();
+        os << symbol;
+        return os.str();
     }
 };
 
@@ -71,17 +71,20 @@ struct SmartFodder {
 
     std::string desc() const
     {
-        std::stringstream ss;
-        ss << time;
+        std::ostringstream os;
+        os << time;
         if (shovel_time != -1) {
-            ss << "~" << shovel_time;
+            os << "~" << shovel_time;
         }
-        ss << symbol << " ";
-        for (const auto& position : positions) {
-            ss << position.row;
+        os << symbol;
+        if (positions.size() != choose) {
+            os << " ";
+            for (const auto& position : positions) {
+                os << position.row;
+            }
+            os << ">" << choose;
         }
-        ss << ">" << choose;
-        return ss.str();
+        return os.str();
     }
 };
 
@@ -106,8 +109,10 @@ struct Wave {
     std::vector<int> ice_times;
     int wave_length;
     std::vector<Action> actions;
-    int start_tick = 0;
+    int start_tick = -1;
 };
+
+using Round = std::vector<Wave>;
 
 struct Setting {
     struct ProtectPos {
@@ -122,7 +127,7 @@ struct Setting {
 
 struct Config {
     Setting setting;
-    std::vector<Wave> waves;
+    std::vector<Round> rounds;
 };
 
 bool is_cob(const Setting::ProtectPos& protect_pos)

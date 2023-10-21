@@ -107,16 +107,7 @@ void insert_cob(std::vector<Op>& ops, Info& info, int tick, int wave, const Cob*
                 {nullptr, launch_cob(w, pos.row, pos.col, cob_col)});
         };
 
-        int cob_fly_time;
-        if (is_backyard(scene_type) && (pos.row == 3 || pos.row == 4)) {
-            cob_fly_time = 378;
-        } else if (is_roof(scene_type)) {
-            cob_fly_time = get_roof_cob_fly_time(pos.col, cob_col);
-        } else {
-            cob_fly_time = 373;
-        }
-
-        ops.push_back({tick - cob_fly_time, f});
+        ops.push_back({tick - get_cob_fly_time(scene_type, pos.row, pos.col, cob_col) , f});
     }
 }
 
@@ -230,12 +221,12 @@ std::vector<Op> load_config(const Config& config, Info& info, int giga_total)
     auto giga_rows = get_giga_rows(config);
 
     insert_setup(ops, base_tick, config.setting.protect_positions);
-    for (int i = 0; i < config.waves.size(); i++) {
+    for (int i = 0; i < config.rounds[0].size(); i++) {
         const int wave_num = i + 1;
-        const auto& wave = config.waves[i];
+        const auto& wave = config.rounds[0][i];
 
         insert_spawn(ops, info, base_tick, wave_num,
-            std::max(giga_total / static_cast<int>(config.waves.size()), 1), giga_rows);
+            giga_total / static_cast<int>(config.rounds[0].size()), giga_rows);
 
         for (const auto& ice_time : wave.ice_times) {
             insert_ice(ops, base_tick + ice_time - 100);
@@ -267,7 +258,7 @@ std::vector<Op> load_config(const Config& config, Info& info, int giga_total)
     std::stable_sort(
         ops.begin(), ops.end(), [](const Op& a, const Op& b) { return a.tick < b.tick; });
     insert_spawn(ops, info, std::max(base_tick + 1, latest_effect_time + 1),
-        static_cast<int>(config.waves.size()) + 1, 0,
+        static_cast<int>(config.rounds[0].size()) + 1, 0,
         {}); // make sure giga info is synced at the end
 
     return ops;

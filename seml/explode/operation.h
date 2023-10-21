@@ -65,16 +65,7 @@ void insert_cob(
         auto f = [&test, pos, cob_col](
                      pvz_emulator::world& w) { launch_cob(w, pos.row, pos.col, cob_col); };
 
-        int cob_fly_time;
-        if (is_backyard(scene_type) && (pos.row == 3 || pos.row == 4)) {
-            cob_fly_time = 378;
-        } else if (is_roof(scene_type)) {
-            cob_fly_time = get_roof_cob_fly_time(pos.col, cob_col);
-        } else {
-            cob_fly_time = 373;
-        }
-
-        test.ops.push_back({tick - cob_fly_time, f});
+        test.ops.push_back({tick - get_cob_fly_time(scene_type, pos.row, pos.col, cob_col), f});
     }
 }
 
@@ -166,38 +157,47 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
 
 } // namespace _ExplodeInternal
 
-void load_config(const Config& config, int wave_num, Test& test)
+void load_config(const Config& config, int round_num, Test& test)
 {
     using namespace pvz_emulator::object;
     using namespace _ExplodeInternal;
 
+    const auto& round = config.rounds[round_num];
+
     test = {};
-
-    const auto& wave = config.waves[wave_num];
-
-    test.loss_infos.reserve(wave.wave_length - wave.start_tick + 1);
     test.plants.reserve(config.setting.protect_positions.size());
-
-    insert_setup(test, 0, config.setting.protect_positions);
-    insert_spawn(test, 0);
-
-    for (const auto& ice_time : wave.ice_times) {
-        insert_ice(test, ice_time - 100);
+    test.wave_infos.reserve(round.size());
+    for (const auto& wave : round) {
+        test.wave_infos.push_back({wave.start_tick, {}});
+        test.wave_infos.back().loss_infos.reserve((wave.wave_length - 200) - wave.start_tick + 1);
     }
 
-    for (const auto& action : wave.actions) {
-        if (auto a = std::get_if<Cob>(&action)) {
-            insert_cob(test, a->time, a, config.setting.scene_type);
-        } else if (auto a = std::get_if<Jalapeno>(&action)) {
-            insert_jalapeno(test, a->time, a);
-        } else if (auto a = std::get_if<FixedFodder>(&action)) {
-            insert_fixed_fodder(test, a->time, a);
-        } else if (auto a = std::get_if<SmartFodder>(&action)) {
-            insert_smart_fodder(test, a->time, a);
-        } else {
-            assert(false && "unreachable");
+    int base_tick = 0;
+    insert_setup(test, base_tick, config.setting.protect_positions);
+    for (const auto& wave : round) {
+        insert_spawn(test, base_tick);
+
+        for (const auto& ice_time : wave.ice_times) {
+            insert_ice(test, base_tick + ice_time - 100);
         }
+
+        for (const auto& action : wave.actions) {
+            if (auto a = std::get_if<Cob>(&action)) {
+                insert_cob(test, base_tick + a->time, a, config.setting.scene_type);
+            } else if (auto a = std::get_if<Jalapeno>(&action)) {
+                insert_jalapeno(test, base_tick + a->time, a);
+            } else if (auto a = std::get_if<FixedFodder>(&action)) {
+                insert_fixed_fodder(test, base_tick + a->time, a);
+            } else if (auto a = std::get_if<SmartFodder>(&action)) {
+                insert_smart_fodder(test, base_tick + a->time, a);
+            } else {
+                assert(false && "unreachable");
+            }
+        }
+
+        base_tick += wave.wave_length;
     }
+
     std::stable_sort(
         test.ops.begin(), test.ops.end(), [](const Op& a, const Op& b) { return a.tick < b.tick; });
 }

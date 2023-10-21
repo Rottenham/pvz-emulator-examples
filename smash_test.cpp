@@ -17,18 +17,23 @@ RawTable raw_table;
 
 void validate_config(const Config& config)
 {
-    if (config.waves.empty()) {
-        std::cerr << "必须提供操作" << std::endl;
+    if (config.rounds.size() != 1) {
+        std::cerr << "Smash test only supports duplicate = 1." << std::endl;
         exit(1);
     }
 
-    if (config.waves.size() > 200) {
-        std::cerr << "波数不能超过 200" << std::endl;
+    if (config.rounds[0].empty()) {
+        std::cerr << "Must provide at least one wave." << std::endl;
+        exit(1);
+    }
+
+    if (config.rounds[0].size() > 200) {
+        std::cerr << "Total number of waves must not exceed 200." << std::endl;
         exit(1);
     }
 
     if (config.setting.protect_positions.empty()) {
-        std::cerr << "必须提供要保护的位置" << std::endl;
+        std::cerr << "Must provide protect positions." << std::endl;
         exit(1);
     }
 
@@ -41,7 +46,7 @@ void validate_config(const Config& config)
 
     for (const auto& protect_position : config.setting.protect_positions) {
         if (!valid_rows.count(protect_position.row)) {
-            std::cerr << "保护位置所在行无效: " << protect_position.row << std::endl;
+            std::cerr << "Invalid row for protect position: " << protect_position.row << std::endl;
             exit(1);
         }
     }
@@ -49,7 +54,7 @@ void validate_config(const Config& config)
 
 bool contains_smart_fodder(const Config& config)
 {
-    for (const auto& wave : config.waves) {
+    for (const auto& wave : config.rounds[0]) {
         for (const auto& action : wave.actions) {
             if (std::holds_alternative<SmartFodder>(action)) {
                 return true;
@@ -62,7 +67,7 @@ bool contains_smart_fodder(const Config& config)
 int get_giga_total(const Config& config)
 {
     if (contains_smart_fodder(config)) {
-        return 5 * static_cast<int>(config.waves.size());
+        return 5 * static_cast<int>(config.rounds[0].size());
     } else {
         return 1000;
     }
