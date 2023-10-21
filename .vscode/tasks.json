@@ -17,14 +17,14 @@
                 "dest/bin/${fileBasenameNoExtension}",
                 "${file}",
                 "-I.",
-                "-Ilib",
-                "-Ilib/lib",
+                "-isystem",
+                "lib",
+                "-isystem",
+                "lib/lib",
                 "-Llib/build",
                 "-lpvzemu",
                 "-Wall",
                 "-Wextra",
-                "-Wno-class-memaccess",
-                "-Wno-sign-compare",
                 "-Werror",
                 "-Wcast-align",
                 "-Wcast-qual",
@@ -35,29 +35,33 @@
                 "-Winit-self",
                 "-Wlogical-op",
                 "-Wmissing-include-dirs",
+                "-Wnoexcept",
                 "-Wold-style-cast",
                 "-Woverloaded-virtual",
                 "-Wredundant-decls",
                 "-Wstrict-null-sentinel",
                 "-Wswitch-default",
+                "-Wswitch-enum",
+                "-Wsign-compare",
+                "-Wsign-promo",
                 "-Wundef",
                 "-Wunused-variable",
             ],
             "dependsOn": [
                 "buildLib"
             ],
-        },
-        {
-            "label": "run",
-            "type": "shell",
-            "command": "cd dest; ./bin/${fileBasenameNoExtension} -f 1.json -r 1000; cd ..",
-            "dependsOn": [
-                "compile"
-            ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
+        },
+        {
+            "label": "run",
+            "type": "shell",
+            "command": "cd dest; ./bin/${fileBasenameNoExtension}; cd ..",
+            "dependsOn": [
+                "compile"
+            ],
         },
     ]
 }
