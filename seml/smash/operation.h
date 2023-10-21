@@ -107,7 +107,7 @@ void insert_cob(std::vector<Op>& ops, Info& info, int tick, int wave, const Cob*
                 {nullptr, launch_cob(w, pos.row, pos.col, cob_col)});
         };
 
-        ops.push_back({tick - get_cob_fly_time(scene_type, pos.row, pos.col, cob_col) , f});
+        ops.push_back({tick - get_cob_fly_time(scene_type, pos.row, pos.col, cob_col), f});
     }
 }
 

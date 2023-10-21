@@ -20,11 +20,6 @@ pvz_emulator::object::plant::explode_info& operator+=(
     return lhs;
 }
 
-int sum(const pvz_emulator::object::plant::explode_info& explode)
-{
-    return explode.from_upper + explode.from_same + explode.from_lower;
-}
-
 struct MergedWaveInfo {
     int start_tick;
     std::vector<LossInfo> merged_loss_info;

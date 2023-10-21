@@ -67,17 +67,15 @@ void test_one(const Config& config, int repeat)
         std::vector<Test> tests;
         tests.reserve(config.rounds.size());
 
-        for (int round_num = 0; round_num < config.rounds.size(); round_num++) {
-            const auto& round = config.rounds[round_num];
-
+        for (const auto& round : config.rounds) {
             w.scene.reset();
             w.scene.stop_spawn = true;
 
             Test test;
-            load_config(config, round_num, test);
+            load_setting_and_round(config.setting, round, test);
 
             auto it = test.ops.begin();
-            int curr_tick = it->tick;
+            int curr_tick = it->tick; // there are at least 2 op (setup and spawning)
             int base_tick = 0;
             for (int wave_num = 0; wave_num < round.size(); wave_num++) {
                 const auto& wave = round[wave_num];
@@ -140,8 +138,8 @@ int main(int argc, char* argv[])
         t.join();
     }
 
-    int max_headaer_count = 0;
     std::vector<std::vector<std::string>> headers(config.rounds.size());
+    int max_headaer_count = 0;
     int max_wave = 0;
     for (int round_num = 0; round_num < config.rounds.size(); round_num++) {
         const auto& round = config.rounds[round_num];
@@ -221,7 +219,7 @@ int main(int argc, char* argv[])
                 }
             }
         }
-        
+
         std::ostringstream os;
         for (int i = 0; i < loss_list.size(); i++) {
             if (loss_list[i] >= 0) {
@@ -251,10 +249,13 @@ int main(int argc, char* argv[])
                     && tick >= merged_round_info[wave_num].start_tick
                     && tick < merged_round_info[wave_num].start_tick
                             + merged_round_info[wave_num].merged_loss_info.size()) {
-                    int idx = tick - merged_round_info[wave_num].start_tick;
-                    double explode
-                        = sum(merged_round_info[wave_num].merged_loss_info[idx].explode) * 300.0;
-                    double hp = merged_round_info[wave_num].merged_loss_info[idx].hp_loss;
+                    const auto& loss_info
+                        = merged_round_info[wave_num]
+                              .merged_loss_info[tick - merged_round_info[wave_num].start_tick];
+                    double explode = (loss_info.explode.from_upper + loss_info.explode.from_same
+                                         + loss_info.explode.from_lower)
+                        * 300.0;
+                    double hp = loss_info.hp_loss;
                     loss_list.push_back((explode + hp) / table.repeat);
                     explode_loss_list.push_back(explode / table.repeat);
                     hp_loss_list.push_back(hp / table.repeat);

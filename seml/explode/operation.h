@@ -157,15 +157,13 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
 
 } // namespace _ExplodeInternal
 
-void load_config(const Config& config, int round_num, Test& test)
+void load_setting_and_round(const Setting& setting, const Round& round, Test& test)
 {
     using namespace pvz_emulator::object;
     using namespace _ExplodeInternal;
 
-    const auto& round = config.rounds[round_num];
-
     test = {};
-    test.plants.reserve(config.setting.protect_positions.size());
+    test.plants.reserve(setting.protect_positions.size());
     test.wave_infos.reserve(round.size());
     for (const auto& wave : round) {
         test.wave_infos.push_back({wave.start_tick, {}});
@@ -173,7 +171,7 @@ void load_config(const Config& config, int round_num, Test& test)
     }
 
     int base_tick = 0;
-    insert_setup(test, base_tick, config.setting.protect_positions);
+    insert_setup(test, base_tick, setting.protect_positions);
     for (const auto& wave : round) {
         insert_spawn(test, base_tick);
 
@@ -183,7 +181,7 @@ void load_config(const Config& config, int round_num, Test& test)
 
         for (const auto& action : wave.actions) {
             if (auto a = std::get_if<Cob>(&action)) {
-                insert_cob(test, base_tick + a->time, a, config.setting.scene_type);
+                insert_cob(test, base_tick + a->time, a, setting.scene_type);
             } else if (auto a = std::get_if<Jalapeno>(&action)) {
                 insert_jalapeno(test, base_tick + a->time, a);
             } else if (auto a = std::get_if<FixedFodder>(&action)) {
