@@ -55,7 +55,7 @@ void insert_spawn(std::vector<Op>& ops, Info& info, int tick, int wave, int giga
         for (auto& giga_info : info.giga_infos) {
             auto& zombie = giga_info.zombie;
 
-            if (zombie.ptr && zombie.ptr->uuid == zombie.uuid) {
+            if (zombie.is_valid()) {
                 giga_info.alive_time = giga_info.zombie.ptr->time_since_spawn;
 
                 giga_info.hit_by_ash.clear();
@@ -146,7 +146,7 @@ void insert_fixed_fodder(
     if (fodder->shovel_time != -1) {
         auto f = [&info, idx](pvz_emulator::world& w) {
             for (const auto& plant : info.action_infos[idx].plants) {
-                if (plant.ptr && plant.ptr->uuid == plant.uuid) {
+                if (plant.is_valid()) {
                     w.plant_factory.destroy(*plant.ptr);
                 }
             }
@@ -193,7 +193,7 @@ void insert_smart_fodder(
     if (fodder->shovel_time != -1) {
         auto f = [&info, idx](pvz_emulator::world& w) {
             for (const auto& plant : info.action_infos[idx].plants) {
-                if (plant.ptr && plant.ptr->uuid == plant.uuid) {
+                if (plant.is_valid()) {
                     w.plant_factory.destroy(*plant.ptr);
                 }
             }

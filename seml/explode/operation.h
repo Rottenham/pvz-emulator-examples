@@ -23,9 +23,9 @@ void insert_setup(Test& test, int tick, const std::vector<Setting::ProtectPos>& 
         for (const auto& pos : protect_positions) {
             auto plant_type = is_cob(pos) ? pvz_emulator::object::plant_type::cob_cannon
                                           : pvz_emulator::object::plant_type::umbrella_leaf;
-            auto col = is_cob(pos) ? pos.col - 2 : pos.col - 1;
 
-            auto& p = w.plant_factory.create(plant_type, pos.row - 1, col);
+            auto& p = w.plant_factory.create(
+                plant_type, pos.row - 1, is_cob(pos) ? pos.col - 2 : pos.col - 1);
             p.ignore_jack_explode = true;
             p.hp = p.max_hp = PLANT_INIT_HP;
             test.plants.push_back(&p);
@@ -40,7 +40,7 @@ void insert_spawn(Test& test, int tick)
     auto f = [tick](pvz_emulator::world& w) {
         for (const auto& zombie_type : {zombie_type::jack_in_the_box, zombie_type::ladder,
                  zombie_type::football, zombie_type::catapult}) {
-            for (int i = 0; i < 5; i++) {
+            for (int r = 0; r < 5; r++) {
                 w.zombie_factory.create(zombie_type);
             }
         }
@@ -100,7 +100,7 @@ void insert_fixed_fodder(Test& test, int tick, const FixedFodder* fodder)
     if (fodder->shovel_time != -1) {
         auto f = [&test, idx](pvz_emulator::world& w) {
             for (const auto& fodder : test.fodders[idx]) {
-                if (fodder.ptr && fodder.ptr->uuid == fodder.uuid) {
+                if (fodder.is_valid()) {
                     w.plant_factory.destroy(*fodder.ptr);
                 }
             }
@@ -146,7 +146,7 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
     if (fodder->shovel_time != -1) {
         auto f = [&test, idx](pvz_emulator::world& w) {
             for (const auto& fodder : test.fodders[idx]) {
-                if (fodder.ptr && fodder.ptr->uuid == fodder.uuid) {
+                if (fodder.is_valid()) {
                     w.plant_factory.destroy(*fodder.ptr);
                 }
             }
@@ -166,8 +166,9 @@ void load_setting_and_round(const Setting& setting, const Round& round, Test& te
     test.plants.reserve(setting.protect_positions.size());
     test.wave_infos.reserve(round.size());
     for (const auto& wave : round) {
-        test.wave_infos.push_back({wave.start_tick, {}});
-        test.wave_infos.back().loss_infos.reserve((wave.wave_length - 200) - wave.start_tick + 1);
+        WaveInfo wave_info = {wave.start_tick, {}};
+        wave_info.loss_infos.reserve((wave.wave_length - 200) - wave.start_tick + 1);
+        test.wave_infos.push_back(std::move(wave_info));
     }
 
     int base_tick = 0;
