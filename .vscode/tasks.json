@@ -50,10 +50,6 @@
             "dependsOn": [
                 "buildLib"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
         },
         {
             "label": "run",
@@ -62,6 +58,10 @@
             "dependsOn": [
                 "compile"
             ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
         },
     ]
 }
