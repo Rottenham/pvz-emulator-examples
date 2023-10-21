@@ -1,9 +1,12 @@
+.vscode
+data
+
+debug.*
+
 dest/*
 !dest/bin/
 dest/bin/*
 !dest/bin/foo
-.vscode
-hello.cpp
-data
+
 lib/build/*
 !lib/build/foo

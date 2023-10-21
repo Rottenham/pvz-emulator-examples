@@ -196,17 +196,17 @@ int main(int argc, char* argv[])
         file << "\n";
     }
 
-    auto to_string = [](const std::vector<double>& loss_list) -> std::string {
+    auto to_string = [](const std::vector<std::optional<double>>& loss_list) -> std::string {
         double min = -1;
         std::optional<size_t> min_idx;
 
         auto valid_count = std::count_if(
-            loss_list.begin(), loss_list.end(), [](const auto& loss) { return loss >= 0; });
+            loss_list.begin(), loss_list.end(), [](const auto& loss) { return loss.has_value(); });
 
         if (valid_count > 1) {
             for (size_t i = 0; i < loss_list.size(); i++) {
-                if (loss_list[i] >= 0 && (min < 0 || loss_list[i] <= min)) {
-                    min = loss_list[i];
+                if (loss_list[i].has_value() && (min < 0 || *loss_list[i] <= min)) {
+                    min = *loss_list[i];
                     min_idx = i;
                 }
             }
@@ -214,11 +214,11 @@ int main(int argc, char* argv[])
 
         std::ostringstream os;
         for (size_t i = 0; i < loss_list.size(); i++) {
-            if (loss_list[i] >= 0) {
+            if (loss_list[i].has_value()) {
                 if (min_idx.has_value() && *min_idx == i) {
-                    os << "[" << loss_list[i] << "]";
+                    os << "[" << *loss_list[i] << "]";
                 } else {
-                    os << loss_list[i];
+                    os << *loss_list[i];
                 }
             }
             os << ",";
@@ -227,14 +227,14 @@ int main(int argc, char* argv[])
     };
 
     for (size_t wave_num = 0; wave_num < max_wave; wave_num++) {
-        for (int tick = tick_range[wave_num].first; tick < tick_range[wave_num].second - 200;
+        for (int tick = tick_range[wave_num].first; tick <= tick_range[wave_num].second - 200;
              tick++) {
 
             file << wave_num + 1 << "," << tick << ",";
 
-            std::vector<double> loss_list;
-            std::vector<double> explode_loss_list;
-            std::vector<double> hp_loss_list;
+            std::vector<std::optional<double>> loss_list;
+            std::vector<std::optional<double>> explode_loss_list;
+            std::vector<std::optional<double>> hp_loss_list;
 
             for (const auto& merged_round_info : table.merged_round_infos) {
                 if (wave_num < merged_round_info.size()
@@ -253,9 +253,9 @@ int main(int argc, char* argv[])
                     explode_loss_list.push_back(explode / table.repeat);
                     hp_loss_list.push_back(hp / table.repeat);
                 } else {
-                    loss_list.push_back(-1);
-                    explode_loss_list.push_back(-1);
-                    hp_loss_list.push_back(-1);
+                    loss_list.push_back(std::nullopt);
+                    explode_loss_list.push_back(std::nullopt);
+                    hp_loss_list.push_back(std::nullopt);
                 }
             }
 
