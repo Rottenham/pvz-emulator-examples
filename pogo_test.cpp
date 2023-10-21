@@ -8,6 +8,10 @@
 
 #include <mutex>
 
+using namespace pvz_emulator;
+using namespace pvz_emulator::object;
+using namespace pvz_emulator::system;
+
 /***** 配置部分开始 *****/
 
 const int TOTAL_WAVE_NUM = 1000;
@@ -19,10 +23,6 @@ const std::vector<int> IDLE_COB_COLS = {6, 8}; // [2..9]
 const int HIT_COB_COL = -1;                    // [1..8], only effective in RE/ME
 
 /***** 配置部分结束 *****/
-
-using namespace pvz_emulator;
-using namespace pvz_emulator::object;
-using namespace pvz_emulator::system;
 
 std::mutex mtx;
 
@@ -51,7 +51,7 @@ void test(int repeat)
         }
 
         for (const auto& cob_col : IDLE_COB_COLS) {
-            for (int cob_row = 1; cob_row <= w.scene.get_max_row(); cob_row++) {
+            for (int cob_row = 1; cob_row <= static_cast<int>(w.scene.get_max_row()); cob_row++) {
                 w.plant_factory.create(plant_type::cob_cannon, cob_row - 1, cob_col - 2);
             }
         }

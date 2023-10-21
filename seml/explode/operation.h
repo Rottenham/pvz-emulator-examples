@@ -16,7 +16,7 @@ void insert_setup(Test& test, int tick, const std::vector<Setting::ProtectPos>& 
 {
     auto f = [&test, protect_positions](pvz_emulator::world& w) {
         // plant umbrella leafs to ignore catapults
-        for (int row = 0; row < w.scene.get_max_row(); row++) {
+        for (int row = 0; row < static_cast<int>(w.scene.get_max_row()); row++) {
             w.plant_factory.create(pvz_emulator::object::plant_type::umbrella_leaf, row, 0);
         }
 
@@ -90,7 +90,7 @@ void insert_fixed_fodder(Test& test, int tick, const FixedFodder* fodder)
     auto f = [&test, idx, fodders, positions](pvz_emulator::world& w) {
         assert(fodders.size() == positions.size());
 
-        for (int i = 0; i < fodders.size(); i++) {
+        for (size_t i = 0; i < fodders.size(); i++) {
             auto& p = plant_fodder(w, fodders[i], positions[i]);
             test.fodders[idx].push_back({&p, p.uuid});
         }
@@ -122,10 +122,10 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
     auto f = [&test, idx, symbol, fodders, positions, choose, waves](pvz_emulator::world& w) {
         assert(fodders.size() == positions.size());
 
-        std::vector<int> chosen;
+        std::vector<size_t> chosen;
         if (symbol == "C") {
             chosen.reserve(positions.size());
-            for (int i = 0; i < positions.size(); i++) {
+            for (size_t i = 0; i < positions.size(); i++) {
                 chosen.push_back(i);
             }
         } else if (symbol == "C_POS") {
@@ -136,7 +136,7 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
             assert(false && "unreachable");
         }
 
-        for (int i : chosen) {
+        for (auto i : chosen) {
             auto& p = plant_fodder(w, fodders[i], positions[i]);
             test.fodders[idx].push_back({&p, p.uuid});
         }

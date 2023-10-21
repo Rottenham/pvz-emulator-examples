@@ -52,9 +52,9 @@ void validate_config(const Config& config)
     }
 }
 
-bool contains_smart_fodder(const Config& config)
+bool contains_smart_fodder(const Round& round)
 {
-    for (const auto& wave : config.rounds[0]) {
+    for (const auto& wave : round) {
         for (const auto& action : wave.actions) {
             if (std::holds_alternative<SmartFodder>(action)) {
                 return true;
@@ -64,10 +64,10 @@ bool contains_smart_fodder(const Config& config)
     return false;
 }
 
-int get_giga_total(const Config& config)
+int get_giga_total(const Round& round)
 {
-    if (contains_smart_fodder(config)) {
-        return 5 * static_cast<int>(config.rounds[0].size());
+    if (contains_smart_fodder(round)) {
+        return 5 * static_cast<int>(round.size());
     } else {
         return 1000;
     }
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 
     auto config = read_json(config_file);
     validate_config(config);
-    auto giga_total = get_giga_total(config);
+    auto giga_total = get_giga_total(config.rounds[0]);
     if (giga_total != 1000) {
         total_repeat_num = static_cast<int>(total_repeat_num * 1000.0 / giga_total);
     }

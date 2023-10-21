@@ -7,6 +7,7 @@
 #include "world.h"
 
 #include <mutex>
+#include <optional>
 
 using namespace pvz_emulator;
 using namespace pvz_emulator::object;
@@ -77,7 +78,7 @@ void test_one(const Config& config, int repeat)
             auto it = test.ops.begin();
             int curr_tick = it->tick; // there are at least 2 op (setup and spawning)
             int base_tick = 0;
-            for (int wave_num = 0; wave_num < round.size(); wave_num++) {
+            for (size_t wave_num = 0; wave_num < round.size(); wave_num++) {
                 const auto& wave = round[wave_num];
 
                 for (; it != test.ops.end() && it->tick < base_tick + wave.start_tick; it++) {
@@ -138,10 +139,10 @@ int main(int argc, char* argv[])
     std::vector<std::vector<std::string>> headers(config.rounds.size());
     size_t max_headaer_count = 0;
     size_t max_wave = 0;
-    for (int round_num = 0; round_num < config.rounds.size(); round_num++) {
+    for (size_t round_num = 0; round_num < config.rounds.size(); round_num++) {
         const auto& round = config.rounds[round_num];
 
-        for (int wave_num = 0; wave_num < round.size(); wave_num++) {
+        for (size_t wave_num = 0; wave_num < round.size(); wave_num++) {
             const auto& wave = round[wave_num];
 
             std::string prefix = "[w" + std::to_string(wave_num + 1) + "] ";
@@ -159,7 +160,7 @@ int main(int argc, char* argv[])
 
     std::vector<std::pair<int, int>> tick_range(max_wave, {INT_MAX, 0});
     for (const auto& round : config.rounds) {
-        for (int wave_num = 0; wave_num < round.size(); wave_num++) {
+        for (size_t wave_num = 0; wave_num < round.size(); wave_num++) {
             const auto& wave = round[wave_num];
             tick_range[wave_num].first = std::min(tick_range[wave_num].first, wave.start_tick);
             tick_range[wave_num].second = std::max(tick_range[wave_num].second, wave.wave_length);
@@ -169,13 +170,13 @@ int main(int argc, char* argv[])
     file << ",";
     for (const auto& str : {"炮伤", "来自爆炸的炮伤", "来自啃食的炮伤"}) {
         file << "," << str;
-        for (int i = 0; i < headers.size(); i++) {
+        for (size_t i = 0; i < headers.size(); i++) {
             file << ",";
         }
     }
     file << "\n";
 
-    for (int i = 0; i < max_headaer_count; i++) {
+    for (size_t i = 0; i < max_headaer_count; i++) {
         if (i == max_headaer_count - 1) {
             file << "波数,时刻,";
         } else {
@@ -197,13 +198,13 @@ int main(int argc, char* argv[])
 
     auto to_string = [](const std::vector<double>& loss_list) -> std::string {
         double min = -1;
-        int min_idx = -1;
+        std::optional<size_t> min_idx;
 
         auto valid_count = std::count_if(
             loss_list.begin(), loss_list.end(), [](const auto& loss) { return loss >= 0; });
 
         if (valid_count > 1) {
-            for (int i = 0; i < loss_list.size(); i++) {
+            for (size_t i = 0; i < loss_list.size(); i++) {
                 if (loss_list[i] >= 0 && (min < 0 || loss_list[i] <= min)) {
                     min = loss_list[i];
                     min_idx = i;
@@ -212,9 +213,9 @@ int main(int argc, char* argv[])
         }
 
         std::ostringstream os;
-        for (int i = 0; i < loss_list.size(); i++) {
+        for (size_t i = 0; i < loss_list.size(); i++) {
             if (loss_list[i] >= 0) {
-                if (i == min_idx) {
+                if (min_idx.has_value() && *min_idx == i) {
                     os << "[" << loss_list[i] << "]";
                 } else {
                     os << loss_list[i];
@@ -225,7 +226,7 @@ int main(int argc, char* argv[])
         return os.str();
     };
 
-    for (int wave_num = 0; wave_num < max_wave; wave_num++) {
+    for (size_t wave_num = 0; wave_num < max_wave; wave_num++) {
         for (int tick = tick_range[wave_num].first; tick < tick_range[wave_num].second - 200;
              tick++) {
 
@@ -239,7 +240,8 @@ int main(int argc, char* argv[])
                 if (wave_num < merged_round_info.size()
                     && tick >= merged_round_info[wave_num].start_tick
                     && tick < merged_round_info[wave_num].start_tick
-                            + merged_round_info[wave_num].merged_loss_info.size()) {
+                            + static_cast<int>(
+                                merged_round_info[wave_num].merged_loss_info.size())) {
                     const auto& loss_info
                         = merged_round_info[wave_num]
                               .merged_loss_info[tick - merged_round_info[wave_num].start_tick];

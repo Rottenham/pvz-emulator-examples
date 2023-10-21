@@ -42,7 +42,7 @@ void update_wave(MergedWaveInfo& merged_wave_info, const WaveInfo& wave_info,
     assert(merged_wave_info.merged_loss_info.size() == wave_info.loss_infos.size());
     assert(merged_wave_info.start_tick == wave_info.start_tick);
 
-    for (int tick = 0; tick < wave_info.loss_infos.size(); tick++) {
+    for (size_t tick = 0; tick < wave_info.loss_infos.size(); tick++) {
         const auto& loss_info = wave_info.loss_infos.at(tick);
 
         for (const auto& plant : plants) {
@@ -59,7 +59,7 @@ void update_round(MergedRoundInfo& merged_round_info, const Test& test)
     }
     assert(merged_round_info.size() == test.wave_infos.size());
 
-    for (int wave_num = 0; wave_num < test.wave_infos.size(); wave_num++) {
+    for (size_t wave_num = 0; wave_num < test.wave_infos.size(); wave_num++) {
         update_wave(merged_round_info[wave_num], test.wave_infos.at(wave_num), test.plants);
     }
 }
@@ -71,7 +71,7 @@ void update_table(Table& table, const std::vector<Test>& tests)
     }
     assert(table.merged_round_infos.size() == tests.size());
 
-    for (int round_num = 0; round_num < tests.size(); round_num++) {
+    for (size_t round_num = 0; round_num < tests.size(); round_num++) {
         update_round(table.merged_round_infos[round_num], tests.at(round_num));
     }
 
@@ -87,20 +87,20 @@ void merge_table(const Table& src, Table& dst)
 
     assert(src.merged_round_infos.size() == dst.merged_round_infos.size());
 
-    for (int round_num = 0; round_num < src.merged_round_infos.size(); round_num++) {
+    for (size_t round_num = 0; round_num < src.merged_round_infos.size(); round_num++) {
         const auto& src_merged_round_info = src.merged_round_infos.at(round_num);
         auto& dst_merged_round_info = dst.merged_round_infos.at(round_num);
 
         assert(src_merged_round_info.size() == dst_merged_round_info.size());
 
-        for (int wave_num = 0; wave_num < src_merged_round_info.size(); wave_num++) {
+        for (size_t wave_num = 0; wave_num < src_merged_round_info.size(); wave_num++) {
             const auto& src_wave_info = src_merged_round_info.at(wave_num);
             auto& dst_wave_info = dst_merged_round_info.at(wave_num);
 
             assert(src_wave_info.merged_loss_info.size() == dst_wave_info.merged_loss_info.size());
             assert(src_wave_info.start_tick == dst_wave_info.start_tick);
 
-            for (int tick = 0; tick < src_wave_info.merged_loss_info.size(); tick++) {
+            for (size_t tick = 0; tick < src_wave_info.merged_loss_info.size(); tick++) {
                 dst_wave_info.merged_loss_info[tick].explode
                     += src_wave_info.merged_loss_info[tick].explode;
                 dst_wave_info.merged_loss_info[tick].hp_loss

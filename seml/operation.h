@@ -3,6 +3,8 @@
 #include "reader/types.h"
 #include "world.h"
 
+#include <optional>
+
 pvz_emulator::object::plant& plant_fodder(
     pvz_emulator::world& w, const Fodder& fodder, const CardPos& pos)
 {
@@ -39,18 +41,19 @@ std::vector<size_t> choose_by_pos(pvz_emulator::world& w, const std::vector<Card
     std::vector<size_t> res;
     res.reserve(choose);
     for (int i = 0; i < choose; i++) {
-        int min_x = GIGA_X_MAX, best_index = -1;
+        int min_x = GIGA_X_MAX;
+        std::optional<size_t> best_index;
         for (const auto& index : indices) {
             if (giga_min_x[positions[index].row - 1] < min_x) {
                 min_x = giga_min_x[positions[index].row - 1];
-                best_index = static_cast<int>(index);
+                best_index = index;
             }
         }
-        if (best_index == -1) {
+        if (!best_index.has_value()) {
             break;
         } else {
-            indices.erase(best_index);
-            res.push_back(best_index);
+            indices.erase(*best_index);
+            res.push_back(*best_index);
         }
     }
     return res;
@@ -78,18 +81,19 @@ std::vector<size_t> choose_by_num(pvz_emulator::world& w, const std::vector<Card
     std::vector<size_t> res;
     res.reserve(choose);
     for (int i = 0; i < choose; i++) {
-        int max_count = -1, best_index = -1;
+        int max_count = -1;
+        std::optional<size_t> best_index;
         for (const auto& index : indices) {
             if (ladder_jack_count[positions[index].row - 1] > max_count) {
                 max_count = ladder_jack_count[positions[index].row - 1];
-                best_index = static_cast<int>(index);
+                best_index = index;
             }
         }
-        if (best_index == -1) {
+        if (!best_index.has_value()) {
             break;
         } else {
-            indices.erase(best_index);
-            res.push_back(best_index);
+            indices.erase(*best_index);
+            res.push_back(*best_index);
         }
     }
     return res;
