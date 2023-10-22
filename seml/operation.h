@@ -27,7 +27,7 @@ std::vector<size_t> choose_by_pos(pvz_emulator::world& w, const std::vector<Card
         if (!z.is_dead && z.is_not_dying
             && z.type == pvz_emulator::object::zombie_type::giga_gargantuar
             && (waves.empty() || waves.count(z.spawn_wave))
-            && (giga_min_x[z.row] == 0 || z.int_x < giga_min_x[z.row])) {
+            && (z.int_x < giga_min_x[z.row])) {
             giga_min_x[z.row] = z.int_x;
         }
     }
