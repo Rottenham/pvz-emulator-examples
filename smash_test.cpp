@@ -43,6 +43,16 @@ void validate_config(const Config& config)
         std::cerr << "Must provide at least one protect position." << std::endl;
         exit(1);
     }
+
+    std::unordered_set<int> protect_rows;
+    for (const auto& protect_position : config.setting.protect_positions) {
+        if (protect_rows.count(protect_position.row)) {
+            std::cerr << "Cannot provide multiple protect positions on the same row: "
+                      << protect_position.row << std::endl;
+            exit(1);
+        }
+        protect_rows.insert(protect_position.row);
+    }
 }
 
 bool contains_smart_fodder(const Round& round)

@@ -27,7 +27,8 @@ void validate_config(Config& config)
             exit(1);
         }
         if (round.size() > 200) {
-            std::cerr << "Total number of waves must not exceed 200: " << config.rounds.size() << std::endl;
+            std::cerr << "Total number of waves must not exceed 200: " << config.rounds.size()
+                      << std::endl;
             exit(1);
         }
         for (auto& wave : round) {
@@ -40,6 +41,16 @@ void validate_config(Config& config)
     if (config.setting.protect_positions.empty()) {
         std::cerr << "Must provide at least one protect position." << std::endl;
         exit(1);
+    }
+
+    std::unordered_set<int> protect_rows;
+    for (const auto& protect_position : config.setting.protect_positions) {
+        if (protect_rows.count(protect_position.row)) {
+            std::cerr << "Cannot provide multiple protect positions on the same row: "
+                      << protect_position.row << std::endl;
+            exit(1);
+        }
+        protect_rows.insert(protect_position.row);
     }
 }
 
@@ -256,8 +267,8 @@ int main(int argc, char* argv[])
 
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
     std::cout << "Output file has been saved to " << full_output_file << ".\n"
-              << "Finished in " << std::fixed << std::setprecision(2) << elapsed.count() << "s with "
-              << threads.size() << " threads.";
+              << "Finished in " << std::fixed << std::setprecision(2) << elapsed.count()
+              << "s with " << threads.size() << " threads.";
 
     return 0;
 }
