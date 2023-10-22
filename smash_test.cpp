@@ -17,9 +17,15 @@ RawTable raw_table;
 
 void validate_config(const Config& config)
 {
-    if (config.rounds.size() != 1) {
-        std::cerr << "Smash test only supports duplicate = 1." << std::endl;
+    if (config.rounds.empty()) {
+        std::cerr << "Must provide at least one round." << std::endl;
         exit(1);
+    }
+
+    if (config.rounds.size() > 1) {
+        std::cout << "Warning: " << config.rounds.size()
+                  << " rounds were provided, but smash test will ignore all except the first round."
+                  << std::endl;
     }
 
     if (config.rounds[0].empty()) {
@@ -28,27 +34,14 @@ void validate_config(const Config& config)
     }
 
     if (config.rounds[0].size() > 200) {
-        std::cerr << "Total number of waves must not exceed 200." << std::endl;
+        std::cerr << "Total number of waves must not exceed 200: " << config.rounds.size()
+                  << std::endl;
         exit(1);
     }
 
     if (config.setting.protect_positions.empty()) {
-        std::cerr << "Must provide protect positions." << std::endl;
+        std::cerr << "Must provide at least one protect position." << std::endl;
         exit(1);
-    }
-
-    std::unordered_set<int> valid_rows;
-    if (is_backyard(config.setting.scene_type)) {
-        valid_rows = {1, 2, 5, 6};
-    } else {
-        valid_rows = {1, 2, 3, 4, 5};
-    }
-
-    for (const auto& protect_position : config.setting.protect_positions) {
-        if (!valid_rows.count(protect_position.row)) {
-            std::cerr << "Invalid row for protect position: " << protect_position.row << std::endl;
-            exit(1);
-        }
     }
 }
 
@@ -138,12 +131,12 @@ int main(int argc, char* argv[])
 
     auto [table, summary] = generate_table_and_summary(raw_table);
 
-    file << "每波砸率,";
+    file << "Smash rate per wave,";
     for (const auto& wave : summary.waves) {
         file << "w" << wave << ",";
     }
     file << "\n";
-    file << "总和,";
+    file << "Total,";
     for (const auto& wave : summary.waves) {
         const auto& garg_summary = summary.garg_summary_by_wave.at(wave);
         file << std::fixed << std::setprecision(2)
@@ -154,11 +147,11 @@ int main(int argc, char* argv[])
     file << "\n";
 
     for (const auto& protect_position : config.setting.protect_positions) {
-        file << protect_position.row << "路" << protect_position.col;
+        file << "Row " << protect_position.row << " Col " << protect_position.col << " ";
         if (is_cob(protect_position)) {
-            file << "炮,";
+            file << "Cob,";
         } else {
-            file << "普通,";
+            file << "Normal,";
         }
         for (const auto& wave : summary.waves) {
             const auto& garg_summary = summary.garg_summary_by_wave.at(wave);
@@ -175,7 +168,7 @@ int main(int argc, char* argv[])
     Info info;
     load_round(config.setting, config.rounds[0], info, 1000);
 
-    file << "\n出生波数,每波砸率,砸炮数,总数,";
+    file << "\nWave,Smash rate per wave,Smash count,Total count,";
     auto prev_wave = -1;
     for (const auto& action_info : info.action_infos) {
         if (action_info.wave != prev_wave) {
@@ -185,7 +178,7 @@ int main(int argc, char* argv[])
         file << action_info.desc << ",";
     }
     for (const auto& protect_position : config.setting.protect_positions) {
-        file << protect_position.row << "路,";
+        file << "Row " << protect_position.row << ",";
     }
     file << "\n";
 
@@ -206,9 +199,9 @@ int main(int argc, char* argv[])
     file.close();
 
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
-    std::cout << "输出文件已保存至 " << full_output_file << ".\n"
-              << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
-              << threads.size() << " 个线程.";
+    std::cout << "Output file has been saved to " << full_output_file << ".\n"
+              << "Finished in " << std::fixed << std::setprecision(2) << elapsed.count()
+              << "s with " << threads.size() << " threads.";
 
     return 0;
 }

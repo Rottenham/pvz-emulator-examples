@@ -224,7 +224,7 @@ Config read_json(const std::string& filename)
     FILE* fp = std::fopen(filename.c_str(), "rb");
 
     if (!fp) {
-        std::cerr << "无法打开文件: " << filename << std::endl;
+        std::cerr << "Cannot open file: " << filename << std::endl;
         exit(1);
     }
 
@@ -236,7 +236,7 @@ Config read_json(const std::string& filename)
     fclose(fp);
 
     if (doc.HasParseError()) {
-        std::cerr << "不是有效的 JSON 格式: " << filename << std::endl;
+        std::cerr << "Invalid JSON: " << filename << std::endl;
         exit(1);
     }
 

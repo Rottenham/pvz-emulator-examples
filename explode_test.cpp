@@ -27,7 +27,7 @@ void validate_config(Config& config)
             exit(1);
         }
         if (round.size() > 200) {
-            std::cerr << "Total number of waves must not exceed 200." << std::endl;
+            std::cerr << "Total number of waves must not exceed 200: " << config.rounds.size() << std::endl;
             exit(1);
         }
         for (auto& wave : round) {
@@ -38,22 +38,8 @@ void validate_config(Config& config)
     }
 
     if (config.setting.protect_positions.empty()) {
-        std::cerr << "Must provide protect positions." << std::endl;
+        std::cerr << "Must provide at least one protect position." << std::endl;
         exit(1);
-    }
-
-    std::unordered_set<int> valid_rows;
-    if (is_backyard(config.setting.scene_type)) {
-        valid_rows = {1, 2, 5, 6};
-    } else {
-        valid_rows = {1, 2, 3, 4, 5};
-    }
-
-    for (const auto& protect_position : config.setting.protect_positions) {
-        if (!valid_rows.count(protect_position.row)) {
-            std::cerr << "Invalid row for protect position: " << protect_position.row << std::endl;
-            exit(1);
-        }
     }
 }
 
@@ -168,7 +154,7 @@ int main(int argc, char* argv[])
     }
 
     file << ",";
-    for (const auto& str : {"炮伤", "来自爆炸的炮伤", "来自啃食的炮伤"}) {
+    for (const auto& str : {"Loss", "Loss from explosion", "Loss from eating"}) {
         file << "," << str;
         for (size_t i = 0; i < headers.size(); i++) {
             file << ",";
@@ -178,7 +164,7 @@ int main(int argc, char* argv[])
 
     for (size_t i = 0; i < max_headaer_count; i++) {
         if (i == max_headaer_count - 1) {
-            file << "波数,时刻,";
+            file << "wave,tick,";
         } else {
             file << ",,";
         }
@@ -269,9 +255,9 @@ int main(int argc, char* argv[])
     file.close();
 
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
-    std::cout << "输出文件已保存至 " << full_output_file << ".\n"
-              << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
-              << threads.size() << " 个线程.";
+    std::cout << "Output file has been saved to " << full_output_file << ".\n"
+              << "Finished in " << std::fixed << std::setprecision(2) << elapsed.count() << "s with "
+              << threads.size() << " threads.";
 
     return 0;
 }
