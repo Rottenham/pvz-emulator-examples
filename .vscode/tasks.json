@@ -46,6 +46,8 @@
                 "-Wsign-promo",
                 "-Wundef",
                 "-Wunused-variable",
+                "-Wuseless-cast",
+                "-Wzero-as-null-pointer-constant",
             ],
             "dependsOn": [
                 "buildLib"
