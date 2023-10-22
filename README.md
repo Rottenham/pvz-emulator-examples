@@ -22,5 +22,5 @@ Windows x86-64, VSCode, Cmake, Ninja, g++.
 - `row`, `col` 为 0 下标起始（与内存数据一致）
     - `scene.get_max_row()` 是 1 下标起始
 - <del>跳跳和玉米炮的互动有 bug, 将玉米炮视作普通植物.</del> (已修复)
-- 搭梯判断有 bug, 梯子僵尸会给所有植物搭梯. (本 repo 已修复, 原 repo 尚未修复)
-- rect::is_overlap_with_circle 有 bug (本 repo 已修复, 原 repo 尚未修复)
+- <del>搭梯判断有 bug, 梯子僵尸会给所有植物搭梯.</del> (已修复)
+- <del>rect::is_overlap_with_circle 有 bug.</del> (已修复)
