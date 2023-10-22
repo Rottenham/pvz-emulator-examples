@@ -30,14 +30,14 @@ void read_cards(
 }
 
 void read_fodder_positions(
-    const rapidjson::GenericArray<true, rapidjson::Value> pos_vals, std::vector<CardPos>& positions)
+    const rapidjson::GenericArray<true, rapidjson::Value> position_vals, std::vector<CardPos>& positions)
 {
-    positions.reserve(pos_vals.Size());
-    for (const auto& pos_val : pos_vals) {
-        CardPos pos;
-        pos.row = pos_val["row"].GetInt();
-        pos.col = pos_val["col"].GetInt();
-        positions.push_back(pos);
+    positions.reserve(position_vals.Size());
+    for (const auto& position_val : position_vals) {
+        CardPos card_pos;
+        card_pos.row = position_val["row"].GetInt();
+        card_pos.col = position_val["col"].GetInt();
+        positions.push_back(card_pos);
     }
 }
 
@@ -47,17 +47,19 @@ void read_action(const rapidjson::Value& val, Action& action)
 
     if (op == "Cob") {
         Cob cob;
-        const auto positions = val["positions"].GetArray();
-        cob.positions.reserve(positions.Size());
 
         cob.symbol = val["symbol"].GetString();
         cob.time = val["time"].GetInt();
-        for (const auto& pos_val : positions) {
-            CobPos pos;
-            pos.row = pos_val["row"].GetInt();
-            pos.col = pos_val["col"].GetFloat();
-            cob.positions.push_back(pos);
+
+        const auto position_vals = val["positions"].GetArray();
+        cob.positions.reserve(position_vals.Size());
+        for (const auto& position_val : position_vals) {
+            CobPos cob_pos;
+            cob_pos.row = position_val["row"].GetInt();
+            cob_pos.col = position_val["col"].GetFloat();
+            cob.positions.push_back(cob_pos);
         }
+
         auto cob_col_val = val.FindMember("cobCol");
         if (cob_col_val != val.MemberEnd()) {
             cob.cob_col = cob_col_val->value.GetInt();
@@ -88,8 +90,6 @@ void read_action(const rapidjson::Value& val, Action& action)
         action = fodder;
     } else if (op == "SmartFodder") {
         SmartFodder fodder;
-        const auto waves = val["waves"].GetArray();
-        fodder.waves.reserve(waves.Size());
 
         fodder.symbol = val["symbol"].GetString();
         fodder.time = val["time"].GetInt();
@@ -100,6 +100,9 @@ void read_action(const rapidjson::Value& val, Action& action)
         read_cards(val["fodders"].GetArray(), fodder.fodders);
         read_fodder_positions(val["positions"].GetArray(), fodder.positions);
         fodder.choose = val["choose"].GetInt();
+
+        const auto waves = val["waves"].GetArray();
+        fodder.waves.reserve(waves.Size());
         for (const auto& wave_val : waves) {
             fodder.waves.insert(wave_val.GetInt());
         }
@@ -113,14 +116,15 @@ void read_action(const rapidjson::Value& val, Action& action)
 void read_wave(const rapidjson::Value& val, Wave& wave)
 {
     const auto ice_times = val["iceTimes"].GetArray();
-    const auto actions = val["actions"].GetArray();
     wave.ice_times.reserve(ice_times.Size());
-    wave.actions.reserve(actions.Size());
-
     for (const auto& ice_time : ice_times) {
         wave.ice_times.push_back(ice_time.GetInt());
     }
+
     wave.wave_length = val["waveLength"].GetInt();
+
+    const auto actions = val["actions"].GetArray();
+    wave.actions.reserve(actions.Size());
     for (const auto& action_val : actions) {
         Action action;
         read_action(action_val, action);
@@ -160,7 +164,8 @@ void read_rounds(const rapidjson::Value& val, std::vector<Round>& rounds)
 void read_setting(const rapidjson::Value& val, Setting& setting)
 {
     for (auto it = val.MemberBegin(); it != val.MemberEnd(); it++) {
-        if (strcmp(it->name.GetString(), "scene") == 0) {
+        std::string key = it->name.GetString();
+        if (key == "scene") {
             std::string scene = it->value.GetString();
             if (scene == "NE" || scene == "DE") {
                 setting.scene_type = pvz_emulator::object::scene_type::night;
@@ -171,16 +176,23 @@ void read_setting(const rapidjson::Value& val, Setting& setting)
             } else {
                 assert(false && "unreachable");
             }
-        } else if (strcmp(it->name.GetString(), "protect") == 0) {
-            auto protect_positions = it->value.GetArray();
-            setting.protect_positions.reserve(protect_positions.Size());
+        } else if (key == "protect") {
+            auto protect_vals = it->value.GetArray();
+            setting.protect_positions.reserve(protect_vals.Size());
 
-            for (const auto& protect_position : protect_positions) {
-                std::string type = protect_position["type"].GetString();
-                setting.protect_positions.push_back(
-                    {type == "Cob" ? Setting::ProtectPos::Type::Cob
-                                   : Setting::ProtectPos::Type::Normal,
-                        protect_position["row"].GetInt(), protect_position["col"].GetInt()});
+            for (const auto& protect_val : protect_vals) {
+                std::string type = protect_val["type"].GetString();
+                int row = protect_val["row"].GetInt();
+                int col = protect_val["col"].GetInt();
+
+                if (type == "Cob") {
+                    setting.protect_positions.push_back({Setting::ProtectPos::Type::Cob, row, col});
+                } else if (type == "Normal") {
+                    setting.protect_positions.push_back(
+                        {Setting::ProtectPos::Type::Normal, row, col});
+                } else {
+                    assert(false && "unreachable");
+                }
             }
         } else {
             assert(false && "unreachable");
@@ -193,9 +205,11 @@ void read_config(const rapidjson::Value& val, Config& config)
     config = {};
 
     for (auto it = val.MemberBegin(); it != val.MemberEnd(); it++) {
-        if (strcmp(it->name.GetString(), "setting") == 0) {
+        std::string key = it->name.GetString();
+
+        if (key == "setting") {
             read_setting(it->value, config.setting);
-        } else if (strcmp(it->name.GetString(), "rounds") == 0) {
+        } else if (key == "rounds") {
             read_rounds(it->value, config.rounds);
         } else {
             assert(false && "unreachable");
