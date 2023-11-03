@@ -29,8 +29,8 @@ void read_cards(
     }
 }
 
-void read_fodder_positions(
-    const rapidjson::GenericArray<true, rapidjson::Value> position_vals, std::vector<CardPos>& positions)
+void read_fodder_positions(const rapidjson::GenericArray<true, rapidjson::Value> position_vals,
+    std::vector<CardPos>& positions)
 {
     positions.reserve(position_vals.Size());
     for (const auto& position_val : position_vals) {
@@ -43,6 +43,8 @@ void read_fodder_positions(
 
 void read_action(const rapidjson::Value& val, Action& action)
 {
+    using namespace pvz_emulator::object;
+
     std::string op = val["op"].GetString();
 
     if (op == "Cob") {
@@ -66,15 +68,27 @@ void read_action(const rapidjson::Value& val, Action& action)
         }
 
         action = cob;
-    } else if (op == "Jalapeno") {
-        Jalapeno jalapeno;
+    } else if (op == "FixedCard") {
+        FixedCard fixed_card;
 
-        jalapeno.symbol = val["symbol"].GetString();
-        jalapeno.time = val["time"].GetInt();
-        jalapeno.position.row = val["position"]["row"].GetInt();
-        jalapeno.position.col = val["position"]["col"].GetInt();
+        fixed_card.symbol = val["symbol"].GetString();
+        fixed_card.time = val["time"].GetInt();
+        auto shovel_time_val = val.FindMember("shovelTime");
+        if (shovel_time_val != val.MemberEnd()) {
+            fixed_card.shovel_time = shovel_time_val->value.GetInt();
+        }
 
-        action = jalapeno;
+        fixed_card.plant_type
+            = static_cast<pvz_emulator::object::plant_type>(val["plantType"].GetInt());
+        if (fixed_card.plant_type != plant_type::jalapeno
+            && fixed_card.plant_type != plant_type::garlic) {
+            assert(false && "unknown plant type");
+        }
+
+        fixed_card.position.row = val["position"]["row"].GetInt();
+        fixed_card.position.col = val["position"]["col"].GetInt();
+
+        action = fixed_card;
     } else if (op == "FixedFodder") {
         FixedFodder fodder;
 

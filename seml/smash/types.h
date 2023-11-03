@@ -39,5 +39,6 @@ struct Info {
     std::vector<Setting::ProtectPos> protect_positions;
     std::vector<GigaInfo> giga_infos;
     std::vector<ActionInfo> action_infos;
+    std::vector<unique_plant> cards_to_be_shoveled;
     std::mt19937 gen;
 };

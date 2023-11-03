@@ -33,12 +33,23 @@ struct Cob {
     std::string desc() const { return std::to_string(time) + symbol; }
 };
 
-struct Jalapeno {
+struct FixedCard {
     std::string symbol;
     int time;
+    int shovel_time = -1;
+    pvz_emulator::object::plant_type plant_type;
     CardPos position;
 
-    std::string desc() const { return std::to_string(time) + symbol; }
+    std::string desc() const
+    {
+        std::ostringstream os;
+        os << time;
+        if (shovel_time != -1) {
+            os << "~" << shovel_time;
+        }
+        os << symbol;
+        return os.str();
+    }
 };
 
 struct FixedFodder {
@@ -88,13 +99,13 @@ struct SmartFodder {
     }
 };
 
-using Action = std::variant<Cob, Jalapeno, FixedFodder, SmartFodder>;
+using Action = std::variant<Cob, FixedCard, FixedFodder, SmartFodder>;
 
 std::string desc(const Action& action)
 {
     if (auto a = std::get_if<Cob>(&action)) {
         return a->desc();
-    } else if (auto a = std::get_if<Jalapeno>(&action)) {
+    } else if (auto a = std::get_if<FixedCard>(&action)) {
         return a->desc();
     } else if (auto a = std::get_if<FixedFodder>(&action)) {
         return a->desc();

@@ -69,21 +69,42 @@ void insert_cob(
     }
 }
 
-void insert_jalapeno(Test& test, int tick, const Jalapeno* jalapeno)
+void insert_fixed_card(Test& test, int tick, const FixedCard* fixed_card)
 {
-    auto pos = jalapeno->position;
+    test.plants_to_be_shoveled.push_back({});
+    auto idx = test.plants_to_be_shoveled.size() - 1;
+    auto plant_type = fixed_card->plant_type;
+    auto pos = fixed_card->position;
 
-    auto f = [&test, pos](pvz_emulator::world& w) {
-        w.plant_factory.create(
-            pvz_emulator::object::plant_type::jalapeno, pos.row - 1, pos.col - 1);
+    auto f = [&test, idx, plant_type, pos](pvz_emulator::world& w) {
+        auto& p = w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
+        test.plants_to_be_shoveled[idx].push_back({&p, p.uuid});
     };
-    test.ops.push_back({tick - 100, f});
+
+    if (plant_type == plant_type::jalapeno) {
+        test.ops.push_back({tick - 100, f});
+    } else if (plant_type == plant_type::garlic) {
+        test.ops.push_back({tick, f});
+    } else {
+        assert(false && "unreachable");
+    }
+
+    if (fixed_card->shovel_time != -1) {
+        auto f = [&test, idx](pvz_emulator::world& w) {
+            for (auto plant : test.plants_to_be_shoveled[idx]) {
+                if (plant.is_valid()) {
+                    w.plant_factory.destroy(*plant.ptr);
+                }
+            }
+        };
+        test.ops.push_back({tick + fixed_card->shovel_time - fixed_card->time, f});
+    }
 }
 
 void insert_fixed_fodder(Test& test, int tick, const FixedFodder* fodder)
 {
-    test.fodders.push_back({});
-    auto idx = test.fodders.size() - 1;
+    test.plants_to_be_shoveled.push_back({});
+    auto idx = test.plants_to_be_shoveled.size() - 1;
     auto fodders = fodder->fodders;
     auto positions = fodder->positions;
 
@@ -92,14 +113,14 @@ void insert_fixed_fodder(Test& test, int tick, const FixedFodder* fodder)
 
         for (size_t i = 0; i < fodders.size(); i++) {
             auto& p = plant_fodder(w, fodders[i], positions[i]);
-            test.fodders[idx].push_back({&p, p.uuid});
+            test.plants_to_be_shoveled[idx].push_back({&p, p.uuid});
         }
     };
     test.ops.push_back({tick, f});
 
     if (fodder->shovel_time != -1) {
         auto f = [&test, idx](pvz_emulator::world& w) {
-            for (const auto& fodder : test.fodders[idx]) {
+            for (const auto& fodder : test.plants_to_be_shoveled[idx]) {
                 if (fodder.is_valid()) {
                     w.plant_factory.destroy(*fodder.ptr);
                 }
@@ -111,8 +132,8 @@ void insert_fixed_fodder(Test& test, int tick, const FixedFodder* fodder)
 
 void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
 {
-    test.fodders.push_back({});
-    auto idx = test.fodders.size() - 1;
+    test.plants_to_be_shoveled.push_back({});
+    auto idx = test.plants_to_be_shoveled.size() - 1;
     auto symbol = fodder->symbol;
     auto fodders = fodder->fodders;
     auto positions = fodder->positions;
@@ -138,14 +159,14 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
 
         for (auto i : chosen) {
             auto& p = plant_fodder(w, fodders[i], positions[i]);
-            test.fodders[idx].push_back({&p, p.uuid});
+            test.plants_to_be_shoveled[idx].push_back({&p, p.uuid});
         }
     };
     test.ops.push_back({tick, f});
 
     if (fodder->shovel_time != -1) {
         auto f = [&test, idx](pvz_emulator::world& w) {
-            for (const auto& fodder : test.fodders[idx]) {
+            for (const auto& fodder : test.plants_to_be_shoveled[idx]) {
                 if (fodder.is_valid()) {
                     w.plant_factory.destroy(*fodder.ptr);
                 }
@@ -183,8 +204,8 @@ void load_round(const Setting& setting, const Round& round, Test& test)
         for (const auto& action : wave.actions) {
             if (auto a = std::get_if<Cob>(&action)) {
                 insert_cob(test, base_tick + a->time, a, setting.scene_type);
-            } else if (auto a = std::get_if<Jalapeno>(&action)) {
-                insert_jalapeno(test, base_tick + a->time, a);
+            } else if (auto a = std::get_if<FixedCard>(&action)) {
+                insert_fixed_card(test, base_tick + a->time, a);
             } else if (auto a = std::get_if<FixedFodder>(&action)) {
                 insert_fixed_fodder(test, base_tick + a->time, a);
             } else if (auto a = std::get_if<SmartFodder>(&action)) {

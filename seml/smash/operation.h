@@ -111,18 +111,37 @@ void insert_cob(std::vector<Op>& ops, Info& info, int tick, int wave, const Cob*
     }
 }
 
-void insert_jalapeno(std::vector<Op>& ops, Info& info, int tick, int wave, const Jalapeno* jalapeno)
+void insert_fixed_card(
+    std::vector<Op>& ops, Info& info, int tick, int wave, const FixedCard* fixed_card)
 {
-    info.action_infos.push_back({ActionInfo::Type::Ash, wave, tick, jalapeno->desc(), {}});
-    auto idx = info.action_infos.size() - 1;
-    auto pos = jalapeno->position;
+    info.cards_to_be_shoveled.push_back({});
+    auto idx = info.cards_to_be_shoveled.size() - 1;
+    auto plant_type = fixed_card->plant_type;
+    auto pos = fixed_card->position;
 
-    auto f = [&info, idx, pos](pvz_emulator::world& w) {
-        auto& p = w.plant_factory.create(
-            pvz_emulator::object::plant_type::jalapeno, pos.row - 1, pos.col - 1);
-        info.action_infos[idx].plants.push_back({&p, p.uuid});
+    auto f = [&info, idx, plant_type, pos](pvz_emulator::world& w) {
+        auto& p = w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
+        info.cards_to_be_shoveled[idx] = {&p, p.uuid};
     };
-    ops.push_back({tick - 100, f});
+
+    if (plant_type == plant_type::jalapeno) {
+        ops.push_back({tick - 100, f});
+    } else if (plant_type == plant_type::garlic) {
+        ops.push_back({tick, f});
+    } else {
+        assert(false && "unreachable");
+    }
+
+    if (fixed_card->shovel_time != -1) {
+        auto f = [&info, idx](pvz_emulator::world& w) {
+            auto plant = info.cards_to_be_shoveled[idx];
+
+            if (plant.is_valid()) {
+                w.plant_factory.destroy(*plant.ptr);
+            }
+        };
+        ops.push_back({tick + fixed_card->shovel_time - fixed_card->time, f});
+    }
 }
 
 void insert_fixed_fodder(
@@ -237,8 +256,8 @@ std::vector<Op> load_round(const Setting& setting, const Round& round, Info& inf
             if (auto a = std::get_if<Cob>(&action)) {
                 insert_cob(ops, info, base_tick + a->time, wave_num, a, setting.scene_type);
                 effect_time += a->time + 3;
-            } else if (auto a = std::get_if<Jalapeno>(&action)) {
-                insert_jalapeno(ops, info, base_tick + a->time, wave_num, a);
+            } else if (auto a = std::get_if<FixedCard>(&action)) {
+                insert_fixed_card(ops, info, base_tick + a->time, wave_num, a);
                 effect_time += a->time;
             } else if (auto a = std::get_if<FixedFodder>(&action)) {
                 insert_fixed_fodder(ops, info, base_tick + a->time, wave_num, a);

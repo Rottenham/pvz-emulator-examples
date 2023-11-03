@@ -24,6 +24,6 @@ struct WaveInfo {
 struct Test {
     std::vector<WaveInfo> wave_infos;
     std::vector<pvz_emulator::object::plant*> plants;
-    std::vector<std::vector<unique_plant>> fodders; // for removing fodders
+    std::vector<std::vector<unique_plant>> plants_to_be_shoveled;
     std::vector<Op> ops;
 };
