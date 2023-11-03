@@ -114,30 +114,36 @@ void insert_cob(std::vector<Op>& ops, Info& info, int tick, int wave, const Cob*
 void insert_fixed_card(
     std::vector<Op>& ops, Info& info, int tick, int wave, const FixedCard* fixed_card)
 {
-    info.cards_to_be_shoveled.push_back({});
-    auto idx = info.cards_to_be_shoveled.size() - 1;
     auto plant_type = fixed_card->plant_type;
+    int op_tick;
+    ActionInfo::Type action_info_type;
+
+    if (plant_type == pvz_emulator::object::plant_type::jalapeno) {
+        op_tick = tick - 100;
+        action_info_type = ActionInfo::Type::Ash;
+    } else if (plant_type == pvz_emulator::object::plant_type::garlic) {
+        op_tick = tick;
+        action_info_type = ActionInfo::Type::Fodder;
+    } else {
+        assert(false && "unreachable");
+    }
+    info.action_infos.push_back({action_info_type, wave, tick, fixed_card->desc(), {}});
+
+    auto idx = info.action_infos.size() - 1;
     auto pos = fixed_card->position;
 
     auto f = [&info, idx, plant_type, pos](pvz_emulator::world& w) {
         auto& p = w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
-        info.cards_to_be_shoveled[idx] = {&p, p.uuid};
+        info.action_infos[idx].plants.push_back({&p, p.uuid});
     };
-
-    if (plant_type == plant_type::jalapeno) {
-        ops.push_back({tick - 100, f});
-    } else if (plant_type == plant_type::garlic) {
-        ops.push_back({tick, f});
-    } else {
-        assert(false && "unreachable");
-    }
+    ops.push_back({op_tick, f});
 
     if (fixed_card->shovel_time != -1) {
         auto f = [&info, idx](pvz_emulator::world& w) {
-            auto plant = info.cards_to_be_shoveled[idx];
-
-            if (plant.is_valid()) {
-                w.plant_factory.destroy(*plant.ptr);
+            for (const auto& plant : info.action_infos[idx].plants) {
+                if (plant.is_valid()) {
+                    w.plant_factory.destroy(*plant.ptr);
+                }
             }
         };
         ops.push_back({tick + fixed_card->shovel_time - fixed_card->time, f});
@@ -236,7 +242,6 @@ std::vector<Op> load_round(const Setting& setting, const Round& round, Info& inf
     std::vector<Op> ops;
 
     int base_tick = 0;
-    int latest_effect_time = 0;
     auto giga_rows = get_giga_rows(setting);
 
     insert_setup(ops, base_tick, setting.protect_positions);
@@ -252,32 +257,30 @@ std::vector<Op> load_round(const Setting& setting, const Round& round, Info& inf
         }
 
         for (const auto& action : wave.actions) {
-            int effect_time = base_tick;
             if (auto a = std::get_if<Cob>(&action)) {
                 insert_cob(ops, info, base_tick + a->time, wave_num, a, setting.scene_type);
-                effect_time += a->time + 3;
             } else if (auto a = std::get_if<FixedCard>(&action)) {
                 insert_fixed_card(ops, info, base_tick + a->time, wave_num, a);
-                effect_time += a->time;
             } else if (auto a = std::get_if<FixedFodder>(&action)) {
                 insert_fixed_fodder(ops, info, base_tick + a->time, wave_num, a);
-                effect_time += std::max(a->time, a->shovel_time);
             } else if (auto a = std::get_if<SmartFodder>(&action)) {
                 insert_smart_fodder(ops, info, base_tick + a->time, wave_num, a);
-                effect_time += std::max(a->time, a->shovel_time);
             } else {
                 assert(false && "unreachable");
             }
-            latest_effect_time = std::max(latest_effect_time, effect_time);
         }
 
         base_tick += wave.wave_length;
     }
 
-    std::stable_sort(
-        ops.begin(), ops.end(), [](const Op& a, const Op& b) { return a.tick < b.tick; });
-    insert_spawn(ops, info, std::max(base_tick + 1, latest_effect_time + 1),
-        static_cast<int>(round.size()) + 1, 0, {}); // make sure giga info is synced at the end
+    std::vector<Op> valid_ops;
+    std::copy_if(ops.begin(), ops.end(), std::back_inserter(valid_ops),
+        [base_tick](const Op& op) { return op.tick <= base_tick; });
+    std::stable_sort(valid_ops.begin(), valid_ops.end(),
+        [](const Op& a, const Op& b) { return a.tick < b.tick; });
 
-    return ops;
+    insert_spawn(valid_ops, info, base_tick + 1, static_cast<int>(round.size()) + 1, 0,
+        {}); // make sure giga info is synced at the end
+
+    return valid_ops;
 }

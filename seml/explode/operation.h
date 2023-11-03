@@ -81,9 +81,9 @@ void insert_fixed_card(Test& test, int tick, const FixedCard* fixed_card)
         test.plants_to_be_shoveled[idx].push_back({&p, p.uuid});
     };
 
-    if (plant_type == plant_type::jalapeno) {
+    if (plant_type == pvz_emulator::object::plant_type::jalapeno) {
         test.ops.push_back({tick - 100, f});
-    } else if (plant_type == plant_type::garlic) {
+    } else if (plant_type == pvz_emulator::object::plant_type::garlic) {
         test.ops.push_back({tick, f});
     } else {
         assert(false && "unreachable");
