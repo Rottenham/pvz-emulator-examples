@@ -116,6 +116,8 @@ std::string desc(const Action& action)
         return a->desc();
     } else if (auto a = std::get_if<FixedCard>(&action)) {
         return a->desc();
+    } else if (auto a = std::get_if<SmartCard>(&action)) {
+        return a->desc();
     } else if (auto a = std::get_if<FixedFodder>(&action)) {
         return a->desc();
     } else if (auto a = std::get_if<SmartFodder>(&action)) {

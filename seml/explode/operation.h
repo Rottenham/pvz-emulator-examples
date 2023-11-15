@@ -101,6 +101,25 @@ void insert_fixed_card(Test& test, int tick, const FixedCard* fixed_card)
     }
 }
 
+void insert_smart_card(Test& test, int tick, const SmartCard* smart_card)
+{
+    auto plant_type = smart_card->plant_type;
+    auto positions = smart_card->positions;
+    int max_card_zombie_row_diff = get_smart_card_max_card_zombie_row_diff(smart_card);
+
+    auto f = [&test, plant_type, positions, max_card_zombie_row_diff](pvz_emulator::world& w) {
+        auto chosen = choose_by_num(w, positions, 1, {},
+            {pvz_emulator::object::zombie_type::giga_gargantuar,
+                pvz_emulator::object::zombie_type::gargantuar},
+            max_card_zombie_row_diff);
+        assert(chosen.size() == 1);
+
+        auto pos = positions[chosen[0]];
+        w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
+    };
+    test.ops.push_back({get_smart_card_op_tick(smart_card, tick), f});
+}
+
 void insert_fixed_fodder(Test& test, int tick, const FixedFodder* fodder)
 {
     test.plants_to_be_shoveled.push_back({});
@@ -209,12 +228,12 @@ void load_round(const Setting& setting, const Round& round, Test& test)
                 insert_cob(test, base_tick + a->time, a, setting.scene_type);
             } else if (auto a = std::get_if<FixedCard>(&action)) {
                 insert_fixed_card(test, base_tick + a->time, a);
+            } else if (auto a = std::get_if<SmartCard>(&action)) {
+                insert_smart_card(test, base_tick + a->time, a);
             } else if (auto a = std::get_if<FixedFodder>(&action)) {
                 insert_fixed_fodder(test, base_tick + a->time, a);
             } else if (auto a = std::get_if<SmartFodder>(&action)) {
                 insert_smart_fodder(test, base_tick + a->time, a);
-            } else if (auto a = std::get_if<SmartCard>(&action)) {
-                std::cout << "ignoring SmartCard..." << std::endl;
             } else {
                 assert(false && "unreachable");
             }

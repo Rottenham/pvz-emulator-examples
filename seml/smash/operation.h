@@ -116,16 +116,6 @@ void insert_fixed_card(
 {
     auto plant_type = fixed_card->plant_type;
 
-    int op_tick;
-    if (plant_type == pvz_emulator::object::plant_type::jalapeno
-        || plant_type == pvz_emulator::object::plant_type::cherry_bomb) {
-        op_tick = tick - 100;
-    } else if (plant_type == pvz_emulator::object::plant_type::squash) {
-        op_tick = tick - 182;
-    } else {
-        op_tick = tick;
-    }
-
     ActionInfo::Type action_info_type;
     if (plant_type == pvz_emulator::object::plant_type::jalapeno
         || plant_type == pvz_emulator::object::plant_type::cherry_bomb
@@ -144,7 +134,7 @@ void insert_fixed_card(
         auto& p = w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
         info.action_infos[idx].plants.push_back({&p, p.uuid});
     };
-    ops.push_back({op_tick, f});
+    ops.push_back({get_fixed_card_op_tick(fixed_card, tick), f});
 
     if (fixed_card->shovel_time != -1) {
         auto f = [&info, idx](pvz_emulator::world& w) {
@@ -156,6 +146,31 @@ void insert_fixed_card(
         };
         ops.push_back({tick + fixed_card->shovel_time - fixed_card->time, f});
     }
+}
+
+void insert_smart_card(
+    std::vector<Op>& ops, Info& info, int tick, int wave, const SmartCard* smart_card)
+{
+    auto plant_type = smart_card->plant_type;
+
+    info.action_infos.push_back({ActionInfo::Type::Ash, wave, tick, smart_card->desc(), {}});
+
+    auto idx = info.action_infos.size() - 1;
+    auto positions = smart_card->positions;
+    int max_card_zombie_row_diff = get_smart_card_max_card_zombie_row_diff(smart_card);
+
+    auto f = [&info, idx, plant_type, positions, max_card_zombie_row_diff](pvz_emulator::world& w) {
+        auto chosen = choose_by_num(w, positions, 1, {},
+            {pvz_emulator::object::zombie_type::giga_gargantuar,
+                pvz_emulator::object::zombie_type::gargantuar},
+            max_card_zombie_row_diff);
+        assert(chosen.size() == 1);
+
+        auto pos = positions[chosen[0]];
+        auto& p = w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
+        info.action_infos[idx].plants.push_back({&p, p.uuid});
+    };
+    ops.push_back({get_smart_card_op_tick(smart_card, tick), f});
 }
 
 void insert_fixed_fodder(
@@ -272,12 +287,12 @@ std::vector<Op> load_round(const Setting& setting, const Round& round, Info& inf
                 insert_cob(ops, info, base_tick + a->time, wave_num, a, setting.scene_type);
             } else if (auto a = std::get_if<FixedCard>(&action)) {
                 insert_fixed_card(ops, info, base_tick + a->time, wave_num, a);
+            } else if (auto a = std::get_if<SmartCard>(&action)) {
+                insert_smart_card(ops, info, base_tick + a->time, wave_num, a);
             } else if (auto a = std::get_if<FixedFodder>(&action)) {
                 insert_fixed_fodder(ops, info, base_tick + a->time, wave_num, a);
             } else if (auto a = std::get_if<SmartFodder>(&action)) {
                 insert_smart_fodder(ops, info, base_tick + a->time, wave_num, a);
-            } else if (auto a = std::get_if<SmartCard>(&action)) {
-                std::cout << "ignoring SmartCard..." << std::endl;
             } else {
                 assert(false && "unreachable");
             }

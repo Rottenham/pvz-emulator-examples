@@ -1,9 +1,9 @@
 #pragma once
 
+#include <optional>
+
 #include "reader/types.h"
 #include "world.h"
-
-#include <optional>
 
 pvz_emulator::object::plant& plant_fodder(
     pvz_emulator::world& w, const Fodder& fodder, const CardPos& pos)
@@ -60,8 +60,8 @@ std::vector<size_t> choose_by_giga_pos(pvz_emulator::world& w,
 
 std::vector<size_t> choose_by_num(pvz_emulator::world& w,
     const std::vector<CardPos>& card_positions, int choose, const std::unordered_set<int>& waves,
-    std::unordered_set<pvz_emulator::object::zombie_type>& target_zombies,
-    int max_row_diff_between_card_and_zombie)
+    const std::unordered_set<pvz_emulator::object::zombie_type>& target_zombies,
+    int max_card_zombie_row_diff)
 {
     std::array<int, 6> target_zombie_count = {};
     for (const auto& z : w.scene.zombies) {
@@ -86,8 +86,8 @@ std::vector<size_t> choose_by_num(pvz_emulator::world& w,
         for (const auto& index : indices) {
             auto card_row = card_positions[index].row - 1;
             int target_zombie_sum = 0;
-            for (int zombie_row = card_row - max_row_diff_between_card_and_zombie;
-                 zombie_row <= card_row + max_row_diff_between_card_and_zombie; zombie_row++) {
+            for (int zombie_row = card_row - max_card_zombie_row_diff;
+                 zombie_row <= card_row + max_card_zombie_row_diff; zombie_row++) {
                 if (zombie_row >= 0 && zombie_row < 6) {
                     target_zombie_sum += target_zombie_count[zombie_row];
                 }
@@ -106,6 +106,53 @@ std::vector<size_t> choose_by_num(pvz_emulator::world& w,
         }
     }
     return res;
+}
+
+int get_fixed_card_op_tick(const FixedCard* fixed_card, int tick)
+{
+    auto plant_type = fixed_card->plant_type;
+
+    if (plant_type == pvz_emulator::object::plant_type::jalapeno
+        || plant_type == pvz_emulator::object::plant_type::cherry_bomb) {
+        return tick - 100;
+    } else if (plant_type == pvz_emulator::object::plant_type::squash) {
+        return tick - 182;
+    } else if (plant_type == pvz_emulator::object::plant_type::garlic) {
+        return tick;
+    } else {
+        assert(false && "unreachable");
+        return 0;
+    }
+}
+
+int get_smart_card_op_tick(const SmartCard* smart_card, int tick)
+{
+    auto plant_type = smart_card->plant_type;
+
+    if (plant_type == pvz_emulator::object::plant_type::jalapeno
+        || plant_type == pvz_emulator::object::plant_type::cherry_bomb) {
+        return tick - 100;
+    } else if (plant_type == pvz_emulator::object::plant_type::squash) {
+        return tick - 182;
+    } else {
+        assert(false && "unreachable");
+        return 0;
+    }
+}
+
+int get_smart_card_max_card_zombie_row_diff(const SmartCard* smart_card)
+{
+    auto plant_type = smart_card->plant_type;
+
+    if (plant_type == pvz_emulator::object::plant_type::cherry_bomb) {
+        return 1;
+    } else if (plant_type == pvz_emulator::object::plant_type::jalapeno
+        || plant_type == pvz_emulator::object::plant_type::squash) {
+        return 0;
+    } else {
+        assert(false && "unreachable");
+        return 0;
+    }
 }
 
 int get_cob_fly_time(
