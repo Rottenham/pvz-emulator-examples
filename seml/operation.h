@@ -17,8 +17,8 @@ pvz_emulator::object::plant& plant_fodder(
     return w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
 }
 
-std::vector<size_t> choose_by_pos(pvz_emulator::world& w, const std::vector<CardPos>& positions,
-    int choose, const std::unordered_set<int>& waves)
+std::vector<size_t> choose_by_giga_pos(pvz_emulator::world& w,
+    const std::vector<CardPos>& positions, int choose, const std::unordered_set<int>& waves)
 {
     const int GIGA_X_MAX = 1000;
     std::array<int, 6> giga_min_x;
@@ -58,41 +58,51 @@ std::vector<size_t> choose_by_pos(pvz_emulator::world& w, const std::vector<Card
     return res;
 }
 
-std::vector<size_t> choose_by_num(pvz_emulator::world& w, const std::vector<CardPos>& positions,
-    int choose, const std::unordered_set<int>& waves)
+std::vector<size_t> choose_by_num(pvz_emulator::world& w,
+    const std::vector<CardPos>& card_positions, int choose, const std::unordered_set<int>& waves,
+    std::unordered_set<pvz_emulator::object::zombie_type>& target_zombies,
+    int max_row_diff_between_card_and_zombie)
 {
-    std::array<int, 6> ladder_jack_count = {};
+    std::array<int, 6> target_zombie_count = {};
     for (const auto& z : w.scene.zombies) {
-        if (!z.is_dead && z.is_not_dying
-            && (z.type == pvz_emulator::object::zombie_type::ladder
-                || z.type == pvz_emulator::object::zombie_type::jack_in_the_box)
+        if (!z.is_dead && z.is_not_dying && target_zombies.count(z.type)
             && (waves.empty() || waves.count(z.spawn_wave))) {
-            ladder_jack_count[z.row]++;
+            target_zombie_count[z.row]++;
         }
     }
 
     std::unordered_set<size_t> indices;
-    indices.reserve(positions.size());
-    for (size_t i = 0; i < positions.size(); i++) {
+    indices.reserve(card_positions.size());
+    for (size_t i = 0; i < card_positions.size(); i++) {
         indices.insert(i);
     }
 
     std::vector<size_t> res;
     res.reserve(choose);
     for (int i = 0; i < choose; i++) {
-        int max_count = -1;
+        int max_target_zombie_sum = -1;
         std::optional<size_t> best_index;
+
         for (const auto& index : indices) {
-            if (ladder_jack_count[positions[index].row - 1] > max_count) {
-                max_count = ladder_jack_count[positions[index].row - 1];
+            auto card_row = card_positions[index].row - 1;
+            int target_zombie_sum = 0;
+            for (int zombie_row = card_row - max_row_diff_between_card_and_zombie;
+                 zombie_row <= card_row + max_row_diff_between_card_and_zombie; zombie_row++) {
+                if (zombie_row >= 0 && zombie_row < 6) {
+                    target_zombie_sum += target_zombie_count[zombie_row];
+                }
+            }
+
+            if (target_zombie_sum > max_target_zombie_sum) {
+                max_target_zombie_sum = target_zombie_sum;
                 best_index = index;
             }
         }
         if (!best_index.has_value()) {
             break;
         } else {
-            indices.erase(*best_index);
             res.push_back(*best_index);
+            indices.erase(*best_index);
         }
     }
     return res;

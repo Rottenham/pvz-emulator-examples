@@ -11,32 +11,32 @@
 
 namespace _SemlInternal {
 
-void read_cards(
-    const rapidjson::GenericArray<true, rapidjson::Value> card_vals, std::vector<Fodder>& cards)
+void read_fodders(
+    const rapidjson::GenericArray<true, rapidjson::Value> vals, std::vector<Fodder>& fodders)
 {
-    cards.reserve(card_vals.Size());
-    for (const auto& card_val : card_vals) {
-        std::string card = card_val.GetString();
-        if (card == "Normal") {
-            cards.push_back(Fodder::Normal);
-        } else if (card == "Puff") {
-            cards.push_back(Fodder::Puff);
-        } else if (card == "Pot") {
-            cards.push_back(Fodder::Pot);
+    fodders.reserve(vals.Size());
+    for (const auto& val : vals) {
+        std::string fodder = val.GetString();
+        if (fodder == "Normal") {
+            fodders.push_back(Fodder::Normal);
+        } else if (fodder == "Puff") {
+            fodders.push_back(Fodder::Puff);
+        } else if (fodder == "Pot") {
+            fodders.push_back(Fodder::Pot);
         } else {
             assert(false && "unreachable");
         }
     }
 }
 
-void read_fodder_positions(const rapidjson::GenericArray<true, rapidjson::Value> position_vals,
-    std::vector<CardPos>& positions)
+void read_card_positions(
+    const rapidjson::GenericArray<true, rapidjson::Value> vals, std::vector<CardPos>& positions)
 {
-    positions.reserve(position_vals.Size());
-    for (const auto& position_val : position_vals) {
+    positions.reserve(vals.Size());
+    for (const auto& val : vals) {
         CardPos card_pos;
-        card_pos.row = position_val["row"].GetInt();
-        card_pos.col = position_val["col"].GetInt();
+        card_pos.row = val["row"].GetInt();
+        card_pos.col = val["col"].GetInt();
         positions.push_back(card_pos);
     }
 }
@@ -80,15 +80,29 @@ void read_action(const rapidjson::Value& val, Action& action)
 
         fixed_card.plant_type
             = static_cast<pvz_emulator::object::plant_type>(val["plantType"].GetInt());
-        if (fixed_card.plant_type != plant_type::jalapeno
-            && fixed_card.plant_type != plant_type::garlic) {
-            assert(false && "unknown plant type");
-        }
+        std::unordered_set<pvz_emulator::object::plant_type> allowed_types = {
+            plant_type::cherry_bomb, plant_type::jalapeno, plant_type::squash, plant_type::garlic};
+        assert(allowed_types.count(fixed_card.plant_type));
 
         fixed_card.position.row = val["position"]["row"].GetInt();
         fixed_card.position.col = val["position"]["col"].GetInt();
 
         action = fixed_card;
+    } else if (op == "SmartCard") {
+        SmartCard smart_card;
+
+        smart_card.symbol = val["symbol"].GetString();
+        smart_card.time = val["time"].GetInt();
+
+        smart_card.plant_type
+            = static_cast<pvz_emulator::object::plant_type>(val["plantType"].GetInt());
+        std::unordered_set<pvz_emulator::object::plant_type> allowed_types
+            = {plant_type::cherry_bomb, plant_type::jalapeno, plant_type::squash};
+        assert(allowed_types.count(smart_card.plant_type));
+
+        read_card_positions(val["positions"].GetArray(), smart_card.positions);
+
+        action = smart_card;
     } else if (op == "FixedFodder") {
         FixedFodder fodder;
 
@@ -98,8 +112,8 @@ void read_action(const rapidjson::Value& val, Action& action)
         if (shovel_time_val != val.MemberEnd()) {
             fodder.shovel_time = shovel_time_val->value.GetInt();
         }
-        read_cards(val["fodders"].GetArray(), fodder.fodders);
-        read_fodder_positions(val["positions"].GetArray(), fodder.positions);
+        read_fodders(val["fodders"].GetArray(), fodder.fodders);
+        read_card_positions(val["positions"].GetArray(), fodder.positions);
 
         action = fodder;
     } else if (op == "SmartFodder") {
@@ -111,8 +125,8 @@ void read_action(const rapidjson::Value& val, Action& action)
         if (shovel_time_val != val.MemberEnd()) {
             fodder.shovel_time = shovel_time_val->value.GetInt();
         }
-        read_cards(val["fodders"].GetArray(), fodder.fodders);
-        read_fodder_positions(val["positions"].GetArray(), fodder.positions);
+        read_fodders(val["fodders"].GetArray(), fodder.fodders);
+        read_card_positions(val["positions"].GetArray(), fodder.positions);
         fodder.choose = val["choose"].GetInt();
 
         const auto waves = val["waves"].GetArray();
@@ -151,26 +165,25 @@ void read_wave(const rapidjson::Value& val, Wave& wave)
     }
 }
 
-void read_round(const rapidjson::Value& val, Round& round)
+void read_waves(const rapidjson::GenericArray<true, rapidjson::Value>& vals, Round& round)
 {
-    const auto& waves_val = val.GetArray();
-    round.reserve(waves_val.Size());
+    round.reserve(vals.Size());
 
-    for (const auto& wave_val : waves_val) {
+    for (const auto& val : vals) {
         Wave wave;
-        read_wave(wave_val, wave);
+        read_wave(val, wave);
         round.push_back(wave);
     }
 }
 
-void read_rounds(const rapidjson::Value& val, std::vector<Round>& rounds)
+void read_rounds(
+    const rapidjson::GenericArray<true, rapidjson::Value>& vals, std::vector<Round>& rounds)
 {
-    const auto& rounds_val = val.GetArray();
-    rounds.reserve(rounds_val.Size());
+    rounds.reserve(vals.Size());
 
-    for (const auto& round_val : rounds_val) {
+    for (const auto& val : vals) {
         Round round;
-        read_round(round_val, round);
+        read_waves(val.GetArray(), round);
         rounds.push_back(round);
     }
 }
@@ -224,7 +237,7 @@ void read_config(const rapidjson::Value& val, Config& config)
         if (key == "setting") {
             read_setting(it->value, config.setting);
         } else if (key == "rounds") {
-            read_rounds(it->value, config.rounds);
+            read_rounds(it->value.GetArray(), config.rounds);
         } else {
             assert(false && "unreachable");
         }

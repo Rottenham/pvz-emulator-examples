@@ -150,9 +150,12 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
                 chosen.push_back(i);
             }
         } else if (symbol == "C_POS") {
-            chosen = choose_by_pos(w, positions, choose, waves);
+            chosen = choose_by_giga_pos(w, positions, choose, waves);
         } else if (symbol == "C_NUM") {
-            chosen = choose_by_num(w, positions, choose, waves);
+            chosen = choose_by_num(w, positions, choose, waves,
+                {pvz_emulator::object::zombie_type::ladder,
+                    pvz_emulator::object::zombie_type::jack_in_the_box},
+                0);
         } else {
             assert(false && "unreachable");
         }
@@ -210,6 +213,8 @@ void load_round(const Setting& setting, const Round& round, Test& test)
                 insert_fixed_fodder(test, base_tick + a->time, a);
             } else if (auto a = std::get_if<SmartFodder>(&action)) {
                 insert_smart_fodder(test, base_tick + a->time, a);
+            } else if (auto a = std::get_if<SmartCard>(&action)) {
+                std::cout << "ignoring SmartCard..." << std::endl;
             } else {
                 assert(false && "unreachable");
             }

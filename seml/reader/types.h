@@ -52,6 +52,15 @@ struct FixedCard {
     }
 };
 
+struct SmartCard {
+    std::string symbol;
+    int time;
+    pvz_emulator::object::plant_type plant_type;
+    std::vector<CardPos> positions;
+
+    std::string desc() const { return std::to_string(time) + symbol; }
+};
+
 struct FixedFodder {
     std::string symbol;
     int time;
@@ -99,7 +108,7 @@ struct SmartFodder {
     }
 };
 
-using Action = std::variant<Cob, FixedCard, FixedFodder, SmartFodder>;
+using Action = std::variant<Cob, FixedCard, SmartCard, FixedFodder, SmartFodder>;
 
 std::string desc(const Action& action)
 {

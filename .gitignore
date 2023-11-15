@@ -1,12 +1,17 @@
 .vscode
+
+# data folder, for personal use only
 data
 
+# debug files
 debug.*
 
+# keep dest/bin folder
 dest/*
 !dest/bin/
 dest/bin/*
 !dest/bin/foo
 
+# keep lib/build folder
 lib/build/*
 !lib/build/foo

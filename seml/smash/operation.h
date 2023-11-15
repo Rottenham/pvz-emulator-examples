@@ -115,18 +115,26 @@ void insert_fixed_card(
     std::vector<Op>& ops, Info& info, int tick, int wave, const FixedCard* fixed_card)
 {
     auto plant_type = fixed_card->plant_type;
-    int op_tick;
-    ActionInfo::Type action_info_type;
 
-    if (plant_type == pvz_emulator::object::plant_type::jalapeno) {
+    int op_tick;
+    if (plant_type == pvz_emulator::object::plant_type::jalapeno
+        || plant_type == pvz_emulator::object::plant_type::cherry_bomb) {
         op_tick = tick - 100;
-        action_info_type = ActionInfo::Type::Ash;
-    } else if (plant_type == pvz_emulator::object::plant_type::garlic) {
-        op_tick = tick;
-        action_info_type = ActionInfo::Type::Fodder;
+    } else if (plant_type == pvz_emulator::object::plant_type::squash) {
+        op_tick = tick - 182;
     } else {
-        assert(false && "unreachable");
+        op_tick = tick;
     }
+
+    ActionInfo::Type action_info_type;
+    if (plant_type == pvz_emulator::object::plant_type::jalapeno
+        || plant_type == pvz_emulator::object::plant_type::cherry_bomb
+        || plant_type == pvz_emulator::object::plant_type::squash) {
+        action_info_type = ActionInfo::Type::Ash;
+    } else {
+        action_info_type = ActionInfo::Type::Fodder;
+    }
+
     info.action_infos.push_back({action_info_type, wave, tick, fixed_card->desc(), {}});
 
     auto idx = info.action_infos.size() - 1;
@@ -201,9 +209,12 @@ void insert_smart_fodder(
                 chosen.push_back(i);
             }
         } else if (symbol == "C_POS") {
-            chosen = choose_by_pos(w, positions, choose, waves);
+            chosen = choose_by_giga_pos(w, positions, choose, waves);
         } else if (symbol == "C_NUM") {
-            chosen = choose_by_num(w, positions, choose, waves);
+            chosen = choose_by_num(w, positions, choose, waves,
+                {pvz_emulator::object::zombie_type::ladder,
+                    pvz_emulator::object::zombie_type::jack_in_the_box},
+                0);
         } else {
             assert(false && "unreachable");
         }
@@ -265,6 +276,8 @@ std::vector<Op> load_round(const Setting& setting, const Round& round, Info& inf
                 insert_fixed_fodder(ops, info, base_tick + a->time, wave_num, a);
             } else if (auto a = std::get_if<SmartFodder>(&action)) {
                 insert_smart_fodder(ops, info, base_tick + a->time, wave_num, a);
+            } else if (auto a = std::get_if<SmartCard>(&action)) {
+                std::cout << "ignoring SmartCard..." << std::endl;
             } else {
                 assert(false && "unreachable");
             }
