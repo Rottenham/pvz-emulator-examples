@@ -17,18 +17,17 @@ std::mutex mtx;
 void validate_config(Config& config)
 {
     if (config.rounds.empty()) {
-        std::cerr << "Must provide at least one round." << std::endl;
+        std::cerr << "请提供操作." << std::endl;
         exit(1);
     }
 
     for (auto& round : config.rounds) {
         if (round.empty()) {
-            std::cerr << "Must provide at least one wave." << std::endl;
+            std::cerr << "请提供操作." << std::endl;
             exit(1);
         }
         if (round.size() > 200) {
-            std::cerr << "Total number of waves must not exceed 200: " << config.rounds.size()
-                      << std::endl;
+            std::cerr << "波数超过 200: " << config.rounds.size() << std::endl;
             exit(1);
         }
         for (auto& wave : round) {
@@ -39,15 +38,14 @@ void validate_config(Config& config)
     }
 
     if (config.setting.protect_positions.empty()) {
-        std::cerr << "Must provide at least one protect position." << std::endl;
+        std::cerr << "请提供保护位置." << std::endl;
         exit(1);
     }
 
     std::unordered_set<int> protect_rows;
     for (const auto& protect_position : config.setting.protect_positions) {
         if (protect_rows.count(protect_position.row)) {
-            std::cerr << "Cannot provide multiple protect positions on the same row: "
-                      << protect_position.row << std::endl;
+            std::cerr << "保护位置行重复: " << protect_position.row << std::endl;
             exit(1);
         }
         protect_rows.insert(protect_position.row);
@@ -165,7 +163,7 @@ int main(int argc, char* argv[])
     }
 
     file << ",";
-    for (const auto& str : {"Loss", "Loss from explosion", "Loss from eating"}) {
+    for (const auto& str : {"炮伤", "瞬伤", "损伤"}) {
         file << "," << str;
         for (size_t i = 0; i < headers.size(); i++) {
             file << ",";
@@ -175,7 +173,7 @@ int main(int argc, char* argv[])
 
     for (size_t i = 0; i < max_headaer_count; i++) {
         if (i == max_headaer_count - 1) {
-            file << "wave,tick,";
+            file << "波次,时刻,";
         } else {
             file << ",,";
         }
@@ -266,9 +264,9 @@ int main(int argc, char* argv[])
     file.close();
 
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
-    std::cout << "Output file has been saved to " << full_output_file << ".\n"
-              << "Finished in " << std::fixed << std::setprecision(2) << elapsed.count()
-              << "s with " << threads.size() << " threads.";
+    std::cout << "输出文件已保存至 " << full_output_file << ".\n"
+              << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
+              << threads.size() << " 个线程." << std::endl;
 
     return 0;
 }

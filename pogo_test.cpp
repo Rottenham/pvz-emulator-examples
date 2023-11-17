@@ -45,31 +45,29 @@ void get_hit_cob_col(const Wave& wave)
             return;
         }
     }
-    std::cerr << "For roof scenes, must provide cob col in form of cob action." << std::endl;
+    std::cerr << "屋顶场合, 请提供炮尾所在列." << std::endl;
     exit(1);
 }
 
 void validate_config(Config& config)
 {
     if (config.rounds.empty()) {
-        std::cerr << "Must provide at least one round." << std::endl;
+        std::cerr << "请提供操作." << std::endl;
         exit(1);
     }
 
     if (config.rounds.size() > 1) {
-        std::cout << "Warning: " << config.rounds.size()
-                  << " rounds were provided, but pogo test will ignore all except the first round."
-                  << std::endl;
+        std::cout << "警告: 共有 " << config.rounds.size()
+                  << " 种测试情况, 但跳跳测试只考虑第 1 种." << std::endl;
     }
 
     if (config.rounds[0].empty()) {
-        std::cerr << "Must provide at least one wave." << std::endl;
+        std::cerr << "请提供操作." << std::endl;
         exit(1);
     }
 
     if (config.rounds[0].size() > 1) {
-        std::cout << "Warning: " << config.rounds.size()
-                  << " waves were provided, but pogo test will ignore all except the first wave."
+        std::cout << "警告: 共有 " << config.rounds.size() << " 波操作, 但跳跳测试只考虑第 1 波."
                   << std::endl;
     }
 
@@ -91,8 +89,8 @@ void validate_config(Config& config)
     for (const auto& protect_position : config.setting.protect_positions) {
         for (const auto& prev_position : prev_protect_positions) {
             if (is_range_overlap(get_col_range(protect_position), get_col_range(prev_position))) {
-                std::cerr << "Duplicate col in protect positions: " << prev_position.col << ", "
-                          << protect_position.col << std::endl;
+                std::cerr << "列重复: " << prev_position.col << ", " << protect_position.col
+                          << std::endl;
                 exit(1);
             }
         }
@@ -206,11 +204,10 @@ int main(int argc, char* argv[])
         t.join();
     }
 
-    file << "tick,Upper pogo,Same pogo,Lower pogo,Upper garg,Same garg,Lower garg,"
-         << "Upper pogo upper garg,Upper pogo same garg,Upper pogo lower garg,Same pogo upper "
-            "garg,Same pogo same garg,Same pogo lower garg,Lower pogo upper garg,Lower pogo "
-            "same "
-            "garg,Lower pogo lower garg"
+    file << "时刻,收上行跳跳,收本行跳跳,收下行跳跳,收上行巨人,收本行巨人,收下行巨人,"
+         << "上跳上巨,上跳本巨,上跳下巨,"
+         << "本跳上巨,本跳本巨,本跳下巨,"
+         << "下跳上巨,下跳本巨,下跳下巨,"
          << "\n";
 
     for (int tick = wave.start_tick; tick <= wave.wave_length; tick++) {
@@ -256,8 +253,8 @@ int main(int argc, char* argv[])
     file.close();
 
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
-    std::cout << "Output file has been saved to " << full_output_file << ".\n"
-              << "Finished in " << std::fixed << std::setprecision(2) << elapsed.count()
-              << "s with " << threads.size() << " threads.";
+    std::cout << "输出文件已保存至 " << full_output_file << ".\n"
+              << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
+              << threads.size() << " 个线程." << std::endl;
     return 0;
 }
