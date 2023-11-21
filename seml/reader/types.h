@@ -134,13 +134,13 @@ struct Wave {
     int start_tick = -1;
 };
 
-using Round = std::vector<Wave>;
-
 struct Setting {
     struct ProtectPos {
         enum class Type { Cob, Normal } type;
         int row;
         int col;
+
+        bool is_cob() const { return type == Type::Cob; }
     };
 
     pvz_emulator::object::scene_type scene_type = pvz_emulator::object::scene_type::fog;
@@ -149,10 +149,5 @@ struct Setting {
 
 struct Config {
     Setting setting;
-    std::vector<Round> rounds;
+    std::vector<Wave> waves;
 };
-
-bool is_cob(const Setting::ProtectPos& protect_pos)
-{
-    return protect_pos.type == Setting::ProtectPos::Type::Cob;
-}

@@ -10,11 +10,6 @@
 #include "seml/types.h"
 #include "world.h"
 
-struct Op {
-    int tick;
-    std::function<void(pvz_emulator::world&)> f;
-};
-
 struct GigaInfo {
     unique_zombie zombie;
     unsigned int row; // [0, 5]
@@ -35,9 +30,10 @@ struct ActionInfo {
     std::vector<unique_plant> plants;
 };
 
-struct Info {
+struct Test {
     std::vector<Setting::ProtectPos> protect_positions;
     std::vector<GigaInfo> giga_infos;
     std::vector<ActionInfo> action_infos;
-    std::mt19937 gen;
+    std::vector<Op> ops;
+    std::mt19937 rnd;
 };

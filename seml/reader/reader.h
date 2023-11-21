@@ -165,26 +165,15 @@ void read_wave(const rapidjson::Value& val, Wave& wave)
     }
 }
 
-void read_waves(const rapidjson::GenericArray<true, rapidjson::Value>& vals, Round& round)
+void read_waves(
+    const rapidjson::GenericArray<true, rapidjson::Value>& vals, std::vector<Wave>& waves)
 {
-    round.reserve(vals.Size());
+    waves.reserve(vals.Size());
 
     for (const auto& val : vals) {
         Wave wave;
         read_wave(val, wave);
-        round.push_back(wave);
-    }
-}
-
-void read_rounds(
-    const rapidjson::GenericArray<true, rapidjson::Value>& vals, std::vector<Round>& rounds)
-{
-    rounds.reserve(vals.Size());
-
-    for (const auto& val : vals) {
-        Round round;
-        read_waves(val.GetArray(), round);
-        rounds.push_back(round);
+        waves.push_back(wave);
     }
 }
 
@@ -227,7 +216,7 @@ void read_setting(const rapidjson::Value& val, Setting& setting)
     }
 }
 
-void read_config(const rapidjson::Value& val, Config& config)
+void read_seml(const rapidjson::Value& val, Config& config)
 {
     config = {};
 
@@ -236,8 +225,8 @@ void read_config(const rapidjson::Value& val, Config& config)
 
         if (key == "setting") {
             read_setting(it->value, config.setting);
-        } else if (key == "rounds") {
-            read_rounds(it->value.GetArray(), config.rounds);
+        } else if (key == "waves") {
+            read_waves(it->value.GetArray(), config.waves);
         } else {
             assert(false && "unreachable");
         }
@@ -268,7 +257,7 @@ Config read_json(const std::string& filename)
     }
 
     Config config;
-    _SemlInternal::read_config(doc, config);
+    _SemlInternal::read_seml(doc, config);
 
     return config;
 }

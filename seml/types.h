@@ -2,6 +2,11 @@
 
 #include "world.h"
 
+struct Op {
+    int tick;
+    std::function<void(pvz_emulator::world&)> f;
+};
+
 struct unique_plant {
     pvz_emulator::object::plant* ptr;
     int uuid;

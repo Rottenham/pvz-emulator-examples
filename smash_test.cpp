@@ -17,23 +17,13 @@ RawTable raw_table;
 
 void validate_config(const Config& config)
 {
-    if (config.rounds.empty()) {
+    if (config.waves.empty()) {
         std::cerr << "请提供操作." << std::endl;
         exit(1);
     }
 
-    if (config.rounds.size() > 1) {
-        std::cout << "警告: 共有 " << config.rounds.size()
-                  << " 种测试情况, 但砸率测试只考虑第 1 种." << std::endl;
-    }
-
-    if (config.rounds[0].empty()) {
-        std::cerr << "请提供操作." << std::endl;
-        exit(1);
-    }
-
-    if (config.rounds[0].size() > 200) {
-        std::cerr << "波数超过 200: " << config.rounds.size() << std::endl;
+    if (config.waves.size() > 200) {
+        std::cerr << "波数超过 200: " << config.waves.size() << std::endl;
         exit(1);
     }
 
@@ -52,22 +42,21 @@ void validate_config(const Config& config)
     }
 }
 
-bool contains_smart_fodder(const Round& round)
+int get_giga_total(const std::vector<Wave>& waves)
 {
-    for (const auto& wave : round) {
-        for (const auto& action : wave.actions) {
-            if (std::holds_alternative<SmartFodder>(action)) {
-                return true;
+    auto contains_smart_fodder = [](const std::vector<Wave>& waves) {
+        for (const auto& wave : waves) {
+            for (const auto& action : wave.actions) {
+                if (std::holds_alternative<SmartFodder>(action)) {
+                    return true;
+                }
             }
         }
-    }
-    return false;
-}
+        return false;
+    };
 
-int get_giga_total(const Round& round)
-{
-    if (contains_smart_fodder(round)) {
-        return 5 * static_cast<int>(round.size());
+    if (contains_smart_fodder(waves)) {
+        return 5 * static_cast<int>(waves.size());
     } else {
         return 1000;
     }
@@ -83,28 +72,28 @@ double calc_smash_rate(const Config& config, int smashed_garg_count, int total_g
 void test_one(const Config& config, int repeat, int giga_total)
 {
     world w(config.setting.scene_type);
-    Info info;
+    Test test;
     RawTable local_raw_table;
 
     for (int r = 0; r < repeat; r++) {
-        auto ops = load_round(config.setting, config.rounds[0], info, giga_total);
+        load_config(config, test, giga_total);
 
         w.scene.reset();
         w.scene.stop_spawn = true;
         w.scene.disable_garg_throw_imp = true;
 
-        auto prev_tick = ops.front().tick;
-        for (const auto& op : ops) {
+        auto prev_tick = test.ops.front().tick;
+        for (const auto& op : test.ops) {
             run(w, op.tick - prev_tick);
             op.f(w);
             prev_tick = op.tick;
         }
 
-        update_raw_table(info, local_raw_table);
+        local_raw_table.update(test);
     }
 
     std::lock_guard<std::mutex> guard(mtx);
-    merge_raw_table(local_raw_table, raw_table);
+    raw_table.merge(local_raw_table);
 }
 
 int main(int argc, char* argv[])
@@ -122,7 +111,7 @@ int main(int argc, char* argv[])
 
     auto config = read_json(config_file);
     validate_config(config);
-    auto giga_total = get_giga_total(config.rounds[0]);
+    auto giga_total = get_giga_total(config.waves);
     if (giga_total != 1000) {
         total_repeat_num = static_cast<int>(total_repeat_num * 1000.0 / giga_total);
     }
@@ -136,7 +125,7 @@ int main(int argc, char* argv[])
         t.join();
     }
 
-    auto [table, summary] = generate_table_and_summary(raw_table);
+    auto [table, summary] = raw_table.make_table_and_summary();
 
     file << "单波砸率,";
     for (const auto& wave : summary.waves) {
@@ -155,7 +144,7 @@ int main(int argc, char* argv[])
 
     for (const auto& protect_position : config.setting.protect_positions) {
         file << protect_position.row << "路" << protect_position.col;
-        if (is_cob(protect_position)) {
+        if (protect_position.is_cob()) {
             file << "炮,";
         } else {
             file << "普通,";
@@ -172,12 +161,12 @@ int main(int argc, char* argv[])
         file << "\n";
     }
 
-    Info info;
-    load_round(config.setting, config.rounds[0], info, 1000);
+    Test test;
+    load_config(config, test, 1000);
 
     file << "\n出生波数,单波砸率,砸炮数,总数,";
     auto prev_wave = -1;
-    for (const auto& action_info : info.action_infos) {
+    for (const auto& action_info : test.action_infos) {
         if (action_info.wave != prev_wave) {
             file << "[w" << action_info.wave << "] ";
             prev_wave = action_info.wave;

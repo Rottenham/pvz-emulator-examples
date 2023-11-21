@@ -20,94 +20,76 @@ pvz_emulator::object::plant::explode_info& operator+=(
     return lhs;
 }
 
-struct MergedWaveInfo {
+struct TestInfo {
+    friend struct Table;
+
     int start_tick;
     std::vector<LossInfo> merged_loss_info;
-};
 
-using MergedRoundInfo = std::vector<MergedWaveInfo>;
-
-struct Table {
-    std::vector<MergedRoundInfo> merged_round_infos;
-    int repeat = 0;
-};
-
-void update_wave(MergedWaveInfo& merged_wave_info, const WaveInfo& wave_info,
-    const std::vector<pvz_emulator::object::plant*>& plants)
-{
-    if (merged_wave_info.merged_loss_info.empty()) {
-        merged_wave_info.merged_loss_info.resize(wave_info.loss_infos.size());
-        merged_wave_info.start_tick = wave_info.start_tick;
-    }
-    assert(merged_wave_info.merged_loss_info.size() == wave_info.loss_infos.size());
-    assert(merged_wave_info.start_tick == wave_info.start_tick);
-
-    for (size_t tick = 0; tick < wave_info.loss_infos.size(); tick++) {
-        const auto& loss_info = wave_info.loss_infos.at(tick);
-
-        for (const auto& plant : plants) {
-            merged_wave_info.merged_loss_info[tick].explode += loss_info[plant->row].explode;
-            merged_wave_info.merged_loss_info[tick].hp_loss += loss_info[plant->row].hp_loss;
+private:
+    void update(const Test& test)
+    {
+        if (merged_loss_info.empty()) {
+            merged_loss_info.resize(test.loss_infos.size());
+            start_tick = test.start_tick;
         }
-    }
-}
+        assert(merged_loss_info.size() == test.loss_infos.size());
+        assert(start_tick == test.start_tick);
 
-void update_round(MergedRoundInfo& merged_round_info, const Test& test)
-{
-    if (merged_round_info.empty()) {
-        merged_round_info.resize(test.wave_infos.size());
-    }
-    assert(merged_round_info.size() == test.wave_infos.size());
+        for (size_t tick = 0; tick < test.loss_infos.size(); tick++) {
+            const auto& loss_info = test.loss_infos.at(tick);
 
-    for (size_t wave_num = 0; wave_num < test.wave_infos.size(); wave_num++) {
-        update_wave(merged_round_info[wave_num], test.wave_infos.at(wave_num), test.plants);
-    }
-}
-
-void update_table(Table& table, const std::vector<Test>& tests)
-{
-    if (table.merged_round_infos.empty()) {
-        table.merged_round_infos.resize(tests.size());
-    }
-    assert(table.merged_round_infos.size() == tests.size());
-
-    for (size_t round_num = 0; round_num < tests.size(); round_num++) {
-        update_round(table.merged_round_infos[round_num], tests.at(round_num));
-    }
-
-    table.repeat++;
-}
-
-void merge_table(const Table& src, Table& dst)
-{
-    if (dst.merged_round_infos.empty()) {
-        dst = src;
-        return;
-    }
-
-    assert(src.merged_round_infos.size() == dst.merged_round_infos.size());
-
-    for (size_t round_num = 0; round_num < src.merged_round_infos.size(); round_num++) {
-        const auto& src_merged_round_info = src.merged_round_infos.at(round_num);
-        auto& dst_merged_round_info = dst.merged_round_infos.at(round_num);
-
-        assert(src_merged_round_info.size() == dst_merged_round_info.size());
-
-        for (size_t wave_num = 0; wave_num < src_merged_round_info.size(); wave_num++) {
-            const auto& src_wave_info = src_merged_round_info.at(wave_num);
-            auto& dst_wave_info = dst_merged_round_info.at(wave_num);
-
-            assert(src_wave_info.merged_loss_info.size() == dst_wave_info.merged_loss_info.size());
-            assert(src_wave_info.start_tick == dst_wave_info.start_tick);
-
-            for (size_t tick = 0; tick < src_wave_info.merged_loss_info.size(); tick++) {
-                dst_wave_info.merged_loss_info[tick].explode
-                    += src_wave_info.merged_loss_info[tick].explode;
-                dst_wave_info.merged_loss_info[tick].hp_loss
-                    += src_wave_info.merged_loss_info[tick].hp_loss;
+            for (const auto& plant : test.protect_plants) {
+                merged_loss_info[tick].explode += loss_info[plant->row].explode;
+                merged_loss_info[tick].hp_loss += loss_info[plant->row].hp_loss;
             }
         }
     }
+};
 
-    dst.repeat += src.repeat;
-}
+struct Table {
+    std::vector<TestInfo> test_infos;
+    int repeat = 0;
+
+    void update(const std::vector<Test>& tests)
+    {
+        if (test_infos.empty()) {
+            test_infos.resize(tests.size());
+        }
+        assert(test_infos.size() == tests.size());
+
+        for (size_t i = 0; i < tests.size(); i++) {
+            test_infos[i].update(tests.at(i));
+        }
+
+        repeat++;
+    }
+
+    void merge(const Table& other)
+    {
+        if (test_infos.empty()) {
+            test_infos = other.test_infos;
+            repeat = other.repeat;
+            return;
+        }
+
+        assert(test_infos.size() == other.test_infos.size());
+
+        for (size_t i = 0; i < other.test_infos.size(); i++) {
+            const auto& other_test_info = other.test_infos.at(i);
+            auto& test_info = test_infos.at(i);
+
+            assert(other_test_info.merged_loss_info.size() == test_info.merged_loss_info.size());
+            assert(other_test_info.start_tick == test_info.start_tick);
+
+            for (size_t tick = 0; tick < other_test_info.merged_loss_info.size(); tick++) {
+                test_info.merged_loss_info[tick].explode
+                    += other_test_info.merged_loss_info[tick].explode;
+                test_info.merged_loss_info[tick].hp_loss
+                    += other_test_info.merged_loss_info[tick].hp_loss;
+            }
+        }
+
+        repeat += other.repeat;
+    }
+};

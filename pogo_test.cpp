@@ -51,27 +51,17 @@ void get_hit_cob_col(const Wave& wave)
 
 void validate_config(Config& config)
 {
-    if (config.rounds.empty()) {
+    if (config.waves.empty()) {
         std::cerr << "请提供操作." << std::endl;
         exit(1);
     }
 
-    if (config.rounds.size() > 1) {
-        std::cout << "警告: 共有 " << config.rounds.size()
-                  << " 种测试情况, 但跳跳测试只考虑第 1 种." << std::endl;
-    }
-
-    if (config.rounds[0].empty()) {
-        std::cerr << "请提供操作." << std::endl;
-        exit(1);
-    }
-
-    if (config.rounds[0].size() > 1) {
-        std::cout << "警告: 共有 " << config.rounds.size() << " 波操作, 但跳跳测试只考虑第 1 波."
+    if (config.waves.size() > 1) {
+        std::cout << "警告: 共有 " << config.waves.size() << " 波操作, 但跳跳测试只考虑第 1 波."
                   << std::endl;
     }
 
-    auto& wave = config.rounds[0][0];
+    auto& wave = config.waves[0];
 
     if (is_roof(config.setting.scene_type)) {
         get_hit_cob_col(wave);
@@ -103,7 +93,7 @@ void validate_config(Config& config)
 
 void test(const Config& config, int repeat)
 {
-    const auto& wave = config.rounds[0][0];
+    const auto& wave = config.waves[0];
 
     world w(config.setting.scene_type);
 
@@ -194,8 +184,6 @@ int main(int argc, char* argv[])
     auto config = read_json(config_file);
     validate_config(config);
 
-    const auto& wave = config.rounds[0][0];
-
     std::vector<std::thread> threads;
     for (int repeat : assign_repeat(total_repeat_num, std::thread::hardware_concurrency())) {
         threads.emplace_back([config, repeat]() { test(config, repeat); });
@@ -209,7 +197,8 @@ int main(int argc, char* argv[])
          << "本跳上巨,本跳本巨,本跳下巨,"
          << "下跳上巨,下跳本巨,下跳下巨,"
          << "\n";
-
+         
+    const auto& wave = config.waves[0];
     for (int tick = wave.start_tick; tick <= wave.wave_length; tick++) {
         auto upper_cob_pogo = upper_cob[tick - wave.start_tick];
         auto same_cob_pogo = same_cob[tick - wave.start_tick];
