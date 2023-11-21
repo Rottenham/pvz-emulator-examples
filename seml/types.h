@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "world.h"
 
 struct Op {

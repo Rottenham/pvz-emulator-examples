@@ -92,8 +92,8 @@ ZombieTypes get_spawn_types(std::mt19937& rng, const pvz_emulator::object::scene
     return res;
 }
 
-std::array<zombie_type, 50> get_spawn_list(std::mt19937& rng, ZombieTypes spawn_types,
-    bool huge, int giga_limit = 50, std::optional<int> giga_count = std::nullopt)
+ZombieList get_spawn_list(std::mt19937& rng, ZombieTypes spawn_types, bool huge,
+    int giga_limit = 50, std::optional<int> giga_count = std::nullopt)
 {
     if (giga_count.has_value()) {
         spawn_types.erase(zombie_type::giga_gargantuar);
@@ -105,16 +105,16 @@ std::array<zombie_type, 50> get_spawn_list(std::mt19937& rng, ZombieTypes spawn_
     }
     std::discrete_distribution<> dist(weights.begin(), weights.end());
 
-    std::array<zombie_type, 50> result;
+    ZombieList res;
     int cur = 0;
     if (huge) {
-        result[cur++] = zombie_type::flag;
+        res[cur++] = zombie_type::flag;
         for (int i = 0; i < 8; i++)
-            result[cur++] = zombie_type::zombie;
+            res[cur++] = zombie_type::zombie;
     }
     if (giga_count.has_value()) {
         for (int i = 0; i < *giga_count; i++) {
-            result[cur++] = zombie_type::giga_gargantuar;
+            res[cur++] = zombie_type::giga_gargantuar;
         }
     }
 
@@ -124,10 +124,10 @@ std::array<zombie_type, 50> get_spawn_list(std::mt19937& rng, ZombieTypes spawn_
         while (!huge && giga_limit <= 0 && type == zombie_type::giga_gargantuar) {
             type = spawn_types_vec[dist(rng)];
         }
-        result[cur++] = type;
+        res[cur++] = type;
         if (type == zombie_type::giga_gargantuar) {
             giga_limit--;
         }
     }
-    return result;
+    return res;
 }

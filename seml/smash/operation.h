@@ -141,7 +141,7 @@ void insert_fixed_card(Test& test, int tick, int wave, const FixedCard* fixed_ca
                 }
             }
         };
-        test.ops.push_back({tick + fixed_card->shovel_time - fixed_card->time, f});
+        test.ops.push_back({tick - fixed_card->time + fixed_card->shovel_time, f});
     }
 }
 
@@ -194,7 +194,7 @@ void insert_fixed_fodder(Test& test, int tick, int wave, const FixedFodder* fodd
                 }
             }
         };
-        test.ops.push_back({tick + fodder->shovel_time - fodder->time, f});
+        test.ops.push_back({tick - fodder->time + fodder->shovel_time, f});
     }
 }
 
@@ -243,7 +243,7 @@ void insert_smart_fodder(Test& test, int tick, int wave, const SmartFodder* fodd
                 }
             }
         };
-        test.ops.push_back({tick + fodder->shovel_time - fodder->time, f});
+        test.ops.push_back({tick - fodder->time + fodder->shovel_time, f});
     }
 }
 

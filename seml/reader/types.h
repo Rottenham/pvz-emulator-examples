@@ -1,10 +1,8 @@
 #pragma once
 
-#include <functional>
 #include <sstream>
 #include <unordered_set>
 #include <variant>
-#include <vector>
 
 #include "world.h"
 

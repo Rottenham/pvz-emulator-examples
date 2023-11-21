@@ -1,14 +1,11 @@
 #pragma once
 
-#include <functional>
-
 #include "common/pe.h"
 #include "constants/constants.h"
 #include "seml/operation.h"
-#include "seml/reader/types.h"
 #include "types.h"
 
-namespace _ExplodeInternal {
+namespace _explode_internal {
 
 using scene_type = pvz_emulator::object::scene_type;
 using plant_type = pvz_emulator::object::plant_type;
@@ -63,7 +60,6 @@ void insert_cob(Test& test, int tick, const Cob* cob, const scene_type& scene_ty
     for (const auto& pos : cob->positions) {
         auto f = [&test, pos, cob_col](
                      pvz_emulator::world& w) { launch_cob(w, pos.row, pos.col, cob_col); };
-
         test.ops.push_back({tick - get_cob_fly_time(scene_type, pos.row, pos.col, cob_col), f});
     }
 }
@@ -79,14 +75,7 @@ void insert_fixed_card(Test& test, int tick, const FixedCard* fixed_card)
         auto& p = w.plant_factory.create(plant_type, pos.row - 1, pos.col - 1);
         test.plants_to_be_shoveled[idx].push_back({&p, p.uuid});
     };
-
-    if (plant_type == plant_type::jalapeno) {
-        test.ops.push_back({tick - 100, f});
-    } else if (plant_type == plant_type::garlic) {
-        test.ops.push_back({tick, f});
-    } else {
-        assert(false && "unreachable");
-    }
+    test.ops.push_back({get_fixed_card_op_tick(fixed_card, tick), f});
 
     if (fixed_card->shovel_time != -1) {
         auto f = [&test, idx](pvz_emulator::world& w) {
@@ -96,7 +85,7 @@ void insert_fixed_card(Test& test, int tick, const FixedCard* fixed_card)
                 }
             }
         };
-        test.ops.push_back({tick + fixed_card->shovel_time - fixed_card->time, f});
+        test.ops.push_back({tick - fixed_card->time + fixed_card->shovel_time, f});
     }
 }
 
@@ -142,7 +131,7 @@ void insert_fixed_fodder(Test& test, int tick, const FixedFodder* fodder)
                 }
             }
         };
-        test.ops.push_back({tick + fodder->shovel_time - fodder->time, f});
+        test.ops.push_back({tick - fodder->time + fodder->shovel_time, f});
     }
 }
 
@@ -189,15 +178,15 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
                 }
             }
         };
-        test.ops.push_back({tick + fodder->shovel_time - fodder->time, f});
+        test.ops.push_back({tick - fodder->time + fodder->shovel_time, f});
     }
 }
 
-} // namespace _ExplodeInternal
+} // namespace _explode_internal
 
 void load_wave(const Setting& setting, const Wave& wave, Test& test)
 {
-    using namespace _ExplodeInternal;
+    using namespace _explode_internal;
 
     test = {};
     test.start_tick = wave.start_tick;

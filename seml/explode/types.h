@@ -1,10 +1,6 @@
 #pragma once
 
-#include <functional>
-#include <vector>
-
 #include "seml/types.h"
-#include "world.h"
 
 struct LossInfo {
     pvz_emulator::object::plant::explode_info explode = {0, 0, 0};
