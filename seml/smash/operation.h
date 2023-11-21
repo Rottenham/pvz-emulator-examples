@@ -8,7 +8,7 @@
 #include "seml/types.h"
 #include "types.h"
 
-namespace _SmashInternal {
+namespace _smash_internal {
 
 std::vector<int> get_giga_rows(const Setting& setting)
 {
@@ -247,12 +247,12 @@ void insert_smart_fodder(Test& test, int tick, int wave, const SmartFodder* fodd
     }
 }
 
-} // namespace _SmashInternal
+} // namespace _smash_internal
 
 void load_config(const Config& config, Test& test, int giga_total)
 {
     using namespace pvz_emulator::object;
-    using namespace _SmashInternal;
+    using namespace _smash_internal;
 
     test = {};
     test.protect_positions.reserve(config.setting.protect_positions.size());

@@ -33,7 +33,7 @@ struct OpStates {
     };
 };
 
-namespace _SmashInternal {
+namespace _smash_internal {
 
 OpState categorize(const ActionInfo& action_info, const GigaInfo& garg_info)
 {
@@ -60,7 +60,7 @@ OpState categorize(const ActionInfo& action_info, const GigaInfo& garg_info)
     }
 }
 
-} // namespace _SmashInternal
+} // namespace _smash_internal
 
 struct Data {
     int total_garg_count = 0;
@@ -85,7 +85,7 @@ struct TestInfo {
             os.wave = garg_info.spawn_wave;
             os.op_states.reserve(test.action_infos.size());
             for (const auto& action_info : test.action_infos) {
-                os.op_states.push_back(_SmashInternal::categorize(action_info, garg_info));
+                os.op_states.push_back(_smash_internal::categorize(action_info, garg_info));
             }
 
             assert(os.op_states.size() == test.action_infos.size());

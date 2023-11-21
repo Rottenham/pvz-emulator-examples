@@ -4,7 +4,7 @@
 #include "seml/operation.h"
 #include "types.h"
 
-namespace _RefreshInternal {
+namespace _refresh_internal {
 
 using scene_type = pvz_emulator::object::scene_type;
 using plant_type = pvz_emulator::object::plant_type;
@@ -158,11 +158,11 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
     }
 }
 
-} // namespace _RefreshInternal
+} // namespace _refresh_internal
 
 void load_wave(const Setting& setting, const Wave& wave, const ZombieList& spawn_list, Test& test)
 {
-    using namespace _RefreshInternal;
+    using namespace _refresh_internal;
 
     test = {};
 

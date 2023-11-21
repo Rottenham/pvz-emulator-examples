@@ -9,7 +9,7 @@
 #include "rapidjson/writer.h"
 #include "types.h"
 
-namespace _SemlInternal {
+namespace _reader_internal {
 
 void read_fodders(
     const rapidjson::GenericArray<true, rapidjson::Value> vals, std::vector<Fodder>& fodders)
@@ -216,7 +216,7 @@ void read_setting(const rapidjson::Value& val, Setting& setting)
     }
 }
 
-void read_seml(const rapidjson::Value& val, Config& config)
+void read_config(const rapidjson::Value& val, Config& config)
 {
     config = {};
 
@@ -233,7 +233,7 @@ void read_seml(const rapidjson::Value& val, Config& config)
     }
 }
 
-} // namespace _SemlInternal
+} // namespace _reader_internal
 
 Config read_json(const std::string& filename)
 {
@@ -257,7 +257,7 @@ Config read_json(const std::string& filename)
     }
 
     Config config;
-    _SemlInternal::read_seml(doc, config);
+    _reader_internal::read_config(doc, config);
 
     return config;
 }
