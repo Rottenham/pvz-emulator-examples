@@ -75,8 +75,8 @@ struct Summary {
     std::unordered_map<int, Data> garg_summary_by_wave;
 };
 
-struct RawTable {
-    std::unordered_map<OpStates, Data, OpStates::Hash> raw_table;
+struct TestInfo {
+    std::unordered_map<OpStates, Data, OpStates::Hash> info;
 
     void update(const Test& test)
     {
@@ -90,29 +90,28 @@ struct RawTable {
 
             assert(os.op_states.size() == test.action_infos.size());
 
-            raw_table[os].total_garg_count++;
+            info[os].total_garg_count++;
             if (!garg_info.ignored_smashes.empty()) {
-                raw_table[os].smashed_garg_count++;
-                raw_table[os].smashed_garg_count_by_row[garg_info.row]++;
+                info[os].smashed_garg_count++;
+                info[os].smashed_garg_count_by_row[garg_info.row]++;
             }
         }
     }
 
-    void merge(const RawTable& other)
+    void merge(const TestInfo& other)
     {
-        for (const auto& [op_states, data] : other.raw_table) {
-            raw_table[op_states].total_garg_count += data.total_garg_count;
-            raw_table[op_states].smashed_garg_count += data.smashed_garg_count;
+        for (const auto& [op_states, data] : other.info) {
+            info[op_states].total_garg_count += data.total_garg_count;
+            info[op_states].smashed_garg_count += data.smashed_garg_count;
             for (int i = 0; i < 6; i++) {
-                raw_table[op_states].smashed_garg_count_by_row[i]
-                    += data.smashed_garg_count_by_row[i];
+                info[op_states].smashed_garg_count_by_row[i] += data.smashed_garg_count_by_row[i];
             }
         }
     }
 
     std::pair<Table, Summary> make_table_and_summary() const
     {
-        Table table(raw_table.begin(), raw_table.end());
+        Table table(info.begin(), info.end());
         std::sort(table.begin(), table.end(),
             [](const std::pair<OpStates, Data>& a, const std::pair<OpStates, Data>& b) {
                 if (a.first.wave < b.first.wave) {

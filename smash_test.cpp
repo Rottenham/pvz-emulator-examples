@@ -13,7 +13,7 @@ using namespace pvz_emulator::object;
 
 std::mutex mtx;
 
-RawTable raw_table;
+TestInfo test_info;
 
 void validate_config(const Config& config)
 {
@@ -73,7 +73,7 @@ void test_one(const Config& config, int repeat, int giga_total)
 {
     world w(config.setting.scene_type);
     Test test;
-    RawTable local_raw_table;
+    TestInfo local_test_info;
 
     for (int r = 0; r < repeat; r++) {
         load_config(config, test, giga_total);
@@ -89,11 +89,11 @@ void test_one(const Config& config, int repeat, int giga_total)
             prev_tick = op.tick;
         }
 
-        local_raw_table.update(test);
+        local_test_info.update(test);
     }
 
     std::lock_guard<std::mutex> guard(mtx);
-    raw_table.merge(local_raw_table);
+    test_info.merge(local_test_info);
 }
 
 int main(int argc, char* argv[])
@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
         t.join();
     }
 
-    auto [table, summary] = raw_table.make_table_and_summary();
+    auto [table, summary] = test_info.make_table_and_summary();
 
     file << "单波砸率,";
     for (const auto& wave : summary.waves) {

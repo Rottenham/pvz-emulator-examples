@@ -10,6 +10,10 @@
 
 namespace _ExplodeInternal {
 
+using scene_type = pvz_emulator::object::scene_type;
+using plant_type = pvz_emulator::object::plant_type;
+using zombie_type = pvz_emulator::object::zombie_type;
+
 const int PLANT_INIT_HP = 2147483647 / 2;
 
 void insert_setup(Test& test, int tick, const std::vector<Setting::ProtectPos>& protect_positions)
@@ -17,12 +21,11 @@ void insert_setup(Test& test, int tick, const std::vector<Setting::ProtectPos>& 
     auto f = [&test, protect_positions](pvz_emulator::world& w) {
         // plant umbrella leafs to ignore catapults
         for (int row = 0; row < static_cast<int>(w.scene.get_max_row()); row++) {
-            w.plant_factory.create(pvz_emulator::object::plant_type::umbrella_leaf, row, 0);
+            w.plant_factory.create(plant_type::umbrella_leaf, row, 0);
         }
 
         for (const auto& pos : protect_positions) {
-            auto plant_type = pos.is_cob() ? pvz_emulator::object::plant_type::cob_cannon
-                                           : pvz_emulator::object::plant_type::umbrella_leaf;
+            auto plant_type = pos.is_cob() ? plant_type::cob_cannon : plant_type::umbrella_leaf;
 
             auto& p = w.plant_factory.create(
                 plant_type, pos.row - 1, pos.is_cob() ? pos.col - 2 : pos.col - 1);
@@ -36,7 +39,6 @@ void insert_setup(Test& test, int tick, const std::vector<Setting::ProtectPos>& 
 
 void insert_spawn(Test& test, int tick)
 {
-    using namespace pvz_emulator::object;
     auto f = [tick](pvz_emulator::world& w) {
         for (const auto& zombie_type : {zombie_type::jack_in_the_box, zombie_type::ladder,
                  zombie_type::football, zombie_type::catapult}) {
@@ -50,14 +52,11 @@ void insert_spawn(Test& test, int tick)
 
 void insert_ice(Test& test, int tick)
 {
-    auto f = [](pvz_emulator::world& w) {
-        w.plant_factory.create(pvz_emulator::object::plant_type::iceshroom, 0, 0);
-    };
+    auto f = [](pvz_emulator::world& w) { w.plant_factory.create(plant_type::iceshroom, 0, 0); };
     test.ops.push_back({tick, f});
 }
 
-void insert_cob(
-    Test& test, int tick, const Cob* cob, const pvz_emulator::object::scene_type& scene_type)
+void insert_cob(Test& test, int tick, const Cob* cob, const scene_type& scene_type)
 {
     auto cob_col = cob->cob_col;
 
@@ -81,9 +80,9 @@ void insert_fixed_card(Test& test, int tick, const FixedCard* fixed_card)
         test.plants_to_be_shoveled[idx].push_back({&p, p.uuid});
     };
 
-    if (plant_type == pvz_emulator::object::plant_type::jalapeno) {
+    if (plant_type == plant_type::jalapeno) {
         test.ops.push_back({tick - 100, f});
-    } else if (plant_type == pvz_emulator::object::plant_type::garlic) {
+    } else if (plant_type == plant_type::garlic) {
         test.ops.push_back({tick, f});
     } else {
         assert(false && "unreachable");
@@ -109,9 +108,7 @@ void insert_smart_card(Test& test, int tick, const SmartCard* smart_card)
 
     auto f = [&test, plant_type, positions, max_card_zombie_row_diff](pvz_emulator::world& w) {
         auto chosen = choose_by_num(w, positions, 1, {},
-            {pvz_emulator::object::zombie_type::giga_gargantuar,
-                pvz_emulator::object::zombie_type::gargantuar},
-            max_card_zombie_row_diff);
+            {zombie_type::giga_gargantuar, zombie_type::gargantuar}, max_card_zombie_row_diff);
         assert(chosen.size() == 1);
 
         auto pos = positions[chosen[0]];
@@ -172,9 +169,7 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
             chosen = choose_by_giga_pos(w, positions, choose, waves);
         } else if (symbol == "C_NUM") {
             chosen = choose_by_num(w, positions, choose, waves,
-                {pvz_emulator::object::zombie_type::ladder,
-                    pvz_emulator::object::zombie_type::jack_in_the_box},
-                0);
+                {zombie_type::ladder, zombie_type::jack_in_the_box}, 0);
         } else {
             assert(false && "unreachable");
         }
@@ -202,7 +197,6 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
 
 void load_wave(const Setting& setting, const Wave& wave, Test& test)
 {
-    using namespace pvz_emulator::object;
     using namespace _ExplodeInternal;
 
     test = {};
