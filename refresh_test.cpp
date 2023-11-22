@@ -144,13 +144,13 @@ int main(int argc, char* argv[])
     }
 
     std::vector<std::vector<std::string>> headers(config.waves.size());
-    size_t max_headaer_count = 0;
+    size_t max_header_count = 0;
     for (size_t i = 0; i < config.waves.size(); i++) {
         const auto& wave = config.waves[i];
         for (const auto& action : wave.actions) {
             headers[i].push_back(desc(action));
         }
-        max_headaer_count = std::max(max_headaer_count, headers[i].size());
+        max_header_count = std::max(max_header_count, headers[i].size());
     }
 
     auto table = test_infos.make_table();
@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
     file << "必出类型: " << zombie_types_to_names(required_types, "") << "\n";
     file << "禁出类型: " << zombie_types_to_names(banned_types, "") << "\n";
 
-    for (size_t i = 0; i < max_headaer_count; i++) {
+    for (size_t i = 0; i < max_header_count; i++) {
         for (const auto& header : headers) {
             file << ",";
             if (i < header.size()) {

@@ -115,13 +115,13 @@ int main(int argc, char* argv[])
     }
 
     std::vector<std::vector<std::string>> headers(config.waves.size());
-    size_t max_headaer_count = 0;
+    size_t max_header_count = 0;
     for (size_t i = 0; i < config.waves.size(); i++) {
         const auto& wave = config.waves[i];
         for (const auto& action : wave.actions) {
             headers[i].push_back(desc(action));
         }
-        max_headaer_count = std::max(max_headaer_count, headers[i].size());
+        max_header_count = std::max(max_header_count, headers[i].size());
     }
 
     std::pair<int, int> tick_range {INT_MAX, 0};
@@ -138,8 +138,8 @@ int main(int argc, char* argv[])
     }
     file << "\n";
 
-    for (size_t i = 0; i < max_headaer_count; i++) {
-        if (i == max_headaer_count - 1) {
+    for (size_t i = 0; i < max_header_count; i++) {
+        if (i == max_header_count - 1) {
             file << "时刻";
         }
         file << ",";
