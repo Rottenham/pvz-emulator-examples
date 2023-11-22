@@ -45,6 +45,16 @@ private:
             }
         }
     }
+
+    void merge(const TestInfo& other)
+    {
+        assert(other.start_tick == start_tick);
+
+        for (size_t tick = 0; tick < other.merged_loss_info.size(); tick++) {
+            merged_loss_info[tick].explode += other.merged_loss_info[tick].explode;
+            merged_loss_info[tick].hp_loss += other.merged_loss_info[tick].hp_loss;
+        }
+    }
 };
 
 struct Table {
@@ -71,17 +81,7 @@ struct Table {
             repeat = other.repeat;
         } else {
             for (size_t i = 0; i < other.test_infos.size(); i++) {
-                const auto& other_test_info = other.test_infos.at(i);
-                auto& test_info = test_infos.at(i);
-
-                assert(other_test_info.start_tick == test_info.start_tick);
-
-                for (size_t tick = 0; tick < other_test_info.merged_loss_info.size(); tick++) {
-                    test_info.merged_loss_info[tick].explode
-                        += other_test_info.merged_loss_info[tick].explode;
-                    test_info.merged_loss_info[tick].hp_loss
-                        += other_test_info.merged_loss_info[tick].hp_loss;
-                }
+                test_infos[i].merge(other.test_infos.at(i));
             }
             repeat += other.repeat;
         }

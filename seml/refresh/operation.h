@@ -9,15 +9,23 @@ namespace _refresh_internal {
 using scene_type = pvz_emulator::object::scene_type;
 using plant_type = pvz_emulator::object::plant_type;
 using zombie_type = pvz_emulator::object::zombie_type;
+using zombie_dance_cheat = pvz_emulator::object::zombie_dance_cheat;
 
-void insert_spawn(Test& test, int tick, const std::array<zombie_type, 50>& spawn_list)
+void insert_spawn(Test& test, int tick, const std::array<zombie_type, 50>& spawn_list, bool huge,
+     zombie_dance_cheat dance_cheat)
 {
-    auto f = [&test, tick, spawn_list](pvz_emulator::world& w) {
-        w.scene.spawn.wave = 1;
-        for (const auto& z : spawn_list) {
-            w.zombie_factory.create(z);
+    auto f = [&test, tick, spawn_list, huge, dance_cheat](pvz_emulator::world& w) {
+        auto spawn_wave = huge ? 9 : 0;
+        w.scene.spawn.wave = spawn_wave;
+        for (const auto& type : spawn_list) {
+            auto& z = w.zombie_factory.create(type);
+            if ((type == zombie_type::zombie || type == zombie_type::conehead
+                    || type == zombie_type::buckethead)
+                && dance_cheat != zombie_dance_cheat::none) {
+                z.dance_cheat = dance_cheat;
+            }
         }
-        w.scene.spawn.wave = 2; // required for get_current_hp() to work correctly
+        w.scene.spawn.wave++; // required for get_current_hp() to work correctly
         test.init_hp = static_cast<int>(w.spawn.get_current_hp());
     };
     test.ops.push_back({tick, f});
@@ -160,14 +168,15 @@ void insert_smart_fodder(Test& test, int tick, const SmartFodder* fodder)
 
 } // namespace _refresh_internal
 
-void load_wave(const Setting& setting, const Wave& wave, const ZombieList& spawn_list, Test& test)
+void load_wave(const Setting& setting, const Wave& wave, const ZombieList& spawn_list, bool huge,
+    pvz_emulator::object::zombie_dance_cheat dance_cheat, Test& test)
 {
     using namespace _refresh_internal;
 
     test = {};
 
     int base_tick = 0;
-    insert_spawn(test, base_tick, spawn_list);
+    insert_spawn(test, base_tick, spawn_list, huge, dance_cheat);
 
     for (const auto& ice_time : wave.ice_times) {
         insert_ice(test, base_tick + ice_time - 100);

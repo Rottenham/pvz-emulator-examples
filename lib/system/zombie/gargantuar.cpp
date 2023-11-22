@@ -85,6 +85,7 @@ void zombie_gargantuar::update(zombie& z) {
         z.has_item_or_walk_left = false;
         if (!scene.disable_garg_throw_imp) {
             auto& imp = zombie_factory(scene).create(zombie_type::imp);
+            imp.spawn_wave = z.spawn_wave;
 
             imp.row = z.row;
             imp.status = zombie_status::imp_flying;

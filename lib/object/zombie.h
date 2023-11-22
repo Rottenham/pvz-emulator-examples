@@ -130,6 +130,12 @@ enum class zombie_accessories_type_2 {
     ladder = 0x3,
 };
 
+enum class zombie_dance_cheat {
+    none = 0x0,
+    fast = 0x1,
+    slow = 0x2,
+};
+
 class scene;
 
 class zombie {
@@ -147,6 +153,7 @@ public:
         int arr[4];
         int size;
     } hit_by_ash;
+    zombie_dance_cheat dance_cheat;
 
     zombie_type type;
     zombie_status status;

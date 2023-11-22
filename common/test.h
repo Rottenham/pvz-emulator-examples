@@ -3,12 +3,11 @@
 #include <algorithm>
 #include <ctime>
 #include <fstream>
-#include <iomanip>
+#include <iomanip> // std::put_time
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
-#include <unordered_map>
-#include <variant>
 #include <vector>
 
 // format: 2009.12.25_21.41.37
@@ -38,19 +37,24 @@
 }
 
 [[nodiscard]] std::string get_cmd_arg(const std::vector<std::string>& args,
-    const std::string& option, const std::string& default_value = "")
+    const std::string& option, const std::optional<std::string>& default_value = std::nullopt)
 {
     auto it = std::find(args.begin(), args.end(), "-" + option);
     if (it != args.end() && ++it != args.end()) {
         return *it;
     }
-    if (!default_value.empty()) {
-        return default_value;
+    if (default_value.has_value()) {
+        return *default_value;
     } else {
         std::cerr << "请提供参数: " << option << std::endl;
         exit(1);
         return "";
     }
+}
+
+[[nodiscard]] bool get_cmd_flag(const std::vector<std::string>& args, const std::string& option)
+{
+    return std::find(args.begin(), args.end(), "-" + option) != args.end();
 }
 
 [[nodiscard]] std::vector<int> assign_repeat(int total_repeat_num, int thread_num)
@@ -68,4 +72,16 @@
         repeat_per_thread[i]++;
     }
     return repeat_per_thread;
+}
+
+[[nodiscard]] std::vector<std::string> split(const std::string& s, char delim)
+{
+    std::vector<std::string> tokens;
+    std::istringstream iss(s);
+    std::string token;
+
+    while (std::getline(iss, token, delim)) {
+        tokens.push_back(token);
+    }
+    return tokens;
 }

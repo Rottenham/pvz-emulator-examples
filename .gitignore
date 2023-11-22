@@ -1,4 +1,5 @@
 .vscode
+_*.cpp
 
 # data folder, for personal use only
 data

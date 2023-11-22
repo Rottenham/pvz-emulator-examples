@@ -1,7 +1,7 @@
 /* 测试砸率.
  */
 
-#include "common/io.h"
+#include "common/test.h"
 #include "common/pe.h"
 #include "seml/smash/lib.h"
 #include "world.h"

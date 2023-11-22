@@ -2,6 +2,7 @@
 
 #include <optional>
 
+#include "constants/constants.h"
 #include "reader/types.h"
 #include "world.h"
 

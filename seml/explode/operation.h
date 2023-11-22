@@ -37,10 +37,10 @@ void insert_setup(Test& test, int tick, const std::vector<Setting::ProtectPos>& 
 void insert_spawn(Test& test, int tick)
 {
     auto f = [tick](pvz_emulator::world& w) {
-        for (const auto& zombie_type : {zombie_type::jack_in_the_box, zombie_type::ladder,
+        for (const auto& type : {zombie_type::jack_in_the_box, zombie_type::ladder,
                  zombie_type::football, zombie_type::catapult}) {
             for (int r = 0; r < 5; r++) {
-                w.zombie_factory.create(zombie_type);
+                w.zombie_factory.create(type);
             }
         }
     };

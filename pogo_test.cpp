@@ -1,7 +1,7 @@
 /* 测试收跳跳的最左炮准星.
  */
 
-#include "common/io.h"
+#include "common/test.h"
 #include "common/pe.h"
 #include "constants/constants.h"
 #include "seml/reader/lib.h"
@@ -30,7 +30,7 @@ bool is_range_overlap(std::pair<int, int> range1, std::pair<int, int> range2)
 
 std::pair<int, int> get_col_range(const Setting::ProtectPos& protect_position)
 {
-    if (protect_position.type == Setting::ProtectPos::Type::Cob) {
+    if (protect_position.is_cob()) {
         return {protect_position.col - 1, protect_position.col};
     } else {
         return {protect_position.col, protect_position.col};
@@ -112,9 +112,14 @@ void test(const Config& config, int repeat)
 
             if (tick == 0) {
                 for (const auto& protect_position : config.setting.protect_positions) {
-                    for (int cob_row = 1; cob_row <= 3; cob_row++) {
-                        w.plant_factory.create(
-                            plant_type::cob_cannon, cob_row - 1, protect_position.col - 2);
+                    for (int row = 1; row <= 3; row++) {
+                        if (protect_position.is_cob()) {
+                            w.plant_factory.create(
+                                plant_type::cob_cannon, row - 1, protect_position.col - 2);
+                        } else {
+                            w.plant_factory.create(
+                                plant_type::umbrella_leaf, row - 1, protect_position.col - 1);
+                        }
                     }
                 }
                 for (int i = 0; i < 1000; i++) {
@@ -197,7 +202,7 @@ int main(int argc, char* argv[])
          << "本跳上巨,本跳本巨,本跳下巨,"
          << "下跳上巨,下跳本巨,下跳下巨,"
          << "\n";
-         
+
     const auto& wave = config.waves[0];
     for (int tick = wave.start_tick; tick <= wave.wave_length; tick++) {
         auto upper_cob_pogo = upper_cob[tick - wave.start_tick];

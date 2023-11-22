@@ -16,8 +16,6 @@ class zombie_system {
     system::plant_factory plant_factory;
     system::zombie_factory zombie_factory;
 
-    system::reanim reanim;
-
     system::zombie_subsystems subsystems;
 
     void update_falling(object::zombie& z);
@@ -49,6 +47,8 @@ class zombie_system {
     void update_x(object::zombie& z);
 
 public:
+    system::reanim reanim;
+
     zombie_system(object::scene& s) :
         scene(s),
         rng(s),

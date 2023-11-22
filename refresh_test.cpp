@@ -1,101 +1,211 @@
 /* 测试意外刷新概率.
  */
 
-#include "common/io.h"
-#include "common/pe.h"
-#include "refresh/simulate_summon.h"
+#include "common/test.h"
+#include "seml/refresh/lib.h"
 #include "world.h"
 
-/***** 配置部分开始 *****/
-
-const int TOTAL_ROUND_NUM = 1000;
-const int WAVE_PER_ROUND = 20;
-const int COB_TIME = 225;
-const bool ASSUME_ACTIVATE = true;
-
-/***** 配置部分结束 *****/
+#include <mutex>
 
 using namespace pvz_emulator;
 using namespace pvz_emulator::object;
 
-double hp_ratio[TOTAL_ROUND_NUM + 1][WAVE_PER_ROUND + 1];
-double accident_rate[TOTAL_ROUND_NUM + 1][WAVE_PER_ROUND + 1];
+ZombieTypes SPECIFIABLE_ZOMBIE_TYPES
+    = {zombie_type::pole_vaulting, zombie_type::buckethead, zombie_type::screendoor,
+        zombie_type::football, zombie_type::dancing, zombie_type::snorkel, zombie_type::zomboni,
+        zombie_type::dolphin_rider, zombie_type::jack_in_the_box, zombie_type::balloon,
+        zombie_type::digger, zombie_type::pogo, zombie_type::pogo, zombie_type::ladder,
+        zombie_type::catapult, zombie_type::gargantuar, zombie_type::giga_gargantuar};
 
-void test_one_round(int round, world& w)
+ZombieTypes parse_zombie_types(const std::string& zombie_nums)
 {
-    auto type_list = random_type_list(w.scene, {GARGANTUAR, GIGA_GARGANTUAR});
+    ZombieTypes zombie_types;
+    for (const auto& zombie_num : split(zombie_nums, ',')) {
+        auto type = static_cast<zombie_type>(std::stoi(zombie_num));
+        if (!SPECIFIABLE_ZOMBIE_TYPES.count(type)) {
+            std::cerr << "无法指定此僵尸类型: " << zombie::type_to_string(type) << std::endl;
+            exit(1);
+        }
+        zombie_types.insert(type);
+    }
+    return zombie_types;
+}
 
-    for (int wave = 1; wave <= WAVE_PER_ROUND; wave++) {
-        auto spawn_list = simulate_wave(type_list);
-
-        w.scene.reset();
-        w.scene.stop_spawn = true;
-
-        launch_cob(w, 2, 9);
-        launch_cob(w, 5, 9);
-
-        run(w, 373 - COB_TIME);
-
-        w.scene.spawn.wave = 1;
-        for (const auto& z : spawn_list)
-            w.zombie_factory.create(static_cast<zombie_type>(z));
-
-        w.scene.spawn.wave
-            = 2; // as if we are already at the next wave, so get_current_hp() works correctly
-        auto init_hp = w.spawn.get_current_hp();
-        run(w, 401);
-        auto curr_hp = w.spawn.get_current_hp();
-
-        hp_ratio[round][wave] = 1.0 * curr_hp / init_hp;
-        double refresh_prob = (0.65 - std::clamp(hp_ratio[round][wave], 0.5, 0.65)) / 0.15;
-        accident_rate[round][wave] = ASSUME_ACTIVATE ? 1 - refresh_prob : refresh_prob;
+zombie_dance_cheat get_dance_cheat(bool use_dance_cheat, bool assume_activate)
+{
+    if (use_dance_cheat) {
+        return assume_activate ? zombie_dance_cheat::fast : zombie_dance_cheat::slow;
+    } else {
+        return zombie_dance_cheat::none;
     }
 }
 
-int main(void)
+void validate_config(Config& config)
+{
+    if (config.waves.empty()) {
+        std::cerr << "请提供操作." << std::endl;
+        exit(1);
+    }
+}
+
+double get_accident_rate(int init_hp, int curr_hp, bool assume_activate)
+{
+    double hp_ratio = static_cast<double>(curr_hp) / static_cast<double>(init_hp);
+    double refresh_prob = (0.65 - std::clamp(hp_ratio, 0.5, 0.65)) / 0.15;
+    return assume_activate ? 1.0 - refresh_prob : refresh_prob;
+}
+
+std::mutex mtx;
+TestInfos test_infos;
+
+void test_one(const Config& config, int repeat, const ZombieTypes& required_types,
+    const ZombieTypes& banned_types, bool huge, bool assume_activate,
+    zombie_dance_cheat dance_cheat)
+{
+    std::mt19937 rng(
+        static_cast<unsigned int>(std::chrono::steady_clock::now().time_since_epoch().count()));
+    world w(config.setting.scene_type);
+    TestInfos local_test_infos;
+
+    for (int round_idx = 0; round_idx < repeat; round_idx++) {
+        auto spawn_types
+            = get_spawn_types(rng, config.setting.scene_type, required_types, banned_types);
+
+        for (int wave_idx = 0; wave_idx < 20; wave_idx++) { // test 20 times for each repeat
+            std::vector<Test> tests;
+            tests.reserve(config.waves.size());
+
+            for (const auto& wave : config.waves) {
+                Test test;
+                load_wave(config.setting, wave, get_spawn_list(rng, spawn_types, huge), huge,
+                    dance_cheat, test);
+
+                w.scene.reset();
+                w.scene.stop_spawn = true;
+                if (dance_cheat == zombie_dance_cheat::slow) {
+                    w.scene.is_zombie_dance = true;
+                }
+
+                auto it = test.ops.begin();
+                int curr_tick = it->tick; // there is at least 1 op (spawn)
+
+                for (; it != test.ops.end() && it->tick < wave.wave_length - 200; it++) {
+                    run(w, curr_tick, it->tick);
+                    it->f(w);
+                }
+                run(w, curr_tick, wave.wave_length - 200);
+
+                auto curr_hp = w.spawn.get_current_hp();
+                auto accident_rate = get_accident_rate(test.init_hp, curr_hp, assume_activate);
+                test.accident_rates[spawn_types].push_back(static_cast<float>(accident_rate));
+
+                tests.push_back(std::move(test));
+            }
+            local_test_infos.update(tests);
+        }
+    }
+
+    std::lock_guard<std::mutex> guard(mtx);
+    test_infos.merge(local_test_infos);
+}
+
+int main(int argc, char* argv[])
 {
     auto start = std::chrono::high_resolution_clock::now();
-    ::system("chcp 65001 > nul");
-    auto file = open_csv("refresh_test").first;
-    init_rnd();
 
-    std::atomic<int> i = 0;
+    ::system("chcp 65001 > nul");
+
+    std::vector<std::string> args(argv, argv + argc);
+    auto config_file = get_cmd_arg(args, "f");
+    auto output_file = get_cmd_arg(args, "o", "refresh_test");
+    auto total_repeat_num = std::stoi(get_cmd_arg(args, "r", "1000"));
+    auto required_types = parse_zombie_types(get_cmd_arg(args, "req", ""));
+    auto banned_types = parse_zombie_types(get_cmd_arg(args, "ban", ""));
+    auto huge = get_cmd_flag(args, "h");
+    auto assume_activate = get_cmd_flag(args, "a");
+    auto use_dance_cheat = get_cmd_flag(args, "d");
+    auto dance_cheat = get_dance_cheat(use_dance_cheat, assume_activate);
+
+    auto [file, full_output_file] = open_csv(output_file);
+
+    auto config = read_json(config_file);
+    validate_config(config);
+
     std::vector<std::thread> threads;
-    for (size_t j = 0; j < std::thread::hardware_concurrency(); j++) {
-        threads.emplace_back([&]() {
-            world w(scene_type::fog);
-            for (auto round = i.fetch_add(1); round <= TOTAL_ROUND_NUM; round = i.fetch_add(1)) {
-                test_one_round(round, w);
-            }
-        });
+    for (int repeat : assign_repeat(total_repeat_num, std::thread::hardware_concurrency())) {
+        threads.emplace_back(
+            [config, repeat, required_types, banned_types, huge, assume_activate, dance_cheat]() {
+                test_one(config, repeat, required_types, banned_types, huge, assume_activate,
+                    dance_cheat);
+            });
     }
     for (auto& t : threads) {
         t.join();
     }
 
-    file << "index,wave,hp,accident_rate\n";
-    double hp_ratio_sum = 0.0, accident_rate_sum = 0.0;
-    for (int round = 1; round <= TOTAL_ROUND_NUM; round++) {
-        for (int wave = 1; wave <= WAVE_PER_ROUND; wave++) {
-            hp_ratio_sum += hp_ratio[round][wave];
-            accident_rate_sum += accident_rate[round][wave];
+    std::vector<std::vector<std::string>> headers(config.waves.size());
+    size_t max_headaer_count = 0;
+    for (size_t i = 0; i < config.waves.size(); i++) {
+        const auto& wave = config.waves[i];
+        for (const auto& action : wave.actions) {
+            headers[i].push_back(desc(action));
         }
+        max_headaer_count = std::max(max_headaer_count, headers[i].size());
     }
-    file << ",avg," << std::fixed << std::setprecision(3)
-         << hp_ratio_sum / (TOTAL_ROUND_NUM * WAVE_PER_ROUND) << ","
-         << 100.0 * accident_rate_sum / (TOTAL_ROUND_NUM * WAVE_PER_ROUND) << "%,\n";
 
-    for (int round = 1; round <= TOTAL_ROUND_NUM; round++) {
-        for (int wave = 1; wave <= WAVE_PER_ROUND; wave++) {
-            file << round << "," << wave << "," << hp_ratio[round][wave] << ","
-                 << accident_rate[round][wave] << ",\n";
+    auto table = test_infos.make_table();
+
+    file << "测试环境: " << (huge ? "旗帜波" : "普通波") << " "
+         << (assume_activate ? "激活" : "分离") << " ";
+    if (dance_cheat == zombie_dance_cheat::none) {
+        file << "无dance\n";
+    } else if (dance_cheat == zombie_dance_cheat::fast) {
+        file << "dance快\n";
+    } else if (dance_cheat == zombie_dance_cheat::slow) {
+        file << "dance慢\n";
+    } else {
+        assert(false && "unreachable");
+    }
+    file << "必出类型: " << zombie_types_to_names(required_types, "") << "\n";
+    file << "禁出类型: " << zombie_types_to_names(banned_types, "") << "\n";
+
+    for (size_t i = 0; i < max_headaer_count; i++) {
+        for (const auto& header : headers) {
+            file << ",";
+            if (i < header.size()) {
+                file << header[i];
+            }
+            file << ",,";
         }
+        file << "\n";
+    }
+
+    file << std::fixed << std::setprecision(3);
+    for (const auto& col : table.cols) {
+        file << "平均意外率,";
+        file << 100.0 * col.average_accident_rate << "%,,";
+    }
+    file << "\n";
+
+    for (size_t i = 0; i < table.max_row_count; i++) {
+        for (const auto& col : table.cols) {
+            if (i < col.rows.size()) {
+                file << zombie_types_to_names(col.rows[i].first) << ","
+                     << 100.0 * col.rows[i].second << "%,";
+            } else {
+                file << ",,";
+            }
+            file << ",";
+        }
+        file << "\n";
     }
 
     file.close();
 
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
-    std::cout << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
-              << threads.size() << " 个线程.";
+    std::cout << "输出文件已保存至 " << full_output_file << ".\n"
+              << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
+              << threads.size() << " 个线程." << std::endl;
+
     return 0;
 }

@@ -24,3 +24,4 @@ Windows x86-64, VSCode, Cmake, Ninja, g++.
 - <del>跳跳和玉米炮的互动有 bug, 将玉米炮视作普通植物.</del> (已修复)
 - <del>搭梯判断有 bug, 梯子僵尸会给所有植物搭梯.</del> (已修复)
 - <del>rect::is_overlap_with_circle 有 bug.</del> (已修复)
+- 小鬼/伴舞生生成有 bug, 出生波数应当设为和巨人/舞王一致, 而非使用当前已刷新波数 (原 repo 尚未修复)

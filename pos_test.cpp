@@ -1,7 +1,7 @@
 /* 测试各个时刻各类僵尸的最小/最大x坐标.
  */
 
-#include "common/io.h"
+#include "common/test.h"
 #include "common/pe.h"
 #include "world.h"
 

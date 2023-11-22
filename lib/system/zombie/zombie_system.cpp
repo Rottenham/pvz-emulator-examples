@@ -848,6 +848,14 @@ bool zombie_system::update() {
         z.int_y = static_cast<int>(z.y);
 
         reanim.update_progress(z.reanim);
+
+        if (z.dance_cheat != zombie_dance_cheat::none) {
+            assert(z.type == zombie_type::zombie || z.type == zombie_type::conehead || z.type == zombie_type::buckethead);
+            if (z.dance_cheat == zombie_dance_cheat::slow) {
+                assert(scene.is_zombie_dance);
+            }
+            reanim.update_status(z);
+        }
     }
 
     return false;

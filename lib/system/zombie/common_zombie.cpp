@@ -12,6 +12,7 @@ void zombie_base::init(object::zombie &z, zombie_type type, unsigned int row) {
     z.attempted_smashes.size = 0;
     z.ignored_smashes.size = 0;
     z.hit_by_ash.size = 0;
+    z.dance_cheat = zombie_dance_cheat::none;
 
     z.type = type;
 

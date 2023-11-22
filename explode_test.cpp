@@ -1,7 +1,7 @@
 /* 测试炸率.
  */
 
-#include "common/io.h"
+#include "common/test.h"
 #include "common/pe.h"
 #include "seml/explode/lib.h"
 #include "world.h"
@@ -11,8 +11,6 @@
 
 using namespace pvz_emulator;
 using namespace pvz_emulator::object;
-
-std::mutex mtx;
 
 void validate_config(Config& config)
 {
@@ -41,6 +39,7 @@ void validate_config(Config& config)
     }
 }
 
+std::mutex mtx;
 Table table;
 
 void test_one(const Config& config, int repeat)

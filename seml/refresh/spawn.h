@@ -1,8 +1,13 @@
+/* Adapted from https://github.com/qrmd0/AvZLib/blob/main/Reisen/refresh/refresh/summon_simulate.h
+ */
+
 #pragma once
 
 #include <optional>
 
 #include "types.h"
+
+namespace _refresh_internal {
 
 using namespace pvz_emulator::object;
 
@@ -41,9 +46,13 @@ const std::unordered_map<scene_type, std::vector<zombie_type>> BANNED_TYPES = {
         {zombie_type::dancing, zombie_type::snorkel, zombie_type::dolphin_rider,
             zombie_type::digger}}};
 
+} // namespace _refresh_internal
+
 ZombieTypes get_spawn_types(std::mt19937& rng, const pvz_emulator::object::scene_type& scene_type,
-    const std::vector<zombie_type>& required = {}, const std::vector<zombie_type>& banned = {})
+    const ZombieTypes& required_types = {}, const ZombieTypes& banned_types = {})
 {
+    using zombie_type = pvz_emulator::object::zombie_type;
+
     zombie_type selected, other;
     if (rng() % 5) {
         selected = zombie_type::conehead;
@@ -59,15 +68,15 @@ ZombieTypes get_spawn_types(std::mt19937& rng, const pvz_emulator::object::scene
             zombie_type::screendoor, zombie_type::football, zombie_type::dancing,
             zombie_type::snorkel, zombie_type::zomboni, zombie_type::dolphin_rider,
             zombie_type::jack_in_the_box, zombie_type::balloon, zombie_type::digger,
-            zombie_type::pogo, zombie_type::pogo, zombie_type::ladder, zombie_type::catapult,
+            zombie_type::pogo, zombie_type::bungee, zombie_type::ladder, zombie_type::catapult,
             zombie_type::gargantuar, zombie_type::giga_gargantuar, other};
         for (const auto& type : dummies) {
             candidates.insert(type);
         }
-        for (const auto& type : BANNED_TYPES.at(scene_type)) {
+        for (const auto& type : _refresh_internal::BANNED_TYPES.at(scene_type)) {
             candidates.erase(type);
         }
-        for (const auto& types : {required, banned}) {
+        for (const auto& types : {required_types, banned_types}) {
             for (const auto& type : types) {
                 assert(candidates.count(type));
                 candidates.erase(type);
@@ -78,10 +87,10 @@ ZombieTypes get_spawn_types(std::mt19937& rng, const pvz_emulator::object::scene
 
     auto candidates = get_candidates();
     ZombieTypes res = {zombie_type::zombie, zombie_type::yeti, selected};
-    for (const auto& type : required) {
+    for (const auto& type : required_types) {
         res.insert(type);
     }
-    for (size_t i = 0; i < 9 - required.size(); i++) {
+    for (size_t i = 0; i < 9 - required_types.size(); i++) {
         int idx = rng() % static_cast<int>(candidates.size());
         if (!dummies.count(candidates[idx])) {
             res.insert(candidates[idx]);
@@ -95,13 +104,15 @@ ZombieTypes get_spawn_types(std::mt19937& rng, const pvz_emulator::object::scene
 ZombieList get_spawn_list(std::mt19937& rng, ZombieTypes spawn_types, bool huge,
     int giga_limit = 50, std::optional<int> giga_count = std::nullopt)
 {
+    using zombie_type = pvz_emulator::object::zombie_type;
+
     if (giga_count.has_value()) {
         spawn_types.erase(zombie_type::giga_gargantuar);
     }
 
     std::vector<int> weights;
     for (const auto& type : spawn_types) {
-        weights.push_back(WEIGHT.at(type).at(huge));
+        weights.push_back(_refresh_internal::WEIGHT.at(type).at(huge));
     }
     std::discrete_distribution<> dist(weights.begin(), weights.end());
 
