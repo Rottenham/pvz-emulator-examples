@@ -124,8 +124,6 @@ int main()
         file << "\n";
     }
 
-    file.close();
-
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
     std::cout << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
               << threads.size() << " 个线程.";

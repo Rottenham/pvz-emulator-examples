@@ -1,3 +1,5 @@
+#pragma once
+
 #include <array>
 
 namespace _constants_internal {

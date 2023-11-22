@@ -200,8 +200,6 @@ int main(int argc, char* argv[])
         file << "\n";
     }
 
-    file.close();
-
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
     std::cout << "输出文件已保存至 " << full_output_file << ".\n"
               << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
