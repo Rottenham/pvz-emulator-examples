@@ -198,7 +198,7 @@ void load_wave(const Setting& setting, const Wave& wave, Test& test)
     insert_spawn(test, base_tick);
 
     for (const auto& ice_time : wave.ice_times) {
-        insert_ice(test, base_tick + ice_time - 100);
+        insert_ice(test, base_tick + ice_time - 99);
     }
 
     for (const auto& action : wave.actions) {

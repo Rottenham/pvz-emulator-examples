@@ -115,9 +115,9 @@ int get_fixed_card_op_tick(const FixedCard* fixed_card, int tick)
 
     if (plant_type == pvz_emulator::object::plant_type::jalapeno
         || plant_type == pvz_emulator::object::plant_type::cherry_bomb) {
-        return tick - 100;
+        return tick - 99;
     } else if (plant_type == pvz_emulator::object::plant_type::squash) {
-        return tick - 182;
+        return tick - 181;
     } else if (plant_type == pvz_emulator::object::plant_type::garlic) {
         return tick;
     } else {
@@ -132,9 +132,9 @@ int get_smart_card_op_tick(const SmartCard* smart_card, int tick)
 
     if (plant_type == pvz_emulator::object::plant_type::jalapeno
         || plant_type == pvz_emulator::object::plant_type::cherry_bomb) {
-        return tick - 100;
+        return tick - 99;
     } else if (plant_type == pvz_emulator::object::plant_type::squash) {
-        return tick - 182;
+        return tick - 181;
     } else {
         assert(false && "unreachable");
         return 0;

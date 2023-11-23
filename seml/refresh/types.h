@@ -27,6 +27,3 @@ struct Test {
     std::vector<std::vector<unique_plant>> plants_to_be_shoveled;
     std::vector<Op> ops;
 };
-
-using Tests = std::vector<Test>;
-

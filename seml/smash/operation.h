@@ -57,16 +57,19 @@ void insert_spawn(Test& test, int tick, int wave, int giga_num, const std::vecto
                 giga_info.alive_time = giga_info.zombie.ptr->time_since_spawn;
 
                 giga_info.hit_by_ash.clear();
+                giga_info.hit_by_ash.reserve(zombie.ptr->hit_by_ash.size);
                 for (int i = 0; i < zombie.ptr->hit_by_ash.size; i++) {
                     giga_info.hit_by_ash.insert(zombie.ptr->hit_by_ash.arr[i]);
                 }
 
                 giga_info.attempted_smashes.clear();
+                giga_info.attempted_smashes.reserve(zombie.ptr->attempted_smashes.size);
                 for (int i = 0; i < zombie.ptr->attempted_smashes.size; i++) {
                     giga_info.attempted_smashes.insert(zombie.ptr->attempted_smashes.arr[i]);
                 }
 
                 giga_info.ignored_smashes.clear();
+                giga_info.ignored_smashes.reserve(zombie.ptr->ignored_smashes.size);
                 for (int i = 0; i < zombie.ptr->ignored_smashes.size; i++) {
                     giga_info.ignored_smashes.insert(zombie.ptr->ignored_smashes.arr[i]);
                 }
@@ -271,7 +274,7 @@ void load_config(const Config& config, Test& test, int giga_total)
             giga_rows);
 
         for (const auto& ice_time : wave.ice_times) {
-            insert_ice(test, base_tick + ice_time - 100);
+            insert_ice(test, base_tick + ice_time - 99);
         }
 
         for (const auto& action : wave.actions) {

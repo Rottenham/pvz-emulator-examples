@@ -106,7 +106,7 @@ void test(const Config& config, int repeat)
         w.scene.stop_spawn = true;
 
         for (int tick = -100; tick <= wave.wave_length; tick++, run(w, 1)) {
-            if (ice_time.has_value() && tick == *ice_time - 100) {
+            if (ice_time.has_value() && tick == *ice_time - 99) {
                 w.plant_factory.create(plant_type::iceshroom, 0, 0);
             }
 

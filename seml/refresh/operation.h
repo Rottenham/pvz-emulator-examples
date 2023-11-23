@@ -179,7 +179,7 @@ void load_wave(const Setting& setting, const Wave& wave, const ZombieList& spawn
     insert_spawn(test, base_tick, spawn_list, huge, dance_cheat);
 
     for (const auto& ice_time : wave.ice_times) {
-        insert_ice(test, base_tick + ice_time - 100);
+        insert_ice(test, base_tick + ice_time - 99);
     }
 
     for (const auto& action : wave.actions) {
