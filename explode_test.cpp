@@ -67,7 +67,7 @@ void test_one(const Config& config, int repeat)
             }
             run(w, curr_tick, wave.start_tick);
 
-            while (curr_tick <= wave.wave_length - 200) {
+            while (curr_tick <= wave.wave_length) {
                 for (; it != test.ops.end() && it->tick == curr_tick; it++) {
                     it->f(w);
                 }
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
         return os.str();
     };
 
-    for (int tick = tick_range.first; tick <= tick_range.second - 200; tick++) {
+    for (int tick = tick_range.first; tick <= tick_range.second; tick++) {
 
         file << tick << ",";
 
