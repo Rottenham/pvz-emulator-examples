@@ -190,7 +190,7 @@ void load_wave(const Setting& setting, const Wave& wave, Test& test)
 
     test = {};
     test.start_tick = wave.start_tick;
-    test.loss_infos.reserve((wave.wave_length - 200) - wave.start_tick + 1);
+    test.loss_infos.reserve(wave.wave_length - wave.start_tick + 1);
     test.protect_plants.reserve(setting.protect_positions.size());
 
     int base_tick = 0;

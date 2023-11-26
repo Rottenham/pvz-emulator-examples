@@ -1,8 +1,8 @@
 /* 测试炸率.
  */
 
-#include "common/test.h"
 #include "common/pe.h"
+#include "common/test.h"
 #include "seml/explode/lib.h"
 #include "world.h"
 
@@ -20,7 +20,7 @@ void validate_config(Config& config)
     }
     for (auto& wave : config.waves) {
         if (wave.start_tick == -1) {
-            wave.start_tick = wave.wave_length - 200;
+            wave.start_tick = wave.wave_length;
         }
     }
 
@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
 
         file << "\n";
     }
-    
+
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
     std::cout << "输出文件已保存至 " << full_output_file << ".\n"
               << "耗时 " << std::fixed << std::setprecision(2) << elapsed.count() << " 秒, 使用了 "
