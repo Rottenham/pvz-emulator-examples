@@ -1,8 +1,8 @@
 /* 测试收跳跳的最左炮准星.
  */
 
-#include "common/test.h"
 #include "common/pe.h"
+#include "common/test.h"
 #include "constants/constants.h"
 #include "seml/reader/lib.h"
 #include "world.h"
@@ -16,9 +16,7 @@ using namespace pvz_emulator::system;
 
 std::mutex mtx;
 
-std::vector<int> upper_cob;
-std::vector<int> same_cob;
-std::vector<int> lower_cob;
+std::vector<std::vector<std::pair<int, int>>> cob_ranges;
 std::optional<int> ice_time;
 int hit_cob_col = -1;
 
@@ -85,22 +83,19 @@ void validate_config(Config& config)
             }
         }
     }
-
-    upper_cob.resize(wave.wave_length - wave.start_tick + 1, 999);
-    same_cob.resize(wave.wave_length - wave.start_tick + 1, 999);
-    lower_cob.resize(wave.wave_length - wave.start_tick + 1, 999);
+    cob_ranges.resize(
+        3, std::vector<std::pair<int, int>>(wave.wave_length - wave.start_tick + 1, {-9999, 9999}));
 }
 
+int count = 0;
 void test(const Config& config, int repeat)
 {
     const auto& wave = config.waves[0];
-
     world w(config.setting.scene_type);
+    std::vector<std::vector<std::pair<int, int>>> local_cob_ranges(
+        3, std::vector<std::pair<int, int>>(wave.wave_length - wave.start_tick + 1, {-9999, 9999}));
 
-    std::vector<int> local_upper_cob(wave.wave_length - wave.start_tick + 1, 999);
-    std::vector<int> local_same_cob(wave.wave_length - wave.start_tick + 1, 999);
-    std::vector<int> local_lower_cob(wave.wave_length - wave.start_tick + 1, 999);
-
+    int local_count = 0;
     for (int r = 0; r < repeat; r++) {
         w.scene.reset();
         w.scene.stop_spawn = true;
@@ -112,67 +107,48 @@ void test(const Config& config, int repeat)
 
             if (tick == 0) {
                 for (const auto& protect_position : config.setting.protect_positions) {
-                    for (int row = 1; row <= 3; row++) {
-                        if (protect_position.is_cob()) {
-                            w.plant_factory.create(
-                                plant_type::cob_cannon, row - 1, protect_position.col - 2);
-                        } else {
-                            w.plant_factory.create(
-                                plant_type::umbrella_leaf, row - 1, protect_position.col - 1);
-                        }
+                    if (protect_position.is_cob()) {
+                        w.plant_factory.create(plant_type::cob_cannon, 1, protect_position.col - 2);
+                    } else {
+                        w.plant_factory.create(
+                            plant_type::umbrella_leaf, 1, protect_position.col - 1);
                     }
                 }
                 for (int i = 0; i < 1000; i++) {
                     w.zombie_factory.create(zombie_type::pogo, 1);
                 }
             }
-
+            
             if (tick >= wave.start_tick) {
                 for (auto& z : w.scene.zombies) {
-                    assert(z.type == zombie_type::pogo);
+                    for (int diff = -1; diff <= 1; diff++) {
+                        auto new_cob_range = get_cob_hit_x_range(get_hit_box(z),
+                            get_cob_hit_xy(w.scene.type, (z.row + 1) + diff, 9.0f, hit_cob_col)
+                                .second);
+                        auto& old_cob_range = local_cob_ranges[diff + 1][tick - wave.start_tick];
 
-                    auto upper_cob_x_range = get_cob_hit_x_range(get_hit_box(z),
-                        get_cob_hit_xy(w.scene.type, z.row, 9.0f, hit_cob_col).second);
-                    auto same_cob_x_range = get_cob_hit_x_range(get_hit_box(z),
-                        get_cob_hit_xy(w.scene.type, z.row + 1, 9.0f, hit_cob_col).second);
-                    auto lower_cob_x_range = get_cob_hit_x_range(get_hit_box(z),
-                        get_cob_hit_xy(w.scene.type, z.row + 2, 9.0f, hit_cob_col).second);
-
-                    local_upper_cob[tick - wave.start_tick] = std::min(
-                        local_upper_cob[tick - wave.start_tick], upper_cob_x_range.second);
-                    local_same_cob[tick - wave.start_tick]
-                        = std::min(local_same_cob[tick - wave.start_tick], same_cob_x_range.second);
-                    local_lower_cob[tick - wave.start_tick] = std::min(
-                        local_lower_cob[tick - wave.start_tick], lower_cob_x_range.second);
+                        old_cob_range.first = std::max(old_cob_range.first, new_cob_range.first);
+                        old_cob_range.second = std::min(old_cob_range.second, new_cob_range.second);
+                        if (tick == 1669 && diff == -1 && new_cob_range.second < 678) {
+                            local_count++;
+                        }
+                    }
                 }
             }
         }
     }
 
     std::lock_guard<std::mutex> lock(mtx);
+    count += local_count;
     for (int tick = wave.start_tick; tick <= wave.wave_length; tick++) {
-        upper_cob[tick - wave.start_tick]
-            = std::min(upper_cob[tick - wave.start_tick], local_upper_cob[tick - wave.start_tick]);
-        same_cob[tick - wave.start_tick]
-            = std::min(same_cob[tick - wave.start_tick], local_same_cob[tick - wave.start_tick]);
-        lower_cob[tick - wave.start_tick]
-            = std::min(lower_cob[tick - wave.start_tick], local_lower_cob[tick - wave.start_tick]);
+        for (int i = 0; i < 3; i++) {
+            auto& local_cob_range = local_cob_ranges[i][tick - wave.start_tick];
+            auto& global_cob_range = cob_ranges[i][tick - wave.start_tick];
+            global_cob_range.first = std::max(global_cob_range.first, local_cob_range.first);
+            global_cob_range.second = std::min(global_cob_range.second, local_cob_range.second);
+        }
     }
 }
-
-int min_garg_walk(int tick)
-{
-    if (!ice_time.has_value()) {
-        return tick;
-    } else {
-        int res = *ice_time - 1;
-        int walk = std::max(tick - *ice_time - (600 - 2), 0);
-        int uniced_walk = std::max(walk - (2000 - 600), 0);
-        return static_cast<int>(res + (walk - uniced_walk) / 2.0 + uniced_walk);
-    }
-}
-
-std::string bool_to_string(bool b) { return b ? "OK" : "ERROR"; }
 
 int main(int argc, char* argv[])
 {
@@ -181,7 +157,7 @@ int main(int argc, char* argv[])
 
     std::vector<std::string> args(argv, argv + argc);
     auto config_file = get_cmd_arg(args, "f");
-    auto output_file = get_cmd_arg(args, "o", "pogo_test");
+    auto output_file = get_cmd_arg(args, "o", "pogo_test2");
     auto total_repeat_num = std::stoi(get_cmd_arg(args, "r", "1000"));
 
     auto [file, full_output_file] = open_csv(output_file);
@@ -196,53 +172,28 @@ int main(int argc, char* argv[])
     for (auto& t : threads) {
         t.join();
     }
-
-    file << "时刻,收上行跳跳,收本行跳跳,收下行跳跳,收上行巨人,收本行巨人,收下行巨人,"
-         << "上跳上巨,上跳本巨,上跳下巨,"
-         << "本跳上巨,本跳本巨,本跳下巨,"
-         << "下跳上巨,下跳本巨,下跳下巨,"
+    std::cout << count << "\n";
+    file << "时刻,收上行跳跳左,右,收本行跳跳左,右,收下行跳跳左,右,"
          << "\n";
-
     const auto& wave = config.waves[0];
     for (int tick = wave.start_tick; tick <= wave.wave_length; tick++) {
-        auto upper_cob_pogo = upper_cob[tick - wave.start_tick];
-        auto same_cob_pogo = same_cob[tick - wave.start_tick];
-        auto lower_cob_pogo = lower_cob[tick - wave.start_tick];
-
-        rect garg_hit_box;
-        garg_hit_box.x = static_cast<int>(get_garg_x_max(min_garg_walk(tick))) - 17;
-        garg_hit_box.y = (is_roof(config.setting.scene_type) ? 40 : 50)
-            + (is_frontyard(config.setting.scene_type) ? 100 : 85) - 38;
-        garg_hit_box.width = 125;
-        garg_hit_box.height = 154;
-
-        auto upper_cob_garg = get_cob_hit_x_range(
-            garg_hit_box, get_cob_hit_xy(config.setting.scene_type, 1, 9.0f, hit_cob_col).second)
-                                  .first;
-        auto same_cob_garg = get_cob_hit_x_range(
-            garg_hit_box, get_cob_hit_xy(config.setting.scene_type, 2, 9.0f, hit_cob_col).second)
-                                 .first;
-        auto lower_cob_garg = get_cob_hit_x_range(
-            garg_hit_box, get_cob_hit_xy(config.setting.scene_type, 3, 9.0f, hit_cob_col).second)
-                                  .first;
-
-        file << tick << "," << lower_cob_pogo << "," << same_cob_pogo << "," << upper_cob_pogo
-             << "," << lower_cob_garg << "," << same_cob_garg << "," << upper_cob_garg << ",";
-
-        file << bool_to_string(lower_cob_garg <= lower_cob_pogo) << ",";
-        file << bool_to_string(same_cob_garg <= lower_cob_pogo) << ",";
-        file << bool_to_string(upper_cob_garg <= lower_cob_pogo) << ",";
-
-        file << bool_to_string(lower_cob_garg <= same_cob_pogo) << ",";
-        file << bool_to_string(same_cob_garg <= same_cob_pogo) << ",";
-        file << bool_to_string(upper_cob_garg <= same_cob_pogo) << ",";
-
-        file << bool_to_string(lower_cob_garg <= upper_cob_pogo) << ",";
-        file << bool_to_string(same_cob_garg <= upper_cob_pogo) << ",";
-        file << bool_to_string(upper_cob_garg <= upper_cob_pogo) << ",";
-
+        file << tick << ",";
+        for (int i = 2; i >= 0; i--) {
+            auto& cob_range = cob_ranges[i][tick - wave.start_tick];
+            if (std::abs(cob_range.first) == 9999)
+                file << "ERR";
+            else
+                file << cob_range.first;
+            file << ",";
+            if (std::abs(cob_range.second) == 9999)
+                file << "ERR";
+            else
+                file << cob_range.second;
+            file << ",";
+        }
         file << "\n";
     }
+    file.close();
 
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;
     std::cout << "输出文件已保存至 " << full_output_file << ".\n"

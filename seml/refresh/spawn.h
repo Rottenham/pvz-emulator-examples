@@ -37,7 +37,10 @@ const std::unordered_map<zombie_type, std::array<int, 2>> WEIGHT = {
 
 const std::unordered_map<scene_type, std::vector<zombie_type>> BANNED_TYPES = {
     {scene_type::day, {zombie_type::snorkel, zombie_type::dolphin_rider}},
-    {scene_type::night, {zombie_type::snorkel, zombie_type::zomboni, zombie_type::dolphin_rider}},
+    {scene_type::night,
+        {zombie_type::snorkel, /*zombie_type::zomboni,*/
+            zombie_type::
+                dolphin_rider}}, // 为了蘑菇免唤醒，只使用夜间场地，因此此处允许冰车（DE当作NE的情况）
     {scene_type::pool, {}}, {scene_type::fog, {}},
     {scene_type::roof,
         {zombie_type::dancing, zombie_type::snorkel, zombie_type::dolphin_rider,

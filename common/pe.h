@@ -198,7 +198,7 @@ int launch_cob(
         {zombie_hit_box.y, zombie_hit_box.y + zombie_hit_box.height}, cob_y);
 
     if (y_dist > 115) {
-        return {-1, 999};
+        return {9999, -9999};
     } else {
         int cob_dist = static_cast<int>(sqrt(115 * 115 - y_dist * y_dist));
         return {zombie_hit_box.x - cob_dist + 7,
