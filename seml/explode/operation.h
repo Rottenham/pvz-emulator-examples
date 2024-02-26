@@ -49,7 +49,9 @@ void insert_spawn(Test& test, int tick)
 
 void insert_ice(Test& test, int tick)
 {
-    auto f = [](pvz_emulator::world& w) { w.plant_factory.create(plant_type::iceshroom, 0, 0); };
+    auto f = [](pvz_emulator::world& w) {
+        w.plant_factory.create(plant_type::iceshroom, 0, 0, plant_type::none, true);
+    };
     test.ops.push_back({tick, f});
 }
 

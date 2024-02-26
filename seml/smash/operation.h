@@ -10,6 +10,10 @@
 
 namespace _smash_internal {
 
+using scene_type = pvz_emulator::object::scene_type;
+using plant_type = pvz_emulator::object::plant_type;
+using zombie_type = pvz_emulator::object::zombie_type;
+
 std::vector<int> get_giga_rows(const Setting& setting)
 {
     std::vector<int> giga_rows;
@@ -35,8 +39,7 @@ void insert_setup(Test& test, int tick, const std::vector<Setting::ProtectPos>& 
 {
     auto f = [protect_positions](pvz_emulator::world& w) {
         for (const auto& pos : protect_positions) {
-            auto plant_type = pos.is_cob() ? pvz_emulator::object::plant_type::cob_cannon
-                                           : pvz_emulator::object::plant_type::umbrella_leaf;
+            auto plant_type = pos.is_cob() ? plant_type::cob_cannon : plant_type::umbrella_leaf;
             auto col = pos.is_cob() ? pos.col - 2 : pos.col - 1;
 
             auto& p = w.plant_factory.create(plant_type, pos.row - 1, col);
@@ -79,8 +82,8 @@ void insert_spawn(Test& test, int tick, int wave, int giga_num, const std::vecto
         w.scene.spawn.wave = wave;
 
         for (int i = 0; i < giga_num; i++) {
-            auto& z = w.zombie_factory.create(pvz_emulator::object::zombie_type::giga_gargantuar,
-                pick_giga_row(test.rnd, giga_rows));
+            auto& z = w.zombie_factory.create(
+                zombie_type::giga_gargantuar, pick_giga_row(test.rnd, giga_rows));
             test.giga_infos.push_back({{&z, z.uuid}, z.row, wave, tick, 0, {}, {}, {}});
         }
     };
@@ -90,13 +93,12 @@ void insert_spawn(Test& test, int tick, int wave, int giga_num, const std::vecto
 void insert_ice(Test& test, int tick)
 {
     auto f = [](pvz_emulator::world& w) {
-        w.plant_factory.create(pvz_emulator::object::plant_type::iceshroom, 0, 0);
+        w.plant_factory.create(plant_type::iceshroom, 0, 0, plant_type::none, true);
     };
     test.ops.push_back({tick, f});
 }
 
-void insert_cob(Test& test, int tick, int wave, const Cob* cob,
-    const pvz_emulator::object::scene_type& scene_type)
+void insert_cob(Test& test, int tick, int wave, const Cob* cob, const scene_type& scene_type)
 {
     test.action_infos.push_back({ActionInfo::Type::Ash, wave, tick, cob->desc(), {}});
     auto idx = test.action_infos.size() - 1;
@@ -117,9 +119,8 @@ void insert_fixed_card(Test& test, int tick, int wave, const FixedCard* fixed_ca
     auto plant_type = fixed_card->plant_type;
 
     ActionInfo::Type action_info_type;
-    if (plant_type == pvz_emulator::object::plant_type::jalapeno
-        || plant_type == pvz_emulator::object::plant_type::cherry_bomb
-        || plant_type == pvz_emulator::object::plant_type::squash) {
+    if (plant_type == plant_type::jalapeno || plant_type == plant_type::cherry_bomb
+        || plant_type == plant_type::squash) {
         action_info_type = ActionInfo::Type::Ash;
     } else {
         action_info_type = ActionInfo::Type::Fodder;
@@ -160,9 +161,7 @@ void insert_smart_card(Test& test, int tick, int wave, const SmartCard* smart_ca
 
     auto f = [&test, idx, plant_type, positions, max_card_zombie_row_diff](pvz_emulator::world& w) {
         auto chosen = choose_by_num(w, positions, 1, {},
-            {pvz_emulator::object::zombie_type::giga_gargantuar,
-                pvz_emulator::object::zombie_type::gargantuar},
-            max_card_zombie_row_diff);
+            {zombie_type::giga_gargantuar, zombie_type::gargantuar}, max_card_zombie_row_diff);
         assert(chosen.size() == 1);
 
         auto pos = positions[chosen[0]];
@@ -224,9 +223,7 @@ void insert_smart_fodder(Test& test, int tick, int wave, const SmartFodder* fodd
             chosen = choose_by_giga_pos(w, positions, choose, waves);
         } else if (symbol == "C_NUM") {
             chosen = choose_by_num(w, positions, choose, waves,
-                {pvz_emulator::object::zombie_type::ladder,
-                    pvz_emulator::object::zombie_type::jack_in_the_box},
-                0);
+                {zombie_type::ladder, zombie_type::jack_in_the_box}, 0);
         } else {
             assert(false && "unreachable");
         }

@@ -12,7 +12,7 @@ using zombie_type = pvz_emulator::object::zombie_type;
 using zombie_dance_cheat = pvz_emulator::object::zombie_dance_cheat;
 
 void insert_spawn(Test& test, int tick, const std::array<zombie_type, 50>& spawn_list, bool huge,
-     zombie_dance_cheat dance_cheat)
+    zombie_dance_cheat dance_cheat)
 {
     auto f = [&test, tick, spawn_list, huge, dance_cheat](pvz_emulator::world& w) {
         auto spawn_wave = huge ? 9 : 0;
@@ -33,7 +33,9 @@ void insert_spawn(Test& test, int tick, const std::array<zombie_type, 50>& spawn
 
 void insert_ice(Test& test, int tick)
 {
-    auto f = [](pvz_emulator::world& w) { w.plant_factory.create(plant_type::iceshroom, 0, 0); };
+    auto f = [](pvz_emulator::world& w) {
+        w.plant_factory.create(plant_type::iceshroom, 0, 0, plant_type::none, true);
+    };
     test.ops.push_back({tick, f});
 }
 

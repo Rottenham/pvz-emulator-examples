@@ -45,7 +45,8 @@ public:
         object::plant_type type,
         int row,
         int col,
-        object::plant_type imitater_target = object::plant_type::none);
+        object::plant_type imitater_target = object::plant_type::none,
+        bool skip_plant_map = false);
 
     void destroy(object::plant &p);
     plant_factory(object::scene &s):

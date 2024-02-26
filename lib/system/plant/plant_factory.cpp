@@ -274,7 +274,8 @@ plant& plant_factory::create(
     plant_type type,
     int row,
     int col,
-    plant_type imitater_target)
+    plant_type imitater_target,
+    bool skip_plant_map)
 {
     auto& p = scene.plants.alloc();
 
@@ -431,25 +432,27 @@ plant& plant_factory::create(
         break;
     }
 
-    if (p.type == plant_type::pumpkin) {
-        // assert(!scene.plants.is_active(scene.plant_map[p.row][p.col].pumpkin));
-        scene.plant_map[p.row][p.col].pumpkin = &p;
-    } else if (p.type == plant_type::coffee_bean) {
-        // assert(!scene.plants.is_active(scene.plant_map[p.row][p.col].coffee_bean));
-        scene.plant_map[p.row][p.col].coffee_bean = &p;
-    } else if (p.type == plant_type::flower_pot || p.type == plant_type::lily_pad) {
-        // assert(!scene.plants.is_active(scene.plant_map[p.row][p.col].base));
-        scene.plant_map[p.row][p.col].base = &p;
-    } else if (p.type == plant_type::cob_cannon) {
-        // assert(!scene.plants.is_active(scene.plant_map[p.row][p.col].base));
-        // assert(!scene.plants.is_active(scene.plant_map[p.row][p.col + 1].base));
-        scene.plant_map[p.row][p.col].content = &p;
-        scene.plant_map[p.row][p.col + 1].content = &p;
-    } else {
-        // assert(!scene.plants.is_active(scene.plant_map[p.row][p.col].content));
-        scene.plant_map[p.row][p.col].content = &p;
+    if (!skip_plant_map){
+        if (p.type == plant_type::pumpkin) {
+            // assert(!scene.plants.is_active(scene.plant_map[p.row][p.col].pumpkin));
+            scene.plant_map[p.row][p.col].pumpkin = &p;
+        } else if (p.type == plant_type::coffee_bean) {
+            // assert(!scene.plants.is_active(scene.plant_map[p.row][p.col].coffee_bean));
+            scene.plant_map[p.row][p.col].coffee_bean = &p;
+        } else if (p.type == plant_type::flower_pot || p.type == plant_type::lily_pad) {
+            // assert(!scene.plants.is_active(scene.plant_map[p.row][p.col].base));
+            scene.plant_map[p.row][p.col].base = &p;
+        } else if (p.type == plant_type::cob_cannon) {
+            // assert(!scene.plants.is_active(scene.plant_map[p.row][p.col].base));
+            // assert(!scene.plants.is_active(scene.plant_map[p.row][p.col + 1].base));
+            scene.plant_map[p.row][p.col].content = &p;
+            scene.plant_map[p.row][p.col + 1].content = &p;
+        } else {
+            // assert(!scene.plants.is_active(scene.plant_map[p.row][p.col].content));
+            scene.plant_map[p.row][p.col].content = &p;
+        }
     }
-
+   
     return p;
 }
 

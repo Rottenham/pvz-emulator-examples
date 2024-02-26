@@ -157,7 +157,8 @@ int launch_cob(
         assert(cob_row >= 1 && cob_row <= static_cast<int>(w.scene.get_max_row()));
     }
 
-    auto& p = w.plant_factory.create(plant_type::cob_cannon, cob_row - 1, cob_col - 1);
+    auto& p = w.plant_factory.create(
+        plant_type::cob_cannon, cob_row - 1, cob_col - 1, plant_type::none, true);
 
     p.status = plant_status::cob_cannon_launch;
     p.countdown.launch = 206;

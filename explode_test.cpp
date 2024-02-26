@@ -81,7 +81,7 @@ void test_one(const Config& config, int repeat)
                 run(w, curr_tick, curr_tick + 1);
             }
             tests.push_back(std::move(test));
-        }
+                    }
 
         local_table.update(tests);
     }
@@ -191,9 +191,7 @@ int main(int argc, char* argv[])
 
         file << tick << ",";
 
-        std::vector<std::optional<double>> loss_list;
-        std::vector<std::optional<double>> explode_loss_list;
-        std::vector<std::optional<double>> hp_loss_list;
+        std::vector<std::optional<double>> loss_list, explode_loss_list, hp_loss_list;
 
         for (const auto& test_info : table.test_infos) {
             if (tick < test_info.start_tick

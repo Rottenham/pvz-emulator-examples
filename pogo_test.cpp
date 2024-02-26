@@ -102,7 +102,7 @@ void test(const Config& config, int repeat)
 
         for (int tick = -100; tick <= wave.wave_length; tick++, run(w, 1)) {
             if (ice_time.has_value() && tick == *ice_time - 99) {
-                w.plant_factory.create(plant_type::iceshroom, 0, 0);
+                w.plant_factory.create(plant_type::iceshroom, 0, 0, plant_type::none, true);
             }
 
             if (tick == 0) {
@@ -118,7 +118,7 @@ void test(const Config& config, int repeat)
                     w.zombie_factory.create(zombie_type::pogo, 1);
                 }
             }
-            
+
             if (tick >= wave.start_tick) {
                 for (auto& z : w.scene.zombies) {
                     for (int diff = -1; diff <= 1; diff++) {
