@@ -10,7 +10,7 @@ void zombie_pole_vaulting::update(zombie &z) {
         !z.is_not_dying ||
         z.action != zombie_action::none)
     {
-        if (z.status != zombie_status::pole_valuting_jumpping) {
+        if (z.status != zombie_status::pole_valuting_jumping) {
             return;
         }
 
@@ -70,7 +70,7 @@ void zombie_pole_vaulting::update(zombie &z) {
             }
         }
 
-        z.status = zombie_status::pole_valuting_jumpping;
+        z.status = zombie_status::pole_valuting_jumping;
         reanim.set(z, zombie_reanim_name::anim_jump, reanim_type::once, 24);
         z.has_item_or_walk_left = false;
         z.dx = static_cast<float>(

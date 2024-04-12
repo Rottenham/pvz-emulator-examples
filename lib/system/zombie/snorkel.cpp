@@ -87,19 +87,19 @@ void zombie_snorkel::update(zombie& z) {
                 reanim.set(z, zombie_reanim_name::anim_eat, reanim_type::repeat, 0);
             }
         } else {
-            z.status = zombie_status::snorkel_finied_eat;
+            z.status = zombie_status::snorkel_finished_eat;
             reanim.set(z, zombie_reanim_name::anim_uptoeat, reanim_type::once, -24);
         }
         return;
 
     case zombie_status::snorkel_eat:
         if (!z.is_eating) {
-            z.status = zombie_status::snorkel_finied_eat;
+            z.status = zombie_status::snorkel_finished_eat;
             reanim.set(z, zombie_reanim_name::anim_uptoeat, reanim_type::once, -24);
         }
         return;
 
-    case zombie_status::snorkel_finied_eat:
+    case zombie_status::snorkel_finished_eat:
         if (z.reanim.n_repeated > 0) {
             z.status = zombie_status::snorkel_swim;
             reanim.set(z, zombie_reanim_name::anim_swim, reanim_type::once, 0);

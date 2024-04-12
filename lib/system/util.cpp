@@ -136,7 +136,7 @@ bool is_not_movable(scene& scene, zombie& z) {
         z.countdown.freeze > 0 ||
         z.countdown.butter > 0 ||
         z.status == zombie_status::jackbox_pop ||
-        z.status == zombie_status::newspaper_destoryed ||
+        z.status == zombie_status::newspaper_destroyed ||
         z.status == zombie_status::gargantuar_throw ||
         z.status == zombie_status::gargantuar_smash ||
         z.status == zombie_status::catapult_shoot ||

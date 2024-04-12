@@ -5,7 +5,7 @@ namespace pvz_emulator::system {
 using namespace pvz_emulator::object;
 
 void zombie_newspaper::update(zombie& z) {
-    if (z.status == zombie_status::newspaper_destoryed &&
+    if (z.status == zombie_status::newspaper_destroyed &&
         z.reanim.n_repeated > 0)
     {
         z.status = zombie_status::newspaper_running;

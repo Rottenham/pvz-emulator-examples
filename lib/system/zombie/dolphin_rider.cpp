@@ -8,7 +8,7 @@ using namespace pvz_emulator::object;
 void zombie_dolphin_rider::set_attrs_after_drop_dolphin(zombie& z, float dy) {
     z.dy = dy;
 
-    z.status = zombie_status::dophin_walk_in_pool;
+    z.status = zombie_status::dolphin_walk_in_pool;
 
     z.attack_box.x = 30;
     z.attack_box.y = 0;
@@ -29,34 +29,34 @@ void zombie_dolphin_rider::update(zombie& z) {
     }
 
     switch (z.status) {
-    case zombie_status::dophin_walk_with_dophin:
+    case zombie_status::dolphin_walk_with_dolphin:
         if (700 < z.int_x && z.int_x <= 720) {
-            z.status = zombie_status::dophin_jump_in_pool;
+            z.status = zombie_status::dolphin_jump_in_pool;
             reanim.set(z, zombie_reanim_name::anim_jumpinpool, reanim_type::once, 16);
         }
         return;
 
-    case zombie_status::dophin_jump_in_pool:
+    case zombie_status::dolphin_jump_in_pool:
         if (z.reanim.n_repeated > 0) {
             z.x -= 70;
             z.attack_box.x = -29;
             z.attack_box.width = 70;
             z.attack_box.height = 115;
-            z.status = zombie_status::dophin_ride;
+            z.status = zombie_status::dolphin_ride;
             z.is_in_water = true;
 
             reanim.set(z, zombie_reanim_name::anim_ride, reanim_type::repeat, 12);
         }
         return;
 
-    case zombie_status::dophin_ride:
+    case zombie_status::dolphin_ride:
         if (z.x > 10) {
             if (z.is_not_dying &&
                 !is_target_of_kelp(scene, z) &&
                 find_target(z, zombie_attack_type::jump))
             {
                 z.dx = 0.5;
-                z.status = zombie_status::dophin_jump;
+                z.status = zombie_status::dolphin_jump;
                 z.countdown.action = 120;
                 
                 reanim.set(z, zombie_reanim_name::anim_dolphinjump, reanim_type::once, 10);
@@ -64,14 +64,14 @@ void zombie_dolphin_rider::update(zombie& z) {
         } else {
             z.dy -= 40;
             z.action = zombie_action::leaving_pool;
-            z.status = zombie_status::dophin_walk_with_dophin;
+            z.status = zombie_status::dolphin_walk_with_dolphin;
             
             reanim.set(z, zombie_reanim_name::anim_walkdolphin, reanim_type::repeat, 0);
             reanim.update_dx(z);
         }
         return;
 
-    case zombie_status::dophin_jump:
+    case zombie_status::dolphin_jump:
         z.dy = 0;
 
         if (z.reanim.is_in_progress(0.30000001)) {
@@ -99,7 +99,7 @@ void zombie_dolphin_rider::update(zombie& z) {
 
         return;
 
-    case zombie_status::dophin_walk_in_pool:
+    case zombie_status::dolphin_walk_in_pool:
         if (z.int_x <= 10 && !z.is_walk_right() ||
             z.int_x > 680 && z.is_walk_right()) 
         {
@@ -121,7 +121,7 @@ void zombie_dolphin_rider::init(zombie& z, unsigned int row) {
     zombie_base::init(z, zombie_type::dolphin_rider, row);
 
     z.hp = 500;
-    z.status = zombie_status::dophin_walk_with_dophin;
+    z.status = zombie_status::dolphin_walk_with_dolphin;
     z.garlic_tick.a = 6;
 
     reanim.set(z, zombie_reanim_name::anim_walkdolphin, reanim_type::repeat, 0);

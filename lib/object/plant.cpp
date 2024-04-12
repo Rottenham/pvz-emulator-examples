@@ -505,12 +505,12 @@ const char* plant::status_to_string(plant_status status) {
     case plant_status::cactus_tall_idle: return "cactus_tall_idle";
     case plant_status::cactus_get_short: return "cactus_get_short";
     case plant_status::tangle_kelp_grab: return "tangle_kelp_grab";
-    case plant_status::cob_cannon_unaramed_idle:
-        return "cob_cannon_unaramed_idle";
+    case plant_status::cob_cannon_unarmed_idle:
+        return "cob_cannon_unarmed_idle";
     case plant_status::cob_cannon_charge: return "cob_cannon_charge";
     case plant_status::cob_cannon_launch: return "cob_cannon_launch";
-    case plant_status::cob_cannon_aramed_idle:
-        return "cob_cannon_aramed_idle";
+    case plant_status::cob_cannon_armed_idle:
+        return "cob_cannon_armed_idle";
     case plant_status::kernelpult_launch_butter:
         return "kernelpult_launch_butter";
     case plant_status::umbrella_leaf_block: return "umbrella_leaf_block";

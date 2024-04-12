@@ -259,7 +259,7 @@ void plant_system::launch(plant& p,
             dist_x = zombie_base(scene).predict_after(*target, 50) - x - 30;
             dist_y = static_cast<double>(zr.y) - y;
 
-            if (target->status == zombie_status::dophin_ride) {
+            if (target->status == zombie_status::dolphin_ride) {
                 dist_x -= 60;
             } else if (target->type == zombie_type::pogo &&
                 target->has_item_or_walk_left)
@@ -434,7 +434,7 @@ void plant_system::update_launch_countdown(plant& p) {
         }
     } else if (p.type == plant_type::cob_cannon) {
         if (p.reanim.n_repeated > 0) {
-            p.status = plant_status::cob_cannon_unaramed_idle;
+            p.status = plant_status::cob_cannon_unarmed_idle;
             p.countdown.status = 3000;
             p.set_reanim(plant_reanim_name::anim_unarmed_idle, reanim_type::repeat, 12);
             return;

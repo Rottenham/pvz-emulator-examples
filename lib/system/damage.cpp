@@ -34,13 +34,13 @@ bool damage::can_be_attacked(const zombie& z, unsigned char flags) {
         return false;
     }
 
-    if (z.status == zombie_status::pole_valuting_jumpping ||
+    if (z.status == zombie_status::pole_valuting_jumping ||
         z.status == zombie_status::imp_flying ||
         z.status == zombie_status::digger_drill ||
         z.status == zombie_status::digger_lost_dig ||
         z.status == zombie_status::digger_landing ||
-        z.status == zombie_status::dophin_jump_in_pool ||
-        z.status == zombie_status::dophin_jump ||
+        z.status == zombie_status::dolphin_jump_in_pool ||
+        z.status == zombie_status::dolphin_jump ||
         z.status == zombie_status::snorkel_jump_in_the_pool ||
         z.status == zombie_status::balloon_falling ||
         z.status == zombie_status::rising_from_ground ||
@@ -128,7 +128,7 @@ void damage::set_death_state(zombie& z, unsigned int flags) {
 
     if (z.has_reanim(zombie_reanim_name::anim_death) && (
         z.type != zombie_type::dolphin_rider ||
-        z.status != zombie_status::dophin_jump_in_pool) &&
+        z.status != zombie_status::dolphin_jump_in_pool) &&
         z.status != zombie_status::snorkel_jump_in_the_pool &&
         z.status != zombie_status::snorkel_walking)
     {
@@ -223,7 +223,7 @@ void damage::destroy_accessory_2(zombie& z) {
             z.time_since_ate_garlic = 0;
         }
 
-        z.status = zombie_status::newspaper_destoryed;
+        z.status = zombie_status::newspaper_destroyed;
         reanim.set(z, zombie_reanim_name::anim_gasp, reanim_type::once, 8);
 
         break;
@@ -311,13 +311,13 @@ void damage::take_ash_attack(zombie& z) {
 
     if (z.status != zombie_status::dying &&
         z.status != zombie_status::dying_from_lawnmower &&
-        z.status != zombie_status::pole_valuting_jumpping &&
+        z.status != zombie_status::pole_valuting_jumping &&
         z.status != zombie_status::imp_flying &&
         z.status != zombie_status::rising_from_ground &&
         z.status != zombie_status::backup_spawning &&
-        z.status != zombie_status::dophin_jump_in_pool &&
-        z.status != zombie_status::dophin_jump &&
-        z.status != zombie_status::dophin_ride &&
+        z.status != zombie_status::dolphin_jump_in_pool &&
+        z.status != zombie_status::dolphin_jump &&
+        z.status != zombie_status::dolphin_ride &&
         z.status != zombie_status::snorkel_jump_in_the_pool &&
         z.status != zombie_status::digger_dig &&
         z.status != zombie_status::digger_lost_dig &&

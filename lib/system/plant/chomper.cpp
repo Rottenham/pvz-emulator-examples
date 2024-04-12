@@ -33,7 +33,7 @@ void plant_chomper::update(plant& p) {
 			z->countdown.freeze <= 0 &&
 			z->countdown.butter <= 0 && (
 				z->has_pogo_status() ||
-				z->status == zombie_status::pole_valuting_jumpping ||
+				z->status == zombie_status::pole_valuting_jumping ||
 				z->status == zombie_status::pole_valuting_running);
 
 		if (cannot_swallow) {

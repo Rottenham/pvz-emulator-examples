@@ -48,11 +48,11 @@ zombie* plant_squash::find_target(plant& p) {
             !is_target_of_kelp(scene, z) &&
             damage(scene).can_be_attacked(z, p.get_attack_flags(false)))
         {
-            if (z.status == zombie_status::pole_valuting_jumpping ||
+            if (z.status == zombie_status::pole_valuting_jumping ||
                 z.status == zombie_status::snorkel_jump_in_the_pool ||
-                z.status == zombie_status::dophin_jump_in_pool ||
-                z.status == zombie_status::dophin_ride ||
-                z.status == zombie_status::dophin_jump)
+                z.status == zombie_status::dolphin_jump_in_pool ||
+                z.status == zombie_status::dolphin_ride ||
+                z.status == zombie_status::dolphin_jump)
             {
                 continue;
             }
@@ -75,7 +75,7 @@ zombie* plant_squash::find_target(plant& p) {
 
             if (z.status == zombie_status::pole_vaulting_walking ||
                 z.status == zombie_status::pole_valuting_running ||
-                z.status == zombie_status::dophin_walk_in_pool ||
+                z.status == zombie_status::dolphin_walk_in_pool ||
                 z.type == zombie_type::imp ||
                 z.type == zombie_type::football)
             {

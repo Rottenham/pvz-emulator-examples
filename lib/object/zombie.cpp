@@ -60,9 +60,9 @@ bool zombie::can_be_freezed() const {
         return false;
     }
 
-    return status != zombie_status::pole_valuting_jumpping &&
-        status != zombie_status::dophin_jump_in_pool &&
-        status != zombie_status::dophin_jump &&
+    return status != zombie_status::pole_valuting_jumping &&
+        status != zombie_status::dolphin_jump_in_pool &&
+        status != zombie_status::dolphin_jump &&
         status != zombie_status::snorkel_jump_in_the_pool &&
         !is_flying_or_falling() &&
         status != zombie_status::imp_flying &&
@@ -79,8 +79,8 @@ void zombie::get_attack_box(rect& rect) const {
     rect.width = attack_box.width;
     rect.height = attack_box.height;
 
-    if (status == zombie_status::pole_valuting_jumpping ||
-        status == zombie_status::dophin_jump)
+    if (status == zombie_status::pole_valuting_jumping ||
+        status == zombie_status::dolphin_jump)
     {
         rect.x = -40;
         rect.y = 0;
@@ -132,7 +132,7 @@ float zombie::get_height_bias() const {
 
     if (type == zombie_type::dolphin_rider) {
         switch (status) {
-        case zombie_status::dophin_jump_in_pool:
+        case zombie_status::dolphin_jump_in_pool:
             if (reanim.progress >= 0.56 && reanim.progress <= 0.64999998) {
                 return 0;
             } else if (reanim.progress >= 0.75) {
@@ -141,14 +141,14 @@ float zombie::get_height_bias() const {
                 return -200;
             }
 
-        case zombie_status::dophin_ride:
+        case zombie_status::dolphin_ride:
             if (action == zombie_action::caught_by_kelp) {
                 return -dy - 15;
             } else {
                 return -dy - 10;
             }
 
-        case zombie_status::dophin_jump:
+        case zombie_status::dolphin_jump:
             if (reanim.progress <= 0.05999999865889549) {
                 return -dy - 10;
             } else if (reanim.progress >= 0.5 && reanim.progress <= 0.75999999) {
@@ -160,15 +160,15 @@ float zombie::get_height_bias() const {
         case zombie_status::dying:
             return 44 - dy;
 
-        case zombie_status::dophin_walk_in_pool:
+        case zombie_status::dolphin_walk_in_pool:
             if (action == zombie_action::caught_by_kelp) {
                 return 36 - dy;
             } else {
                 return -200;
             }
 
-        case zombie_status::dophin_walk_with_dophin:
-        case zombie_status::dophin_walk_without_dophin:
+        case zombie_status::dolphin_walk_with_dolphin:
+        case zombie_status::dolphin_walk_without_dolphin:
             if (action == zombie_action::leaving_pool) {
                 return -dy;
             } else {
@@ -438,8 +438,8 @@ const char* zombie::status_to_string(zombie_status status) {
     case zombie_status::bungee_idle: return "bungee_idle";
     case zombie_status::pole_valuting_running: 
         return "pole_valuting_running";
-    case zombie_status::pole_valuting_jumpping:
-        return "pole_valuting_jumpping";
+    case zombie_status::pole_valuting_jumping:
+        return "pole_valuting_jumping";
     case zombie_status::pole_vaulting_walking:
         return "pole_vaulting_walking";
     case zombie_status::rising_from_ground: return "rising_from_ground";
@@ -450,7 +450,7 @@ const char* zombie::status_to_string(zombie_status status) {
         return "pogo_idle_before_target";
     case zombie_status::pogo_jump_across: return "pogo_jump_across";
     case zombie_status::newspaper_walking: return "newspaper_walking";
-    case zombie_status::newspaper_destoryed: return "newspaper_destoryed";
+    case zombie_status::newspaper_destroyed: return "newspaper_destroyed";
     case zombie_status::newspaper_running: return "newspaper_running";
     case zombie_status::digger_dig: return "digger_dig";
     case zombie_status::digger_drill: return "digger_drill";
@@ -472,21 +472,21 @@ const char* zombie::status_to_string(zombie_status status) {
     case zombie_status::dancing_armrise4: return "dancing_armrise4";
     case zombie_status::dancing_armrise5: return "dancing_armrise5";
     case zombie_status::backup_spawning: return "backup_spawning";
-    case zombie_status::dophin_walk_with_dophin: 
-        return "dophin_walk_with_dophin";
-    case zombie_status::dophin_jump_in_pool: return "dophin_jump_in_pool";
-    case zombie_status::dophin_ride: return "dophin_ride";
-    case zombie_status::dophin_jump: return "dophin_jump";
-    case zombie_status::dophin_walk_in_pool: return "dophin_walk_in_pool";
-    case zombie_status::dophin_walk_without_dophin: 
-        return "dophin_walk_without_dophin";
+    case zombie_status::dolphin_walk_with_dolphin: 
+        return "dolphin_walk_with_dolphin";
+    case zombie_status::dolphin_jump_in_pool: return "dolphin_jump_in_pool";
+    case zombie_status::dolphin_ride: return "dolphin_ride";
+    case zombie_status::dolphin_jump: return "dolphin_jump";
+    case zombie_status::dolphin_walk_in_pool: return "dolphin_walk_in_pool";
+    case zombie_status::dolphin_walk_without_dolphin: 
+        return "dolphin_walk_without_dolphin";
     case zombie_status::snorkel_walking: return "snorkel_walking";
     case zombie_status::snorkel_jump_in_the_pool:
         return "snorkel_jump_in_the_pool";
     case zombie_status::snorkel_swim: return "snorkel_swim";
     case zombie_status::snorkel_up_to_eat: return "snorkel_up_to_eat";
     case zombie_status::snorkel_eat: return "snorkel_eat";
-    case zombie_status::snorkel_finied_eat: return "snorkel_finied_eat";
+    case zombie_status::snorkel_finished_eat: return "snorkel_finished_eat";
     case zombie_status::catapult_shoot: return "catapult_shoot";
     case zombie_status::catapult_idle: return "catapult_idle";
     case zombie_status::balloon_flying: return "balloon_flying";

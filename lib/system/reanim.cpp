@@ -50,8 +50,8 @@ void reanim::update_dx(object::zombie& z, bool do_update_fps) {
     } else if (z.status == zombie_status::ladder_walking) {
         z.dx = rng.randfloat(0.79000002, 0.81);
     } else if (z.status == zombie_status::newspaper_running ||
-        z.status == zombie_status::dophin_walk_with_dophin ||
-        z.status == zombie_status::dophin_walk_without_dophin)
+        z.status == zombie_status::dolphin_walk_with_dolphin ||
+        z.status == zombie_status::dolphin_walk_without_dolphin)
     {
         z.dx = rng.randfloat(0.88999999, 0.91000003);
     } else {
@@ -79,7 +79,7 @@ void reanim::update_fps(zombie& z) {
     }
 
     if (z.status == zombie_status::snorkel_up_to_eat ||
-        z.status == zombie_status::snorkel_finied_eat ||
+        z.status == zombie_status::snorkel_finished_eat ||
         z.has_death_status() || z.is_dead)
     {
         set_fps(z, z.reanim.prev_fps);
@@ -105,7 +105,7 @@ void reanim::update_fps(zombie& z) {
 
     if (is_not_movable(scene, z) ||
         z.type == zombie_type::catapult ||
-        z.status == zombie_status::dophin_ride ||
+        z.status == zombie_status::dolphin_ride ||
         z.status == zombie_status::snorkel_swim)
     {
         set_fps(z, z.reanim.prev_fps);

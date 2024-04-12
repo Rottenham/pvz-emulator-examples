@@ -143,7 +143,7 @@ void zombie_system::update_x(zombie& z) {
 
     if (z.status >= zombie_status::pogo_with_stick &&
         z.status <= zombie_status::pogo_jump_across ||
-        z.status == zombie_status::dophin_ride ||
+        z.status == zombie_status::dolphin_ride ||
         z.status == zombie_status::balloon_flying ||
         z.status == zombie_status::snorkel_swim ||
         z.type == zombie_type::catapult)
@@ -153,8 +153,8 @@ void zombie_system::update_x(zombie& z) {
             z.dx;
     } else if (z.type == zombie_type::zomboni ||
         z.status == zombie_status::digger_dig ||
-        z.status == zombie_status::dophin_jump ||
-        z.status == zombie_status::pole_valuting_jumpping ||
+        z.status == zombie_status::dolphin_jump ||
+        z.status == zombie_status::pole_valuting_jumping ||
         z.status == zombie_status::snorkel_jump_in_the_pool)
     {
         dx = z.dx;
@@ -351,7 +351,7 @@ void zombie_system::set_garlic_and_hypno_status(zombie& z) {
 
 void zombie_system::update_garlic_and_hypno_effect(zombie& z) {
     if (z.status == zombie_status::jackbox_pop ||
-        z.status == zombie_status::newspaper_destoryed ||
+        z.status == zombie_status::newspaper_destroyed ||
         z.status == zombie_status::digger_drill ||
         z.status == zombie_status::digger_lost_dig ||
         z.status == zombie_status::digger_landing ||
@@ -626,8 +626,8 @@ void zombie_system::update_eating(object::zombie& z) {
         z.type != zombie_type::zomboni &&
         z.type != zombie_type::catapult &&
         !z.has_pogo_status() &&
-        z.status != zombie_status::pole_valuting_jumpping &&
-        z.status != zombie_status::newspaper_destoryed &&
+        z.status != zombie_status::pole_valuting_jumping &&
+        z.status != zombie_status::newspaper_destroyed &&
         z.status != zombie_status::digger_drill &&
         z.status != zombie_status::digger_lost_dig &&
         z.status != zombie_status::digger_landing &&
@@ -639,11 +639,11 @@ void zombie_system::update_eating(object::zombie& z) {
         z.status != zombie_status::dancing_point &&
         z.status != zombie_status::dancing_wait_summoning &&
         z.status != zombie_status::dancing_summoning &&
-        z.status != zombie_status::dophin_walk_with_dophin &&
-        z.status != zombie_status::dophin_walk_without_dophin &&
-        z.status != zombie_status::dophin_jump_in_pool &&
-        z.status != zombie_status::dophin_ride &&
-        z.status != zombie_status::dophin_jump &&
+        z.status != zombie_status::dolphin_walk_with_dolphin &&
+        z.status != zombie_status::dolphin_walk_without_dolphin &&
+        z.status != zombie_status::dolphin_jump_in_pool &&
+        z.status != zombie_status::dolphin_ride &&
+        z.status != zombie_status::dolphin_jump &&
         z.status != zombie_status::snorkel_jump_in_the_pool &&
         z.status != zombie_status::snorkel_walking &&
         z.status != zombie_status::ladder_placing &&
