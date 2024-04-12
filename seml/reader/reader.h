@@ -182,16 +182,10 @@ void read_setting(const rapidjson::Value& val, Setting& setting)
     for (auto it = val.MemberBegin(); it != val.MemberEnd(); it++) {
         std::string key = it->name.GetString();
         if (key == "scene") {
-            std::string scene = it->value.GetString();
-            if (scene == "NE" || scene == "DE") {
-                setting.scene_type = pvz_emulator::object::scene_type::night;
-            } else if (scene == "FE" || scene == "PE") {
-                setting.scene_type = pvz_emulator::object::scene_type::fog;
-            } else if (scene == "ME" || scene == "RE") {
-                setting.scene_type = pvz_emulator::object::scene_type::moon_night;
-            } else {
-                assert(false && "unreachable");
-            }
+            setting.scene_type = pvz_emulator::object::str_to_scene_type(it->value.GetString());
+        } else if (key == "originalScene") {
+            setting.original_scene_type
+                = pvz_emulator::object::str_to_scene_type(it->value.GetString());
         } else if (key == "protect") {
             auto protect_vals = it->value.GetArray();
             setting.protect_positions.reserve(protect_vals.Size());

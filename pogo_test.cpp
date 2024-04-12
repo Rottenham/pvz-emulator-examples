@@ -87,7 +87,6 @@ void validate_config(Config& config)
         3, std::vector<std::pair<int, int>>(wave.wave_length - wave.start_tick + 1, {-9999, 9999}));
 }
 
-int count = 0;
 void test(const Config& config, int repeat)
 {
     const auto& wave = config.waves[0];
@@ -95,7 +94,6 @@ void test(const Config& config, int repeat)
     std::vector<std::vector<std::pair<int, int>>> local_cob_ranges(
         3, std::vector<std::pair<int, int>>(wave.wave_length - wave.start_tick + 1, {-9999, 9999}));
 
-    int local_count = 0;
     for (int r = 0; r < repeat; r++) {
         w.scene.reset();
         w.scene.stop_spawn = true;
@@ -129,9 +127,6 @@ void test(const Config& config, int repeat)
 
                         old_cob_range.first = std::max(old_cob_range.first, new_cob_range.first);
                         old_cob_range.second = std::min(old_cob_range.second, new_cob_range.second);
-                        if (tick == 1669 && diff == -1 && new_cob_range.second < 678) {
-                            local_count++;
-                        }
                     }
                 }
             }
@@ -139,7 +134,6 @@ void test(const Config& config, int repeat)
     }
 
     std::lock_guard<std::mutex> lock(mtx);
-    count += local_count;
     for (int tick = wave.start_tick; tick <= wave.wave_length; tick++) {
         for (int i = 0; i < 3; i++) {
             auto& local_cob_range = local_cob_ranges[i][tick - wave.start_tick];
@@ -172,7 +166,6 @@ int main(int argc, char* argv[])
     for (auto& t : threads) {
         t.join();
     }
-    std::cout << count << "\n";
     file << "时刻,收上行跳跳左,右,收本行跳跳左,右,收下行跳跳左,右,"
          << "\n";
     const auto& wave = config.waves[0];

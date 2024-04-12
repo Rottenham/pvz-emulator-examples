@@ -35,12 +35,16 @@ const std::unordered_map<zombie_type, std::array<int, 2>> WEIGHT = {
     {zombie_type::giga_gargantuar, {1000, 6000}},
 };
 
-const std::unordered_map<scene_type, std::vector<zombie_type>> BANNED_TYPES = {
+const ZombieTypes SPECIFIABLE_TYPES
+    = {zombie_type::pole_vaulting, zombie_type::buckethead, zombie_type::screendoor,
+        zombie_type::football, zombie_type::dancing, zombie_type::snorkel, zombie_type::zomboni,
+        zombie_type::dolphin_rider, zombie_type::jack_in_the_box, zombie_type::balloon,
+        zombie_type::digger, zombie_type::pogo, zombie_type::bungee, zombie_type::ladder,
+        zombie_type::catapult, zombie_type::gargantuar, zombie_type::giga_gargantuar};
+
+const std::unordered_map<scene_type, ZombieTypes> BANNED_TYPES = {
     {scene_type::day, {zombie_type::snorkel, zombie_type::dolphin_rider}},
-    {scene_type::night,
-        {zombie_type::snorkel, /*zombie_type::zomboni,*/
-            zombie_type::
-                dolphin_rider}}, // 为了蘑菇免唤醒，只使用夜间场地，因此此处允许冰车（DE当作NE的情况）
+    {scene_type::night, {zombie_type::snorkel, zombie_type::zomboni, zombie_type::dolphin_rider}},
     {scene_type::pool, {}}, {scene_type::fog, {}},
     {scene_type::roof,
         {zombie_type::dancing, zombie_type::snorkel, zombie_type::dolphin_rider,
@@ -67,12 +71,8 @@ ZombieTypes get_spawn_types(std::mt19937& rng, const pvz_emulator::object::scene
 
     ZombieTypes dummies = {zombie_type::none, zombie_type::flag};
     auto get_candidates = [&]() {
-        ZombieTypes candidates = {zombie_type::pole_vaulting, zombie_type::buckethead,
-            zombie_type::screendoor, zombie_type::football, zombie_type::dancing,
-            zombie_type::snorkel, zombie_type::zomboni, zombie_type::dolphin_rider,
-            zombie_type::jack_in_the_box, zombie_type::balloon, zombie_type::digger,
-            zombie_type::pogo, zombie_type::bungee, zombie_type::ladder, zombie_type::catapult,
-            zombie_type::gargantuar, zombie_type::giga_gargantuar, other};
+        ZombieTypes candidates = _refresh_internal::SPECIFIABLE_TYPES;
+        candidates.insert(other);
         for (const auto& type : dummies) {
             candidates.insert(type);
         }
@@ -104,44 +104,61 @@ ZombieTypes get_spawn_types(std::mt19937& rng, const pvz_emulator::object::scene
     return res;
 }
 
-ZombieList get_spawn_list(std::mt19937& rng, ZombieTypes spawn_types, bool huge,
+ZombieList get_spawn_list(std::mt19937& rng, ZombieTypes spawn_types, bool huge, bool natural,
     int giga_limit = 50, std::optional<int> giga_count = std::nullopt)
 {
     using zombie_type = pvz_emulator::object::zombie_type;
-
-    if (giga_count.has_value()) {
-        spawn_types.erase(zombie_type::giga_gargantuar);
-    }
-
-    std::vector<int> weights;
-    for (const auto& type : spawn_types) {
-        weights.push_back(_refresh_internal::WEIGHT.at(type).at(huge));
-    }
-    std::discrete_distribution<> dist(weights.begin(), weights.end());
-
     ZombieList res;
-    int cur = 0;
-    if (huge) {
-        res[cur++] = zombie_type::flag;
-        for (int i = 0; i < 8; i++)
-            res[cur++] = zombie_type::zombie;
-    }
-    if (giga_count.has_value()) {
-        for (int i = 0; i < *giga_count; i++) {
-            res[cur++] = zombie_type::giga_gargantuar;
-        }
-    }
 
-    std::vector<zombie_type> spawn_types_vec(spawn_types.begin(), spawn_types.end());
-    while (cur < 50) {
-        auto type = spawn_types_vec[dist(rng)];
-        while (!huge && giga_limit <= 0 && type == zombie_type::giga_gargantuar) {
-            type = spawn_types_vec[dist(rng)];
+    if (natural) {
+
+        if (giga_count.has_value()) {
+            spawn_types.erase(zombie_type::giga_gargantuar);
         }
-        res[cur++] = type;
-        if (type == zombie_type::giga_gargantuar) {
-            giga_limit--;
+
+        std::vector<int> weights;
+        for (const auto& type : spawn_types) {
+            weights.push_back(_refresh_internal::WEIGHT.at(type).at(huge));
         }
+        std::discrete_distribution<> dist(weights.begin(), weights.end());
+
+        ZombieList res;
+        int cur = 0;
+        if (huge) {
+            res[cur++] = zombie_type::flag;
+            for (int i = 0; i < 8; i++)
+                res[cur++] = zombie_type::zombie;
+        }
+        if (giga_count.has_value()) {
+            for (int i = 0; i < *giga_count; i++) {
+                res[cur++] = zombie_type::giga_gargantuar;
+            }
+        }
+
+        std::vector<zombie_type> spawn_types_vec(spawn_types.begin(), spawn_types.end());
+        while (cur < 50) {
+            auto type = spawn_types_vec[dist(rng)];
+            while (!huge && giga_limit <= 0 && type == zombie_type::giga_gargantuar) {
+                type = spawn_types_vec[dist(rng)];
+            }
+            res[cur++] = type;
+            if (type == zombie_type::giga_gargantuar) {
+                giga_limit--;
+            }
+        }
+        return res;
+    } else {
+        spawn_types.erase(zombie_type::yeti);
+        int cur = 0;
+        if (huge) {
+            res[cur++] = zombie_type::flag;
+        } else {
+            spawn_types.erase(zombie_type::bungee);
+        }
+        std::vector<zombie_type> spawn_types_vec(spawn_types.begin(), spawn_types.end());
+        for (; cur < 50; cur++) {
+            res[cur] = spawn_types_vec[cur % spawn_types_vec.size()];
+        }
+        return res;
     }
-    return res;
 }

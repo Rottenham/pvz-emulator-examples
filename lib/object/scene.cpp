@@ -2,6 +2,42 @@
 
 namespace pvz_emulator::object {
 
+scene_type str_to_scene_type(const std::string& str) {
+    if (str == "DE") {
+        return scene_type::day;
+    } else if (str == "NE") {
+        return scene_type::night;
+    } else if (str == "PE") {
+        return scene_type::pool;
+    } else if (str == "FE") {
+        return scene_type::fog;
+    } else if (str == "RE") {
+        return scene_type::roof;
+    } else if (str == "ME") {
+        return scene_type::moon_night;
+    } else {
+        assert(false && "unreachable");
+    }
+}
+
+std::string scene_type_to_str(scene_type scene) {
+    if (scene == scene_type::day) {
+        return "DE";
+    } else if (scene == scene_type::night) {
+        return "NE";
+    } else if (scene == scene_type::pool) {
+        return "PE";
+    } else if (scene == scene_type::fog) {
+        return "FE";
+    } else if (scene == scene_type::roof) {
+        return "RE";
+    } else if (scene == scene_type::moon_night) {
+        return "ME";
+    } else {
+        assert(false && "unreachable");
+    }
+}
+
 scene::scene(const scene& s) :
     type(s.type),
     rng(s.rng),

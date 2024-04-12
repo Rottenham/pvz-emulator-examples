@@ -142,6 +142,7 @@ struct Setting {
     };
 
     pvz_emulator::object::scene_type scene_type = pvz_emulator::object::scene_type::fog;
+    pvz_emulator::object::scene_type original_scene_type = pvz_emulator::object::scene_type::fog;
     std::vector<ProtectPos> protect_positions;
 };
 

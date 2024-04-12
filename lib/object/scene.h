@@ -36,6 +36,9 @@ enum class scene_type {
     moon_night = 0x5,
 };
 
+scene_type str_to_scene_type(const std::string& str);
+std::string scene_type_to_str(scene_type scene);
+
 class scene {
 public:
     scene_type type;

@@ -58,3 +58,15 @@ std::string zombie_types_to_names(
         return os.str();
     }
 }
+
+std::string all_zombie_types_to_names()
+{
+    std::ostringstream os;
+    for (int i = 0; i < 33; i++) {
+        auto type = static_cast<pvz_emulator::object::zombie_type>(i);
+        if (_refresh_internal::ZOMBIE_NAMES.count(type)) {
+            os << zombie_type_to_name(type);
+        }
+    }
+    return os.str();
+}

@@ -10,22 +10,11 @@
 using namespace pvz_emulator;
 using namespace pvz_emulator::object;
 
-ZombieTypes SPECIFIABLE_ZOMBIE_TYPES
-    = {zombie_type::pole_vaulting, zombie_type::buckethead, zombie_type::screendoor,
-        zombie_type::football, zombie_type::dancing, zombie_type::snorkel, zombie_type::zomboni,
-        zombie_type::dolphin_rider, zombie_type::jack_in_the_box, zombie_type::balloon,
-        zombie_type::digger, zombie_type::pogo, zombie_type::pogo, zombie_type::ladder,
-        zombie_type::catapult, zombie_type::gargantuar, zombie_type::giga_gargantuar};
-
 ZombieTypes parse_zombie_types(const std::string& zombie_nums)
 {
     ZombieTypes zombie_types;
     for (const auto& zombie_num : split(zombie_nums, ',')) {
         auto type = static_cast<zombie_type>(std::stoi(zombie_num));
-        if (!SPECIFIABLE_ZOMBIE_TYPES.count(type)) {
-            std::cerr << "无法指定此僵尸类型: " << zombie::type_to_string(type) << std::endl;
-            exit(1);
-        }
         zombie_types.insert(type);
     }
     return zombie_types;
@@ -60,7 +49,7 @@ TestInfos test_infos;
 
 void test_one(const Config& config, int repeat, const ZombieTypes& required_types,
     const ZombieTypes& banned_types, bool huge, bool assume_activate,
-    zombie_dance_cheat dance_cheat)
+    zombie_dance_cheat dance_cheat, bool natural)
 {
     std::mt19937 rng(
         static_cast<unsigned int>(std::chrono::steady_clock::now().time_since_epoch().count()));
@@ -68,8 +57,8 @@ void test_one(const Config& config, int repeat, const ZombieTypes& required_type
     TestInfos local_test_infos;
 
     for (int round_idx = 0; round_idx < repeat; round_idx++) {
-        auto spawn_types
-            = get_spawn_types(rng, config.setting.scene_type, required_types, banned_types);
+        auto spawn_types = get_spawn_types(
+            rng, config.setting.original_scene_type, required_types, banned_types);
 
         for (int wave_idx = 0; wave_idx < 20; wave_idx++) { // test 20 times for each repeat
             std::vector<Test> tests;
@@ -77,8 +66,8 @@ void test_one(const Config& config, int repeat, const ZombieTypes& required_type
 
             for (const auto& wave : config.waves) {
                 Test test;
-                load_wave(config.setting, wave, get_spawn_list(rng, spawn_types, huge), huge,
-                    dance_cheat, test);
+                load_wave(config.setting, wave, get_spawn_list(rng, spawn_types, huge, natural),
+                    huge, dance_cheat, test);
 
                 w.scene.reset();
                 w.scene.stop_spawn = true;
@@ -124,6 +113,7 @@ int main(int argc, char* argv[])
     auto huge = get_cmd_flag(args, "h");
     auto assume_activate = get_cmd_flag(args, "a");
     auto use_dance_cheat = get_cmd_flag(args, "d");
+    auto natural = get_cmd_flag(args, "n");
     auto dance_cheat = get_dance_cheat(use_dance_cheat, assume_activate);
 
     auto [file, full_output_file] = open_csv(output_file);
@@ -133,11 +123,11 @@ int main(int argc, char* argv[])
 
     std::vector<std::thread> threads;
     for (int repeat : assign_repeat(total_repeat_num, std::thread::hardware_concurrency())) {
-        threads.emplace_back(
-            [config, repeat, required_types, banned_types, huge, assume_activate, dance_cheat]() {
-                test_one(config, repeat, required_types, banned_types, huge, assume_activate,
-                    dance_cheat);
-            });
+        threads.emplace_back([config, repeat, required_types, banned_types, huge, assume_activate,
+                                 dance_cheat, natural]() {
+            test_one(config, repeat, required_types, banned_types, huge, assume_activate,
+                dance_cheat, natural);
+        });
     }
     for (auto& t : threads) {
         t.join();
@@ -155,17 +145,18 @@ int main(int argc, char* argv[])
 
     auto table = test_infos.make_table();
 
-    file << "测试环境: " << (huge ? "旗帜波" : "普通波") << " "
-         << (assume_activate ? "激活" : "分离") << " ";
+    file << "测试环境: " << scene_type_to_str(config.setting.original_scene_type) << " "
+         << (huge ? "旗帜波" : "普通波") << " " << (assume_activate ? "激活" : "分离") << " ";
     if (dance_cheat == zombie_dance_cheat::none) {
-        file << "无dance\n";
+        file << "无dance";
     } else if (dance_cheat == zombie_dance_cheat::fast) {
-        file << "dance快\n";
+        file << "dance快";
     } else if (dance_cheat == zombie_dance_cheat::slow) {
-        file << "dance慢\n";
+        file << "dance慢";
     } else {
         assert(false && "unreachable");
     }
+    file << " " << (natural ? "自然出怪" : "均匀出怪") << "\n";
     file << "必出类型: " << zombie_types_to_names(required_types, "") << "\n";
     file << "禁出类型: " << zombie_types_to_names(banned_types, "") << "\n";
 
@@ -184,6 +175,12 @@ int main(int argc, char* argv[])
     for (const auto& col : table.cols) {
         file << "平均意外率,";
         file << 100.0 * col.average_accident_rate << "%,,";
+    }
+    file << "\n";
+
+    auto all_zombie_types_names = all_zombie_types_to_names();
+    for (size_t i = 0; i < table.cols.size(); i++) {
+        file << all_zombie_types_names << ",比照,,";
     }
     file << "\n";
 
