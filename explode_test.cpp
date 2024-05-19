@@ -81,7 +81,7 @@ void test_one(const Config& config, int repeat)
                 run(w, curr_tick, curr_tick + 1);
             }
             tests.push_back(std::move(test));
-                    }
+        }
 
         local_table.update(tests);
     }
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
     for (size_t i = 0; i < config.waves.size(); i++) {
         const auto& wave = config.waves[i];
         for (const auto& action : wave.actions) {
-            headers[i].push_back(desc(action));
+            headers[i].push_back(action.get()->desc());
         }
         max_header_count = std::max(max_header_count, headers[i].size());
     }

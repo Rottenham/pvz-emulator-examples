@@ -111,7 +111,6 @@ ZombieList get_spawn_list(std::mt19937& rng, ZombieTypes spawn_types, bool huge,
     ZombieList res;
 
     if (natural) {
-
         if (giga_count.has_value()) {
             spawn_types.erase(zombie_type::giga_gargantuar);
         }

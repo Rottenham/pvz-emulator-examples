@@ -411,8 +411,9 @@ void damage::activate_plant(object::plant& p) {
                 plant_factory.destroy(other);
             }
         }
-
-        griditem_factory.create(griditem_type::crater, p.row, p.col);
+        if (!scene.disable_crater) {
+            griditem_factory.create(griditem_type::crater, p.row, p.col);
+        }
 
         plant_factory.destroy(p);
         return;

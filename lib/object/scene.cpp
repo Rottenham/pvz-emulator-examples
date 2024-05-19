@@ -56,7 +56,8 @@ scene::scene(const scene& s) :
     is_future_enabled(s.is_future_enabled),
     stop_spawn(s.stop_spawn),
     enable_split_pea_bug(s.enable_split_pea_bug),
-    disable_garg_throw_imp(s.disable_garg_throw_imp)
+    disable_garg_throw_imp(s.disable_garg_throw_imp),
+    disable_crater(s.disable_crater)
 {
     memset(&plant_map, 0, sizeof(plant_map));
 
@@ -298,6 +299,9 @@ void scene::to_json(rapidjson::Writer<rapidjson::StringBuffer>& writer) {
     writer.Key("disable_garg_throw_imp");
     writer.Bool(disable_garg_throw_imp);
 
+    writer.Key("disable_crater");
+    writer.Bool(disable_crater);
+
     writer.EndObject();
 }
 
@@ -311,6 +315,7 @@ void scene::reset() {
     stop_spawn = false;
     enable_split_pea_bug = true;
     disable_garg_throw_imp = false;
+    disable_crater = false;
 
     zombies.clear();
     plants.clear();

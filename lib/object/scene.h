@@ -138,6 +138,7 @@ public:
     bool stop_spawn;
     bool enable_split_pea_bug;
     bool disable_garg_throw_imp;
+    bool disable_crater;
 
     scene(scene_type t) : type(t),
         rng(std::random_device()()),

@@ -204,15 +204,15 @@ void load_wave(const Setting& setting, const Wave& wave, Test& test)
     }
 
     for (const auto& action : wave.actions) {
-        if (auto a = std::get_if<Cob>(&action)) {
+        if (auto a = dynamic_cast<const Cob*>(action.get())) {
             insert_cob(test, base_tick + a->time, a, setting.scene_type);
-        } else if (auto a = std::get_if<FixedCard>(&action)) {
+        } else if (auto a = dynamic_cast<const FixedCard*>(action.get())) {
             insert_fixed_card(test, base_tick + a->time, a);
-        } else if (auto a = std::get_if<SmartCard>(&action)) {
+        } else if (auto a = dynamic_cast<const SmartCard*>(action.get())) {
             insert_smart_card(test, base_tick + a->time, a);
-        } else if (auto a = std::get_if<FixedFodder>(&action)) {
+        } else if (auto a = dynamic_cast<const FixedFodder*>(action.get())) {
             insert_fixed_fodder(test, base_tick + a->time, a);
-        } else if (auto a = std::get_if<SmartFodder>(&action)) {
+        } else if (auto a = dynamic_cast<const SmartFodder*>(action.get())) {
             insert_smart_fodder(test, base_tick + a->time, a);
         } else {
             assert(false && "unreachable");

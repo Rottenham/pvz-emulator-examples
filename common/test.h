@@ -24,7 +24,7 @@
 
 [[nodiscard]] std::pair<std::ofstream, std::string> open_csv(const std::string& filename)
 {
-    auto full_filename = filename + " (" + get_timestamp() + ") .csv";
+    std::string full_filename = filename + " (" + get_timestamp() + ") .csv";
     std::ofstream file(full_filename, std::ios::binary);
 
     if (!file) {

@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
     for (size_t i = 0; i < config.waves.size(); i++) {
         const auto& wave = config.waves[i];
         for (const auto& action : wave.actions) {
-            headers[i].push_back(desc(action));
+            headers[i].push_back(action.get()->desc());
         }
         max_header_count = std::max(max_header_count, headers[i].size());
     }

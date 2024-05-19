@@ -1,8 +1,8 @@
 /* 测试砸率.
  */
 
-#include "common/test.h"
 #include "common/pe.h"
+#include "common/test.h"
 #include "seml/smash/lib.h"
 #include "world.h"
 
@@ -47,7 +47,7 @@ int get_giga_total(const std::vector<Wave>& waves)
     auto contains_smart_fodder = [](const std::vector<Wave>& waves) {
         for (const auto& wave : waves) {
             for (const auto& action : wave.actions) {
-                if (std::holds_alternative<SmartFodder>(action)) {
+                if (dynamic_cast<const SmartFodder*>(action.get())) {
                     return true;
                 }
             }

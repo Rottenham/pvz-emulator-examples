@@ -19,6 +19,8 @@ std::mutex mtx;
 std::vector<std::vector<std::pair<int, int>>> cob_ranges;
 std::optional<int> ice_time;
 int hit_cob_col = -1;
+const int COB_RANGE_MIN_INIT = -9999;
+const int COB_RANGE_MAX_INIT = 9999;
 
 bool is_range_overlap(std::pair<int, int> range1, std::pair<int, int> range2)
 {
@@ -38,7 +40,7 @@ std::pair<int, int> get_col_range(const Setting::ProtectPos& protect_position)
 void get_hit_cob_col(const Wave& wave)
 {
     for (const auto& action : wave.actions) {
-        if (auto a = std::get_if<Cob>(&action)) {
+        if (auto a = dynamic_cast<const Cob*>(action.get())) {
             hit_cob_col = a->cob_col;
             return;
         }
@@ -83,16 +85,18 @@ void validate_config(Config& config)
             }
         }
     }
-    cob_ranges.resize(
-        3, std::vector<std::pair<int, int>>(wave.wave_length - wave.start_tick + 1, {-9999, 9999}));
+    cob_ranges.resize(3,
+        std::vector<std::pair<int, int>>(
+            wave.wave_length - wave.start_tick + 1, {COB_RANGE_MIN_INIT, COB_RANGE_MAX_INIT}));
 }
 
 void test(const Config& config, int repeat)
 {
     const auto& wave = config.waves[0];
     world w(config.setting.scene_type);
-    std::vector<std::vector<std::pair<int, int>>> local_cob_ranges(
-        3, std::vector<std::pair<int, int>>(wave.wave_length - wave.start_tick + 1, {-9999, 9999}));
+    std::vector<std::vector<std::pair<int, int>>> local_cob_ranges(3,
+        std::vector<std::pair<int, int>>(
+            wave.wave_length - wave.start_tick + 1, {COB_RANGE_MIN_INIT, COB_RANGE_MAX_INIT}));
 
     for (int r = 0; r < repeat; r++) {
         w.scene.reset();
@@ -120,9 +124,10 @@ void test(const Config& config, int repeat)
             if (tick >= wave.start_tick) {
                 for (auto& z : w.scene.zombies) {
                     for (int diff = -1; diff <= 1; diff++) {
-                        auto new_cob_range = get_cob_hit_x_range(get_hit_box(z),
-                            get_cob_hit_xy(w.scene.type, (z.row + 1) + diff, 9.0f, hit_cob_col)
-                                .second);
+                        auto cob_y
+                            = get_cob_hit_xy(w.scene.type, (z.row + 1) + diff, 9.0f, hit_cob_col)
+                                  .second;
+                        const auto new_cob_range = get_cob_hit_x_range(get_hit_box(z), cob_y);
                         auto& old_cob_range = local_cob_ranges[diff + 1][tick - wave.start_tick];
 
                         old_cob_range.first = std::max(old_cob_range.first, new_cob_range.first);
@@ -136,7 +141,7 @@ void test(const Config& config, int repeat)
     std::lock_guard<std::mutex> lock(mtx);
     for (int tick = wave.start_tick; tick <= wave.wave_length; tick++) {
         for (int i = 0; i < 3; i++) {
-            auto& local_cob_range = local_cob_ranges[i][tick - wave.start_tick];
+            const auto& local_cob_range = local_cob_ranges[i][tick - wave.start_tick];
             auto& global_cob_range = cob_ranges[i][tick - wave.start_tick];
             global_cob_range.first = std::max(global_cob_range.first, local_cob_range.first);
             global_cob_range.second = std::min(global_cob_range.second, local_cob_range.second);
@@ -166,22 +171,23 @@ int main(int argc, char* argv[])
     for (auto& t : threads) {
         t.join();
     }
-    file << "时刻,收上行跳跳左,右,收本行跳跳左,右,收下行跳跳左,右,"
-         << "\n";
+    file << "时刻,收上行跳跳左,右,收本行跳跳左,右,收下行跳跳左,右," << "\n";
     const auto& wave = config.waves[0];
     for (int tick = wave.start_tick; tick <= wave.wave_length; tick++) {
         file << tick << ",";
         for (int i = 2; i >= 0; i--) {
             auto& cob_range = cob_ranges[i][tick - wave.start_tick];
-            if (std::abs(cob_range.first) == 9999)
+            if (cob_range.first == COB_RANGE_MIN_INIT || cob_range.first == COB_RANGE_MAX_INIT) {
                 file << "ERR";
-            else
+            } else {
                 file << cob_range.first;
+            }
             file << ",";
-            if (std::abs(cob_range.second) == 9999)
+            if (cob_range.first == COB_RANGE_MIN_INIT || cob_range.first == COB_RANGE_MAX_INIT) {
                 file << "ERR";
-            else
+            } else {
                 file << cob_range.second;
+            }
             file << ",";
         }
         file << "\n";

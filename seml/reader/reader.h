@@ -41,7 +41,7 @@ void read_card_positions(
     }
 }
 
-void read_action(const rapidjson::Value& val, Action& action)
+void read_action(const rapidjson::Value& val, std::vector<std::shared_ptr<Action>>& actions)
 {
     using namespace pvz_emulator::object;
 
@@ -67,7 +67,7 @@ void read_action(const rapidjson::Value& val, Action& action)
             cob.cob_col = cob_col_val->value.GetInt();
         }
 
-        action = cob;
+        actions.push_back(std::make_shared<Cob>(cob));
     } else if (op == "FixedCard") {
         FixedCard fixed_card;
 
@@ -87,7 +87,7 @@ void read_action(const rapidjson::Value& val, Action& action)
         fixed_card.position.row = val["position"]["row"].GetInt();
         fixed_card.position.col = val["position"]["col"].GetInt();
 
-        action = fixed_card;
+        actions.push_back(std::make_shared<FixedCard>(fixed_card));
     } else if (op == "SmartCard") {
         SmartCard smart_card;
 
@@ -102,40 +102,40 @@ void read_action(const rapidjson::Value& val, Action& action)
 
         read_card_positions(val["positions"].GetArray(), smart_card.positions);
 
-        action = smart_card;
+        actions.push_back(std::make_shared<SmartCard>(smart_card));
     } else if (op == "FixedFodder") {
-        FixedFodder fodder;
+        FixedFodder fixed_fodder;
 
-        fodder.symbol = val["symbol"].GetString();
-        fodder.time = val["time"].GetInt();
+        fixed_fodder.symbol = val["symbol"].GetString();
+        fixed_fodder.time = val["time"].GetInt();
         auto shovel_time_val = val.FindMember("shovelTime");
         if (shovel_time_val != val.MemberEnd()) {
-            fodder.shovel_time = shovel_time_val->value.GetInt();
+            fixed_fodder.shovel_time = shovel_time_val->value.GetInt();
         }
-        read_fodders(val["fodders"].GetArray(), fodder.fodders);
-        read_card_positions(val["positions"].GetArray(), fodder.positions);
+        read_fodders(val["fodders"].GetArray(), fixed_fodder.fodders);
+        read_card_positions(val["positions"].GetArray(), fixed_fodder.positions);
 
-        action = fodder;
+        actions.push_back(std::make_shared<FixedFodder>(fixed_fodder));
     } else if (op == "SmartFodder") {
-        SmartFodder fodder;
+        SmartFodder smart_fodder;
 
-        fodder.symbol = val["symbol"].GetString();
-        fodder.time = val["time"].GetInt();
+        smart_fodder.symbol = val["symbol"].GetString();
+        smart_fodder.time = val["time"].GetInt();
         auto shovel_time_val = val.FindMember("shovelTime");
         if (shovel_time_val != val.MemberEnd()) {
-            fodder.shovel_time = shovel_time_val->value.GetInt();
+            smart_fodder.shovel_time = shovel_time_val->value.GetInt();
         }
-        read_fodders(val["fodders"].GetArray(), fodder.fodders);
-        read_card_positions(val["positions"].GetArray(), fodder.positions);
-        fodder.choose = val["choose"].GetInt();
+        read_fodders(val["fodders"].GetArray(), smart_fodder.fodders);
+        read_card_positions(val["positions"].GetArray(), smart_fodder.positions);
+        smart_fodder.choose = val["choose"].GetInt();
 
         const auto waves = val["waves"].GetArray();
-        fodder.waves.reserve(waves.Size());
+        smart_fodder.waves.reserve(waves.Size());
         for (const auto& wave_val : waves) {
-            fodder.waves.insert(wave_val.GetInt());
+            smart_fodder.waves.insert(wave_val.GetInt());
         }
 
-        action = fodder;
+        actions.push_back(std::make_shared<SmartFodder>(smart_fodder));
     } else {
         assert(false && "unreachable");
     }
@@ -154,9 +154,7 @@ void read_wave(const rapidjson::Value& val, Wave& wave)
     const auto actions = val["actions"].GetArray();
     wave.actions.reserve(actions.Size());
     for (const auto& action_val : actions) {
-        Action action;
-        read_action(action_val, action);
-        wave.actions.push_back(action);
+        read_action(action_val, wave.actions);
     }
 
     auto start_tick_val = val.FindMember("startTick");

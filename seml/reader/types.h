@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <sstream>
 #include <unordered_set>
 #include <variant>
@@ -22,23 +23,25 @@ struct CardPos {
     int col;
 };
 
-struct Cob {
+struct Action {
     std::string symbol;
     int time;
+    virtual std::string desc() const = 0;
+};
+
+struct Cob : Action {
     std::vector<CobPos> positions;
     int cob_col = -1;
 
-    std::string desc() const { return std::to_string(time) + symbol; }
+    std::string desc() const override { return std::to_string(time) + symbol; }
 };
 
-struct FixedCard {
-    std::string symbol;
-    int time;
+struct FixedCard : Action {
     int shovel_time = -1;
     pvz_emulator::object::plant_type plant_type;
     CardPos position;
 
-    std::string desc() const
+    std::string desc() const override
     {
         std::ostringstream os;
         os << time;
@@ -50,23 +53,19 @@ struct FixedCard {
     }
 };
 
-struct SmartCard {
-    std::string symbol;
-    int time;
+struct SmartCard : Action {
     pvz_emulator::object::plant_type plant_type;
     std::vector<CardPos> positions;
 
-    std::string desc() const { return std::to_string(time) + symbol; }
+    std::string desc() const override { return std::to_string(time) + symbol; }
 };
 
-struct FixedFodder {
-    std::string symbol;
-    int time;
+struct FixedFodder : Action {
     int shovel_time = -1;
     std::vector<Fodder> fodders;
     std::vector<CardPos> positions;
 
-    std::string desc() const
+    std::string desc() const override
     {
         std::ostringstream os;
         os << time;
@@ -78,16 +77,14 @@ struct FixedFodder {
     }
 };
 
-struct SmartFodder {
-    std::string symbol;
-    int time;
+struct SmartFodder : Action {
     int shovel_time = -1;
     std::vector<Fodder> fodders;
     std::vector<CardPos> positions;
     int choose;
     std::unordered_set<int> waves;
 
-    std::string desc() const
+    std::string desc() const override
     {
         std::ostringstream os;
         os << time;
@@ -106,29 +103,10 @@ struct SmartFodder {
     }
 };
 
-using Action = std::variant<Cob, FixedCard, SmartCard, FixedFodder, SmartFodder>;
-
-std::string desc(const Action& action)
-{
-    if (auto a = std::get_if<Cob>(&action)) {
-        return a->desc();
-    } else if (auto a = std::get_if<FixedCard>(&action)) {
-        return a->desc();
-    } else if (auto a = std::get_if<SmartCard>(&action)) {
-        return a->desc();
-    } else if (auto a = std::get_if<FixedFodder>(&action)) {
-        return a->desc();
-    } else if (auto a = std::get_if<SmartFodder>(&action)) {
-        return a->desc();
-    } else {
-        assert(false && "unreachable");
-    }
-}
-
 struct Wave {
     std::vector<int> ice_times;
     int wave_length;
-    std::vector<Action> actions;
+    std::vector<std::shared_ptr<Action>> actions;
     int start_tick = -1;
 };
 
