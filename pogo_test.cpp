@@ -149,12 +149,12 @@ void test(const Config& config, int repeat)
     }
 }
 
-int main(int argc, char* argv[])
+int main()
 {
     auto start = std::chrono::high_resolution_clock::now();
     ::system("chcp 65001 > nul");
 
-    std::vector<std::string> args(argv, argv + argc);
+    auto args = parse_cmd_line();
     auto config_file = get_cmd_arg(args, "f");
     auto output_file = get_cmd_arg(args, "o", "pogo_test2");
     auto total_repeat_num = std::stoi(get_cmd_arg(args, "r", "1000"));

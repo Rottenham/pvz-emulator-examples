@@ -1,7 +1,12 @@
 #pragma once
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 
 #include <algorithm>
+#include <codecvt>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <iomanip> // std::put_time
 #include <iostream>
@@ -9,6 +14,13 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <windows.h>
+
+std::wstring utf8_to_wstring(const std::string& str)
+{
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    return converter.from_bytes(str);
+}
 
 // format: 2009.12.25_21.41.37
 [[nodiscard]] std::string get_timestamp()
@@ -25,7 +37,8 @@
 [[nodiscard]] std::pair<std::ofstream, std::string> open_csv(const std::string& filename)
 {
     std::string full_filename = filename + " (" + get_timestamp() + ") .csv";
-    std::ofstream file(full_filename, std::ios::binary);
+    std::filesystem::path path = std::filesystem::u8path(full_filename.c_str());
+    std::ofstream file(path, std::ios::binary);
 
     if (!file) {
         std::cerr << "打开文件失败: " << full_filename << std::endl;
@@ -34,6 +47,22 @@
 
     file << "\xEF\xBB\xBF"; // UTF-8 BOM
     return {std::move(file), full_filename};
+}
+
+std::vector<std::string> parse_cmd_line()
+{
+    std::wstring cmd_line = GetCommandLineW();
+    int argc;
+    LPWSTR* argv = CommandLineToArgvW(cmd_line.c_str(), &argc);
+    std::vector<std::wstring> args(argv, argv + argc);
+    LocalFree(argv);
+
+    std::vector<std::string> cmd_args;
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    for (const auto& arg : args) {
+        cmd_args.push_back(converter.to_bytes(arg));
+    }
+    return cmd_args;
 }
 
 [[nodiscard]] std::string get_cmd_arg(const std::vector<std::string>& args,

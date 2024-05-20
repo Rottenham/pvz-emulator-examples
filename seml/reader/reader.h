@@ -229,7 +229,11 @@ void read_config(const rapidjson::Value& val, Config& config)
 
 Config read_json(const std::string& filename)
 {
-    FILE* fp = std::fopen(filename.c_str(), "rb");
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring filename_wstr = converter.from_bytes(filename);
+
+    // FILE* fp = std::fopen(filename.c_str(), "rb");
+    FILE* fp = _wfopen(filename_wstr.c_str(), L"rb");
 
     if (!fp) {
         std::cerr << "无法打开文件: " << filename << std::endl;
