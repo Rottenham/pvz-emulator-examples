@@ -755,6 +755,7 @@ bool zombie_system::update_entering_home(object::zombie& z) {
     }
 
     if (z.int_x < threshold && z.is_not_dying) {
+        zombie_factory.destroy(z);
         return true;
     }
 
@@ -824,7 +825,7 @@ bool zombie_system::update() {
                 update_eating(z);
                 update_water_status(z);
 
-                if (update_entering_home(z)) {
+                if (update_entering_home(z) && !scene.ignore_game_over) {
                     return true;
                 }
             }

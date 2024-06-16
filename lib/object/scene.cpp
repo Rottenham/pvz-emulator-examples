@@ -52,6 +52,7 @@ scene::scene(const scene& s) :
     ice_path(s.ice_path),
     cards(s.cards),
     is_game_over(s.is_game_over),
+    ignore_game_over(s.ignore_game_over),
     is_zombie_dance(s.is_zombie_dance),
     is_future_enabled(s.is_future_enabled),
     stop_spawn(s.stop_spawn),
@@ -293,6 +294,9 @@ void scene::to_json(rapidjson::Writer<rapidjson::StringBuffer>& writer) {
     writer.Key("is_game_over");
     writer.Bool(is_game_over);
 
+    writer.Key("ignore_game_over");
+    writer.Bool(ignore_game_over);
+
     writer.Key("stop_spawn");
     writer.Bool(stop_spawn);
 
@@ -312,6 +316,7 @@ void scene::reset() {
     is_zombie_dance = false;
     is_future_enabled = false;
     is_game_over = false;
+    ignore_game_over = false;
     stop_spawn = false;
     enable_split_pea_bug = true;
     disable_garg_throw_imp = false;

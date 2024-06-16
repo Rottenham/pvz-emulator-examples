@@ -131,6 +131,7 @@ public:
     std::array<card_data, 10> cards;
 
     bool is_game_over;
+    bool ignore_game_over;
 
     bool is_zombie_dance;
     bool is_future_enabled;
@@ -145,6 +146,7 @@ public:
         zombie_dancing_clock(rng() % 10000),
         rows(get_max_row()),
         is_game_over(false),
+        ignore_game_over(false),
         is_zombie_dance(false),
         is_future_enabled(false),
         stop_spawn(false),

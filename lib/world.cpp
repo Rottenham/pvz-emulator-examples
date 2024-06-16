@@ -32,7 +32,7 @@ bool world::update() {
 
     plant_system.update();
 
-    if (zombie.update()) {
+    if (zombie.update() && !scene.ignore_game_over) {
         scene.is_game_over = true;
         return true;
     }
