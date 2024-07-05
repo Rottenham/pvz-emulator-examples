@@ -58,7 +58,9 @@ scene::scene(const scene& s) :
     stop_spawn(s.stop_spawn),
     enable_split_pea_bug(s.enable_split_pea_bug),
     disable_garg_throw_imp(s.disable_garg_throw_imp),
-    disable_crater(s.disable_crater)
+    disable_crater(s.disable_crater),
+    lock_dx(s.lock_dx),
+    lock_dx_val(s.lock_dx_val)
 {
     memset(&plant_map, 0, sizeof(plant_map));
 
@@ -306,6 +308,11 @@ void scene::to_json(rapidjson::Writer<rapidjson::StringBuffer>& writer) {
     writer.Key("disable_crater");
     writer.Bool(disable_crater);
 
+    if (lock_dx) {
+        writer.Key("lock_dx_val");
+        writer.Double(lock_dx_val);
+    }
+
     writer.EndObject();
 }
 
@@ -321,6 +328,8 @@ void scene::reset() {
     enable_split_pea_bug = true;
     disable_garg_throw_imp = false;
     disable_crater = false;
+    lock_dx = false;
+    lock_dx_val = 0.0f;
 
     zombies.clear();
     plants.clear();

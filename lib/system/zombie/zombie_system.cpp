@@ -597,6 +597,7 @@ void zombie_system::update_pos(zombie& z) {
     }
 
     if (!z.is_blown || prev_x <= 850) {
+        // fix y after changing row (e.g. garlic)
         if (z.action == zombie_action::none) {
             auto init_y = zombie_init_y(scene.type, z, z.row);
 

@@ -46,16 +46,32 @@ void reanim::update_dx(object::zombie& z, bool do_update_fps) {
         z.type == zombie_type::snorkel ||
         z.type == zombie_type::jack_in_the_box)
     {
-        z.dx = rng.randfloat(0.66000003, 0.68000001);
+        if (scene.lock_dx) {
+            z.dx = scene.lock_dx_val;
+        } else {
+            z.dx = rng.randfloat(0.66000003, 0.68000001);
+        }
     } else if (z.status == zombie_status::ladder_walking) {
-        z.dx = rng.randfloat(0.79000002, 0.81);
+        if (scene.lock_dx) {
+            z.dx = scene.lock_dx_val;
+        } else {
+            z.dx = rng.randfloat(0.79000002, 0.81);
+        }
     } else if (z.status == zombie_status::newspaper_running ||
         z.status == zombie_status::dolphin_walk_with_dolphin ||
         z.status == zombie_status::dolphin_walk_without_dolphin)
     {
-        z.dx = rng.randfloat(0.88999999, 0.91000003);
+        if (scene.lock_dx) {
+            z.dx = scene.lock_dx_val;
+        } else {
+            z.dx = rng.randfloat(0.88999999, 0.91000003);
+        }
     } else {
-        z.dx = rng.randfloat(0.23, 0.37);
+        if (scene.lock_dx) {
+            z.dx = scene.lock_dx_val;
+        } else {
+            z.dx = rng.randfloat(0.23, 0.37);
+        }
 
         if (z.dx >= 0.3) {
             z.garlic_tick.a = 15;
