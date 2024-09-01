@@ -42,26 +42,6 @@ void validate_config(const Config& config)
     }
 }
 
-int get_giga_total(const std::vector<Wave>& waves)
-{
-    auto contains_smart_fodder = [](const std::vector<Wave>& waves) {
-        for (const auto& wave : waves) {
-            for (const auto& action : wave.actions) {
-                if (dynamic_cast<const SmartFodder*>(action.get())) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    };
-
-    if (contains_smart_fodder(waves)) {
-        return 5 * static_cast<int>(waves.size());
-    } else {
-        return 1000;
-    }
-}
-
 double calc_smash_rate(const Config& config, int smashed_garg_count, int total_garg_count)
 {
     int total_garg_rows = is_backyard(config.setting.scene_type) ? 4 : 5;
@@ -69,14 +49,14 @@ double calc_smash_rate(const Config& config, int smashed_garg_count, int total_g
         * (static_cast<double>(config.setting.protect_positions.size()) / total_garg_rows);
 }
 
-void test_one(const Config& config, int repeat, int giga_total)
+void test_one(const Config& config, int repeat)
 {
     world w(config.setting.scene_type);
     Test test;
     TestInfo local_test_info;
 
     for (int r = 0; r < repeat; r++) {
-        load_config(config, test, giga_total);
+        load_config(config, test);
 
         w.scene.reset();
         w.scene.stop_spawn = true;
@@ -105,21 +85,17 @@ int main()
     auto args = parse_cmd_line();
     auto config_file = get_cmd_arg(args, "f");
     auto output_file = get_cmd_arg(args, "o", "smash_test");
-    auto total_repeat_num = std::stoi(get_cmd_arg(args, "r", "300"));
+    auto total_repeat_num = std::stoi(get_cmd_arg(args, "r", "10000"));
 
     auto [file, full_output_file] = open_csv(output_file);
 
     auto config = read_json(config_file);
     validate_config(config);
-    auto giga_total = get_giga_total(config.waves);
-    if (giga_total != 1000) {
-        total_repeat_num = static_cast<int>(total_repeat_num * 1000.0 / giga_total);
-    }
 
     std::vector<std::thread> threads;
     for (int repeat : assign_repeat(total_repeat_num, std::thread::hardware_concurrency())) {
         threads.emplace_back(
-            [config, repeat, giga_total]() { test_one(config, repeat, giga_total); });
+            [config, repeat]() { test_one(config, repeat); });
     }
     for (auto& t : threads) {
         t.join();
@@ -162,7 +138,7 @@ int main()
     }
 
     Test test;
-    load_config(config, test, 1000);
+    load_config(config, test);
 
     file << "\n出生波数,单波砸率,砸炮数,总数,";
     auto prev_wave = -1;

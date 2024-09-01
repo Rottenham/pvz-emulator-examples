@@ -249,14 +249,14 @@ void insert_smart_fodder(Test& test, int tick, int wave, const SmartFodder* fodd
 
 } // namespace _smash_internal
 
-void load_config(const Config& config, Test& test, int giga_total)
+void load_config(const Config& config, Test& test)
 {
     using namespace pvz_emulator::object;
     using namespace _smash_internal;
 
     test = {};
     test.protect_positions.reserve(config.setting.protect_positions.size());
-    test.giga_infos.reserve(giga_total);
+    test.giga_infos.reserve(config.waves.size() * 5);
     test.rnd.seed(std::random_device {}());
 
     int base_tick = 0;
@@ -267,8 +267,7 @@ void load_config(const Config& config, Test& test, int giga_total)
         const int wave_num = static_cast<int>(i + 1);
         const auto& wave = config.waves[i];
 
-        insert_spawn(test, base_tick, wave_num, giga_total / static_cast<int>(config.waves.size()),
-            giga_rows);
+        insert_spawn(test, base_tick, wave_num, 5, giga_rows);
 
         for (const auto& ice_time : wave.ice_times) {
             insert_ice(test, base_tick + ice_time - 99);
