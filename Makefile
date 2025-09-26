@@ -6,7 +6,7 @@ CXXFLAGS := -static -O3 -I. -isystem lib -isystem lib/lib -Llib/build -lpvzemu \
             -Wredundant-decls -Wstrict-null-sentinel -Wswitch-default -Wswitch-enum \
             -Wsign-compare -Wsign-promo -Wundef -Wunused-variable -Wuseless-cast \
             -Wzero-as-null-pointer-constant -Wfatal-errors -Werror
-# Source files (excluding those starting with an underscore)
+# Source files (excluding those starting with an underscore or debug)
 SOURCES := $(filter-out _% debug%, $(wildcard *.cpp))
 # Object files
 OBJECTS := $(SOURCES:%.cpp=%)

@@ -63,7 +63,7 @@ void zombie_base::init(object::zombie &z, zombie_type type, unsigned int row) {
     z.accessory_1.type = zombie_accessories_type_1::none;
     z.accessory_1.hp = 0;
     z.accessory_2.type = zombie_accessories_type_2::none;
-    z.accessory_1.hp = 0;
+    z.accessory_2.hp = 0;
 
     memset(&z.countdown, 0, sizeof(z.countdown));
     z.countdown.dead = -1;
