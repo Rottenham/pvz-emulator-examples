@@ -1,9 +1,10 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <unordered_set>
 
-#include "seml/types.h"
+#include "../types.h"
 #include "world.h"
 
 using ZombieTypes = std::unordered_set<pvz_emulator::object::zombie_type>;
@@ -21,9 +22,16 @@ struct ZombieTypesHash {
     }
 };
 
+struct LogRow {
+    std::optional<std::array<int, 5>> zombie_count[33];
+    int init_hp;
+    int curr_hp;
+};
+
 struct Test {
     int init_hp;
     std::unordered_map<ZombieTypes, std::vector<float>, ZombieTypesHash> accident_rates;
+    LogRow log;
     std::vector<std::vector<unique_plant>> plants_to_be_shoveled;
     std::vector<Op> ops;
 };

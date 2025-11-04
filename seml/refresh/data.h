@@ -6,6 +6,7 @@ struct TestInfo {
     friend struct TestInfos;
 
     std::unordered_map<ZombieTypes, std::pair<float, int>, ZombieTypesHash> merged_accident_rates;
+    std::vector<LogRow> logs;
 
 private:
     void update(const Test& test)
@@ -17,6 +18,7 @@ private:
                 merged_accident_rate.second++;
             }
         }
+        logs.push_back(test.log);
     }
 
     void merge(const TestInfo& other)
@@ -26,6 +28,7 @@ private:
             merged_accident_rate.first += accident_rates.first;
             merged_accident_rate.second += accident_rates.second;
         }
+        logs.insert(logs.end(), other.logs.begin(), other.logs.end());
     }
 };
 

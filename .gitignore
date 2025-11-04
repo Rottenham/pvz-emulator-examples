@@ -1,4 +1,8 @@
 .vscode
+.cache
+
+# CMake files
+build/
 
 # data folder, for personal use only
 data
