@@ -484,7 +484,7 @@ struct plant_subsystems {
     plant_threepeater threepeater;
     plant_tangle_kelp tangle_kelp;
     plant_jalapeno jalapeno;
-    plant_spikeweed spickweed;
+    plant_spikeweed spikeweed;
     plant_torchwood torchwood;
     plant_tallnut tallnut;
     plant_seashroom seashroom;
@@ -536,7 +536,7 @@ struct plant_subsystems {
         threepeater(s),
         tangle_kelp(s),
         jalapeno(s),
-        spickweed(s),
+        spikeweed(s),
         torchwood(s),
         tallnut(s),
         seashroom(s),

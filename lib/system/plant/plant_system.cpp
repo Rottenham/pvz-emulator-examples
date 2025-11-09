@@ -553,7 +553,7 @@ void plant_system::update_countdown_and_status(plant& p) {
         break;
 
     case plant_type::spikeweed:
-        subsystems.spickweed.update(p);
+        subsystems.spikeweed.update(p);
         break;
 
     case plant_type::spikerock:

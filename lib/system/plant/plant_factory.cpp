@@ -344,7 +344,7 @@ plant& plant_factory::create(
         subsystems.jalapeno.init(p, row, col);
         break;
     case plant_type::spikeweed:
-        subsystems.spickweed.init(p, row, col);
+        subsystems.spikeweed.init(p, row, col);
         break;
     case plant_type::torchwood:
         subsystems.torchwood.init(p, row, col);

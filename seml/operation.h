@@ -88,7 +88,7 @@ std::vector<size_t> choose_by_num(pvz_emulator::world& w,
             auto card_row = card_positions[index].row - 1;
             int target_zombie_sum = 0;
             for (int zombie_row = card_row - max_card_zombie_row_diff;
-                 zombie_row <= card_row + max_card_zombie_row_diff; zombie_row++) {
+                zombie_row <= card_row + max_card_zombie_row_diff; zombie_row++) {
                 if (zombie_row >= 0 && zombie_row < 6) {
                     target_zombie_sum += target_zombie_count[zombie_row];
                 }

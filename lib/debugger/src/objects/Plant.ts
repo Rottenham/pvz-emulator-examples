@@ -84,10 +84,10 @@ export type PlantStatus =
     "cactus_tall_idle" |
     "cactus_get_short" |
     "tangle_kelp_grab" |
-    "cob_cannon_unaramed_idle" |
+    "cob_cannon_unarmed_idle" |
     "cob_cannon_charge" |
     "cob_cannon_launch" |
-    "cob_cannon_aramed_idle" |
+    "cob_cannon_armed_idle" |
     "kernelpult_launch_butter" |
     "umbrella_leaf_block" |
     "umbrella_leaf_shrink" |

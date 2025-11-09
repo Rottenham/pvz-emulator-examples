@@ -94,8 +94,7 @@ int main()
 
     std::vector<std::thread> threads;
     for (int repeat : assign_repeat(total_repeat_num, std::thread::hardware_concurrency())) {
-        threads.emplace_back(
-            [config, repeat]() { test_one(config, repeat); });
+        threads.emplace_back([config, repeat]() { test_one(config, repeat); });
     }
     for (auto& t : threads) {
         t.join();
