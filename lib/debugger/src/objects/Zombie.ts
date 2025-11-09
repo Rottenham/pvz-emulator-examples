@@ -70,12 +70,12 @@ export type ZombieStatus =
     "dancing_armrise4" |
     "dancing_armrise5" |
     "backup_spawning" |
-    "dophin_walk_with_dophin" |
-    "dophin_jump_in_pool" |
-    "dophin_ride" |
-    "dophin_jump" |
-    "dophin_walk_in_pool" |
-    "dophin_walk_without_dophin" |
+    "dolphin_walk_with_dolphin" |
+    "dolphin_jump_in_pool" |
+    "dolphin_ride" |
+    "dolphin_jump" |
+    "dolphin_walk_in_pool" |
+    "dolphin_walk_without_dolphin" |
     "snorkel_walking" |
     "snorkel_jump_in_the_pool" |
     "snorkel_swim" |
