@@ -81,7 +81,7 @@ export type ZombieStatus =
     "snorkel_swim" |
     "snorkel_up_to_eat" |
     "snorkel_eat" |
-    "snorkel_finied_eat" |
+    "snorkel_finished_eat" |
     "catapult_shoot" |
     "catapult_idle" |
     "balloon_flying" |

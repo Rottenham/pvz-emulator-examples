@@ -349,7 +349,7 @@ PYBIND11_MODULE(pvzemu, m) {
         .value("snorkel_swim", zombie_status::snorkel_swim)
         .value("snorkel_up_to_eat", zombie_status::snorkel_up_to_eat)
         .value("snorkel_eat", zombie_status::snorkel_eat)
-        .value("snorkel_finied_eat", zombie_status::snorkel_finied_eat)
+        .value("snorkel_finished_eat", zombie_status::snorkel_finished_eat)
         .value("catapult_shoot", zombie_status::catapult_shoot)
         .value("catapult_idle", zombie_status::catapult_idle)
         .value("balloon_flying", zombie_status::balloon_flying)
