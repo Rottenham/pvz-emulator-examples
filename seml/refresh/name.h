@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <sstream>
 
 #include "types.h"
@@ -8,7 +9,7 @@ namespace _refresh_internal {
 
 using namespace pvz_emulator::object;
 
-const std::unordered_map<zombie_type, std::string> ZOMBIE_NAMES = {
+const std::map<zombie_type, std::string> ZOMBIE_NAMES = {
     {zombie_type::zombie, "普"},
     {zombie_type::conehead, "障"},
     {zombie_type::pole_vaulting, "杆"},

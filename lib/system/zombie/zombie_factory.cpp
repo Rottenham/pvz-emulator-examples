@@ -141,7 +141,7 @@ void zombie_factory::create_pool_or_night_lurking(
 	unsigned int col)
 {
 	auto& z = create(type);
-	
+
 	z.x = static_cast<float>(80 * col + 15);
 	z.y = zombie_init_y(scene.type, z, row);
 	z.int_x = static_cast<int>(z.x);
@@ -223,7 +223,13 @@ bool zombie_factory::can_spawn_at_row(zombie_type type, unsigned int row) {
 	case zombie_type::buckethead:
 	case zombie_type::balloon:
 	case zombie_type::bungee:
-		return true;
+		switch (scene.type) {
+		case scene_type::pool:
+		case scene_type::fog:
+			return row == 0 || row == 1 || row == 4 || row == 5 || scene.spawn.wave >= 5;
+		default:
+			return true;
+		}
 
 	case zombie_type::pole_vaulting:
 	case zombie_type::newspaper:
@@ -292,15 +298,11 @@ unsigned int zombie_factory::get_spawn_row(zombie_type type) {
 			continue;
 		}
 
-		f[i] = data.row_random[i].b *
-			static_cast<float>(data.row_random[i].d + 1.5 * data.row_random[i].c + 2.5) /
-			sigma_b;
+		float weight = data.row_random[i].b / sigma_b;
 
-		if (f[i] > 0.01) {
-			f[i] = std::min(100.0f, f[i]);
-		} else {
-			f[i] = static_cast<float>(data.row_random[i].b / sigma_b * 0.01);
-		}
+		f[i] = (6.0f * data.row_random[i].c * weight + 6.0f * weight - 3.0f) / 4.0f;
+		f[i] += (data.row_random[i].d * weight + weight - 1.0f) / 4.0f;
+		f[i] = weight * std::min(std::max(f[i], 0.01f), 100.0f);
 	}
 
 	auto row = rng.random_weighted_sample(f);

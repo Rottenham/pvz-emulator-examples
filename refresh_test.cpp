@@ -54,6 +54,7 @@ void test_one(const Config& config, int repeat, const ZombieTypes& required_type
     std::mt19937 rng(
         static_cast<unsigned int>(std::chrono::steady_clock::now().time_since_epoch().count()));
     world w(config.setting.scene_type);
+    w.scene.stop_spawn = true;
     TestInfos local_test_infos;
 
     for (int round_idx = 0; round_idx < repeat; round_idx++) {
@@ -61,6 +62,14 @@ void test_one(const Config& config, int repeat, const ZombieTypes& required_type
             rng, config.setting.original_scene_type, required_types, banned_types);
 
         for (int wave_idx = 0; wave_idx < 20; wave_idx++) { // test 20 times for each repeat
+            /*
+            TODO: refactor wave logic
+            - use actual wave data from config
+            - set wave in insert_spawn
+            - consider giga limit (generate a full list for each test,
+              and only retain the specified wave)
+            - deprecate huge (use w10 instead)
+            */
             std::vector<Test> tests;
             tests.reserve(config.waves.size());
 
@@ -69,14 +78,37 @@ void test_one(const Config& config, int repeat, const ZombieTypes& required_type
                 load_wave(config.setting, wave, get_spawn_list(rng, spawn_types, huge, natural),
                     huge, dance_cheat, test);
 
-                w.scene.reset();
-                w.scene.stop_spawn = true;
+                w.scene.zombies.clear();
+                w.scene.plants.clear();
+                w.scene.griditems.clear();
+                w.scene.projectiles.clear();
                 if (dance_cheat == zombie_dance_cheat::slow) {
                     w.scene.is_zombie_dance = true;
                 }
 
                 auto it = test.ops.begin();
                 int curr_tick = it->tick; // there is at least 1 op (spawn)
+                do {
+                    run(w, curr_tick, it->tick);
+                    it->f(w);
+                    it++;
+                } while (curr_tick < 0);
+
+                test.log.init_hp = test.init_hp;
+                for (auto typ : spawn_types) {
+                    test.log.zombie_count[int(typ)] = std::array<int, 5>();
+                }
+                for (const auto& z : w.scene.zombies) {
+                    if (z.is_hypno ||
+                        z.has_death_status() ||
+                        z.master_id != -1) {
+                        continue;
+                    }
+                    auto& cnt = test.log.zombie_count[int(z.type)];
+                    if (cnt) {
+                        cnt.value()[0]++;
+                    }
+                }
 
                 for (; it != test.ops.end() && it->tick < wave.wave_length - 200; it++) {
                     run(w, curr_tick, it->tick);
@@ -88,6 +120,19 @@ void test_one(const Config& config, int repeat, const ZombieTypes& required_type
                 auto accident_rate = get_accident_rate(test.init_hp, curr_hp, assume_activate);
                 test.accident_rates[spawn_types].push_back(static_cast<float>(accident_rate));
 
+                test.log.curr_hp = curr_hp;
+                for (const auto& z : w.scene.zombies) {
+                    if (z.is_hypno ||
+                        z.has_death_status() ||
+                        z.master_id != -1) {
+                        continue;
+                    }
+                    auto& cnt = test.log.zombie_count[int(z.type)];
+                    if (cnt) {
+                        cnt.value()[(z.hp + 1799) / 1800]++;
+                    }
+                }
+
                 tests.push_back(std::move(test));
             }
             local_test_infos.update(tests);
@@ -96,6 +141,43 @@ void test_one(const Config& config, int repeat, const ZombieTypes& required_type
 
     std::lock_guard<std::mutex> guard(mtx);
     test_infos.merge(local_test_infos);
+}
+
+int get_zombie_max_hit(zombie_type typ) {
+    switch (typ) {
+        case zombie_type::gargantuar: return 2;
+        case zombie_type::giga_gargantuar: return 4;
+        default: return 1;
+    }
+}
+
+void write_log(std::ofstream& file, const TestInfos& test_infos) {
+    file << "index,wave,init_hp,curr_hp,ratio";
+    for (auto [typ, name] : _refresh_internal::ZOMBIE_NAMES) {
+        file << ',' << name;
+        for (int i = 1; i <= get_zombie_max_hit(typ); ++i)
+            file << ',' << i;
+    }
+    file << std::endl;
+    for (size_t index = 0; index < test_infos.test_infos[0].logs.size(); ++index) {
+        for (size_t wave = 0; wave < test_infos.test_infos.size(); ++wave) {
+            const LogRow& row = test_infos.test_infos[wave].logs[index];
+            file << index + 1 << ',' << wave + 1;
+            file << ',' << row.init_hp << ',' << row.curr_hp;
+            file << std::fixed << std::setprecision(3) << ',' << 1.0 * row.curr_hp / row.init_hp;
+            for (auto [typ, name] : _refresh_internal::ZOMBIE_NAMES) {
+                const auto& cnt = row.zombie_count[int(typ)];
+                if (cnt) {
+                    for (int i = 0; i <= get_zombie_max_hit(typ); ++i)
+                        file << ',' << cnt.value()[i];
+                } else {
+                    for (int i = 0; i <= get_zombie_max_hit(typ); ++i)
+                        file << ',';
+                }
+            }
+            file << std::endl;
+        }
+    }
 }
 
 int main()
@@ -114,6 +196,7 @@ int main()
     auto assume_activate = get_cmd_flag(args, "a");
     auto use_dance_cheat = get_cmd_flag(args, "d");
     auto natural = get_cmd_flag(args, "n");
+    auto enable_raw = get_cmd_flag(args, "raw");
     auto dance_cheat = get_dance_cheat(use_dance_cheat, assume_activate);
 
     auto [file, full_output_file] = open_csv(output_file);
@@ -195,6 +278,11 @@ int main()
             file << ",";
         }
         file << "\n";
+    }
+
+    if (enable_raw) {
+        auto [log_file, log_filename] = open_csv(output_file + "_raw");
+        write_log(log_file, test_infos);
     }
 
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start;

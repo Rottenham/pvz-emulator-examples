@@ -15,7 +15,7 @@ void insert_spawn(Test& test, int tick, const std::array<zombie_type, 50>& spawn
     zombie_dance_cheat dance_cheat)
 {
     auto f = [&test, tick, spawn_list, huge, dance_cheat](pvz_emulator::world& w) {
-        auto spawn_wave = huge ? 9 : 0;
+        auto spawn_wave = huge ? 9 : 5;
         w.scene.spawn.wave = spawn_wave;
         for (const auto& type : spawn_list) {
             auto& z = w.zombie_factory.create(type);
